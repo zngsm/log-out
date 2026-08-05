@@ -231,6 +231,10 @@ h1 {
 }
 
 .file-group p {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
   margin: 0 0 8px;
   color: #9fbdb5;
   font-size: 0.78rem;
@@ -244,12 +248,103 @@ h1 {
   border-radius: 12px;
   text-align: left;
   background: rgba(216, 255, 244, 0.045);
-  cursor: default;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.file-row:hover:not(:disabled),
+.selected-file {
+  border-color: rgba(245, 254, 117, 0.36);
+  background: rgba(245, 254, 117, 0.08);
+}
+
+.file-row:disabled {
+  color: rgba(216, 255, 244, 0.38);
+  cursor: not-allowed;
+  background: rgba(216, 255, 244, 0.025);
+}
+
+.file-row small {
+  color: #9fbdb5;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
+.corrupted-file {
+  border-color: rgba(255, 92, 67, 0.28);
+  background: rgba(255, 92, 67, 0.055);
 }
 
 .file-icon {
-  margin-right: 9px;
   color: #f5fe75;
+}
+
+.status-pill {
+  border: 1px solid rgba(112, 247, 207, 0.22);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+}
+
+.locked-pill {
+  color: #ffb3a5;
+  border-color: rgba(255, 92, 67, 0.32);
+}
+
+.unlock-form {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid rgba(112, 247, 207, 0.14);
+  border-radius: 14px;
+  background: rgba(1, 8, 7, 0.42);
+}
+
+.unlock-form label {
+  display: block;
+  margin-bottom: 8px;
+  color: #70f7cf;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.unlock-form div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.unlock-form input {
+  min-width: 0;
+  border: 1px solid rgba(112, 247, 207, 0.2);
+  border-radius: 999px;
+  padding: 8px 10px;
+  color: #d8fff4;
+  background: rgba(1, 8, 7, 0.72);
+}
+
+.unlock-form button {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 10px;
+  color: #07100f;
+  background: #f5fe75;
+}
+
+.unlock-form button:disabled {
+  color: #07100f;
+  background: #70f7cf;
+}
+
+.form-alert {
+  display: block;
+  margin-top: 8px;
+  color: #ffb3a5;
+  font-size: 0.72rem;
 }
 
 .file-viewer {
@@ -293,6 +388,69 @@ h1 {
 .log-document dd {
   margin: 0;
   color: #f7fffb;
+}
+
+.notice-card,
+.recovery-console {
+  border: 1px solid rgba(112, 247, 207, 0.17);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(112, 247, 207, 0.055);
+}
+
+.notice-card strong,
+.recovery-console span {
+  color: #70f7cf;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.notice-card p,
+.recovery-console p {
+  margin: 8px 0 0;
+}
+
+.notice-card code {
+  color: #07100f;
+  background: #f5fe75;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.danger-card {
+  border-color: rgba(255, 92, 67, 0.26);
+  background: rgba(255, 92, 67, 0.07);
+}
+
+.danger-card strong {
+  color: #ffb3a5;
+}
+
+.recovery-console {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.recovery-console strong {
+  display: block;
+  margin-top: 6px;
+  color: #f7fffb;
+  word-break: break-all;
+}
+
+.recovery-console button {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 16px;
+  color: #07100f;
+  background: #70f7cf;
+}
+
+.recovery-console button:disabled {
+  background: #9fbdb5;
 }
 
 pre {
@@ -396,7 +554,9 @@ pre {
   }
 
   .log-document dl div,
-  .chat-input {
+  .chat-input,
+  .recovery-console,
+  .unlock-form div {
     grid-template-columns: 1fr;
   }
 }
