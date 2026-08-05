@@ -100,6 +100,10 @@ button {
   animation: danger-pulse 1.1s steps(2, end) infinite;
 }
 
+.interaction-locked-shell {
+  cursor: wait;
+}
+
 .scene-backdrop {
   position: fixed;
   inset: 0;
@@ -774,6 +778,12 @@ pre {
   cursor: pointer;
 }
 
+.context-chip:disabled {
+  cursor: not-allowed;
+  color: rgba(7, 16, 15, 0.62);
+  background: #9fbdb5;
+}
+
 .empty-chip {
   color: #9fbdb5;
   font-size: 0.78rem;
@@ -788,6 +798,13 @@ pre {
   padding: 10px 12px;
   color: #d8fff4;
   background: rgba(1, 8, 7, 0.72);
+}
+
+.evidence-form textarea:disabled {
+  cursor: not-allowed;
+  color: rgba(216, 255, 244, 0.44);
+  border-color: rgba(255, 92, 67, 0.24);
+  background: rgba(12, 4, 3, 0.64);
 }
 
 .feedback-card {
@@ -810,6 +827,15 @@ pre {
 
 .success-feedback strong {
   color: #70f7cf;
+}
+
+.blackout-feedback {
+  border-color: rgba(255, 92, 67, 0.36);
+  background: rgba(255, 92, 67, 0.09);
+}
+
+.blackout-feedback strong {
+  color: #ffb3a5;
 }
 
 .evidence-form > button {

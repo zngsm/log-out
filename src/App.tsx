@@ -20,6 +20,7 @@ import {
   applyWrongSubmissionPenalty,
   advanceResourceTime,
   createResourceState,
+  getInteractionLocked,
   getPowerState,
 } from "./game/resourceState";
 import { SpaceshipComputerScene } from "./game/SpaceshipComputerScene";
@@ -190,6 +191,7 @@ function App() {
   const selectedIsRecovered = recoveredFileIds.has(selectedFileId);
   const powerState = getPowerState(resourceState.power);
   const isBlackout = powerState.name === "Blackout" || resourceState.blackoutRemainingSeconds > 0;
+  const interactionLocked = getInteractionLocked(resourceState);
   const isEndingReady = stage === "ending-ready";
   const currentActGuidance = isEndingReady ? null : actGuidance[stage];
   const currentEvidenceNames = isEndingReady
@@ -249,16 +251,29 @@ function App() {
   }
 
   function selectAndAttachFile(fileId: CategoryAFileId) {
+    if (interactionLocked) {
+      return;
+    }
+
     setSelectedFileId(fileId);
     attachFile(fileId);
   }
 
   function removeAttachedFile(fileId: CategoryAFileId) {
+    if (interactionLocked) {
+      return;
+    }
+
     setAttachedFileIds((current) => current.filter((attachedId) => attachedId !== fileId));
   }
 
   function handlePasswordSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (interactionLocked) {
+      setPasswordError("BLACKOUT / 전력 복구 후 보안 입력을 다시 시도하세요.");
+      return;
+    }
 
     if (passwordInput.trim() !== CATEGORY_A_SECURITY_PASSWORD) {
       setPasswordError("ACCESS DENIED / Dr_Kim email_chain_july.txt에서 4자리 코드를 확인하세요.");
@@ -271,6 +286,11 @@ function App() {
   }
 
   function recoverQuarantineRules() {
+    if (interactionLocked) {
+      setPasswordError("BLACKOUT / 전력 복구 후 Log_Fixer.exe를 다시 실행하세요.");
+      return;
+    }
+
     if (!unlockedSecurity) {
       setPasswordError("RECOVERY BLOCKED / 먼저 /System/Security 비밀번호를 해제해야 합니다.");
       setResourceState((current) => applyWrongSubmissionPenalty(current));
@@ -294,6 +314,17 @@ function App() {
 
   function handleEvidenceSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (interactionLocked) {
+      setEchoMessages((current) => [
+        ...current,
+        {
+          speaker: "SYSTEM",
+          text: "BLACKOUT / 입력 채널이 일시 중단되었습니다. 전력이 10%로 복구될 때까지 대기하세요.",
+        },
+      ]);
+      return;
+    }
 
     if (stage === "ending-ready") {
       setEchoMessages((current) => [
@@ -350,7 +381,9 @@ function App() {
     <main
       className={`game-shell ${getPowerToneClass(powerState.name)} ${
         isBlackout ? "blackout-shell" : ""
-      } ${isEndingReady ? "ending-ready-shell" : ""}`}
+      } ${interactionLocked ? "interaction-locked-shell" : ""} ${
+        isEndingReady ? "ending-ready-shell" : ""
+      }`}
     >
       <section className="scene-backdrop" aria-label="Hermes control room 3D placeholder">
         <SpaceshipComputerScene />
@@ -520,7 +553,7 @@ function App() {
                   </p>
                   {getCategoryAFilesByDirectory(directoryPath).map((file) => {
                     const runtimeState = getRuntimeState(file.id);
-                    const disabled = locked;
+                    const disabled = locked || interactionLocked;
                     const attached = attachedFileIds.includes(file.id);
 
                     return (
@@ -537,7 +570,11 @@ function App() {
                       >
                         <span className="file-icon">{runtimeState === "recovered" ? "◆" : "▣"}</span>
                         <span>{file.name}</span>
-                        <small>{getRuntimeStatusLabel({ attached, disabled, runtimeState })}</small>
+                        <small>
+                          {interactionLocked
+                            ? "blackout"
+                            : getRuntimeStatusLabel({ attached, disabled, runtimeState })}
+                        </small>
                       </button>
                     );
                   })}
@@ -552,7 +589,7 @@ function App() {
                           placeholder="4-digit code"
                           readOnly={unlockedSecurity}
                         />
-                        <button type="submit" disabled={unlockedSecurity}>
+                        <button type="submit" disabled={unlockedSecurity || interactionLocked}>
                           {unlockedSecurity ? "OPEN" : "UNLOCK"}
                         </button>
                       </div>
@@ -640,7 +677,7 @@ function App() {
                   <button
                     type="button"
                     onClick={recoverQuarantineRules}
-                    disabled={isQuarantineRecovered}
+                    disabled={isQuarantineRecovered || interactionLocked}
                   >
                     {isQuarantineRecovered ? "RECOVERED" : "RUN LOG_FIXER"}
                   </button>
@@ -700,6 +737,7 @@ function App() {
                       className="context-chip"
                       type="button"
                       key={fileId}
+                      disabled={interactionLocked}
                       onClick={() => removeAttachedFile(fileId)}
                     >
                       @{file?.name ?? fileId} x
@@ -715,7 +753,14 @@ function App() {
               value={messageInput}
               onChange={(event) => setMessageInput(event.target.value)}
               rows={3}
+              disabled={interactionLocked}
             />
+            {interactionLocked ? (
+              <div className="feedback-card blackout-feedback" aria-live="polite">
+                <strong>BLACKOUT LOCK</strong>
+                <p>전력 복구 중입니다. 파일 선택, 증거 제출, 보안 입력, 복구 실행이 잠시 중단됩니다.</p>
+              </div>
+            ) : null}
             {lastSubmissionReason ? (
               <div
                 className={`feedback-card ${
@@ -729,7 +774,7 @@ function App() {
                 <p>{submissionHelp[lastSubmissionReason]}</p>
               </div>
             ) : null}
-            <button type="submit" disabled={stage === "ending-ready"}>
+            <button type="submit" disabled={stage === "ending-ready" || interactionLocked}>
               {stage === "ending-ready" ? "UNLOCK READY" : "SUBMIT"}
             </button>
           </form>
