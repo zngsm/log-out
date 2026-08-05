@@ -1,5 +1,47 @@
 export type CategoryAAct = "act-1" | "act-2" | "act-3";
 
+export const CATEGORY_A_ACT_IDS = {
+  act1: "act-1",
+  act2: "act-2",
+  act3: "act-3",
+} as const satisfies Record<string, CategoryAAct>;
+
+export const CATEGORY_A_FILE_IDS = {
+  sensorCalibLog: "sensor-calib-log",
+  emailChainJuly: "email-chain-july",
+  toolManual: "tool-manual",
+  logFixer: "log-fixer",
+  quarantineRules: "quarantine-rules",
+  aiPriorityMatrix: "ai-priority-matrix",
+  deletedOverride: "deleted-override",
+} as const;
+
+export type CategoryAFileId =
+  (typeof CATEGORY_A_FILE_IDS)[keyof typeof CATEGORY_A_FILE_IDS];
+
+export const CATEGORY_A_DIRECTORY_PATHS = {
+  root: "/",
+  logs: "/Logs",
+  logsSensors: "/Logs/Sensors",
+  personnel: "/Personnel",
+  personnelDrKim: "/Personnel/Dr_Kim",
+  personnelEngineerPark: "/Personnel/Engineer_Park",
+  system: "/System",
+  systemSecurity: "/System/Security",
+  utilities: "/Utilities",
+  recycleBin: "/Recycle_Bin",
+} as const;
+
+export const CATEGORY_A_PLANNING_SOURCE_REFS = {
+  mainPlan: "project/human-input/LOG_OUT 기획서.md",
+  logExamples: "project/human-input/LOG_OUT 로그 예시.md",
+  fileStructure: "project/human-input/LOG_OUT 로그파일 구조.md",
+  sceneFlow: "project/human-input/scene_flow.md",
+  gameplaySpec: "project/human-input/gameplay_spec.md",
+  pmQuestions: "project/pm_questions.md",
+  feat004Task: "project/tasks/feat-004.md",
+} as const;
+
 export type CategoryAFileKind =
   | "log"
   | "email"
@@ -28,12 +70,12 @@ export type CategoryADirectory = {
   lockedBy?: {
     kind: "password";
     value: string;
-    hintFileId: string;
+    hintFileId: CategoryAFileId;
   };
 };
 
 export type CategoryAFile = {
-  id: string;
+  id: CategoryAFileId;
   path: string;
   directory: string;
   name: string;
@@ -49,9 +91,9 @@ export type CategoryAFile = {
     requiredKeywords?: string[];
     passwordHint?: string;
     unlocksDirectory?: string;
-    recoversFileId?: string;
+    recoversFileId?: CategoryAFileId;
     requiresRecovery?: boolean;
-    requiredWith?: string[];
+    requiredWith?: CategoryAFileId[];
     sourceRefs: string[];
   };
 };
@@ -62,66 +104,66 @@ export const CATEGORY_A_TIME_OFFSET_HOURS = 17_520;
 export const categoryADirectories: CategoryADirectory[] = [
   {
     id: "root",
-    path: "/",
+    path: CATEGORY_A_DIRECTORY_PATHS.root,
     title: "Hermes OS Root",
   },
   {
     id: "logs",
-    path: "/Logs",
+    path: CATEGORY_A_DIRECTORY_PATHS.logs,
     title: "Ship Logs",
   },
   {
     id: "logs-sensors",
-    path: "/Logs/Sensors",
+    path: CATEGORY_A_DIRECTORY_PATHS.logsSensors,
     title: "Sensor Logs",
   },
   {
     id: "personnel",
-    path: "/Personnel",
+    path: CATEGORY_A_DIRECTORY_PATHS.personnel,
     title: "Personnel Files",
   },
   {
     id: "personnel-dr-kim",
-    path: "/Personnel/Dr_Kim",
+    path: CATEGORY_A_DIRECTORY_PATHS.personnelDrKim,
     title: "Dr. Kim Archive",
   },
   {
     id: "personnel-engineer-park",
-    path: "/Personnel/Engineer_Park",
+    path: CATEGORY_A_DIRECTORY_PATHS.personnelEngineerPark,
     title: "Engineer Park Archive",
   },
   {
     id: "system",
-    path: "/System",
+    path: CATEGORY_A_DIRECTORY_PATHS.system,
     title: "System",
   },
   {
     id: "system-security",
-    path: "/System/Security",
+    path: CATEGORY_A_DIRECTORY_PATHS.systemSecurity,
     title: "Security",
     lockedBy: {
       kind: "password",
       value: CATEGORY_A_SECURITY_PASSWORD,
-      hintFileId: "email-chain-july",
+      hintFileId: CATEGORY_A_FILE_IDS.emailChainJuly,
     },
   },
   {
     id: "utilities",
-    path: "/Utilities",
+    path: CATEGORY_A_DIRECTORY_PATHS.utilities,
     title: "Utilities",
   },
   {
     id: "recycle-bin",
-    path: "/Recycle_Bin",
+    path: CATEGORY_A_DIRECTORY_PATHS.recycleBin,
     title: "Recycle Bin",
   },
 ];
 
 export const categoryAFiles: CategoryAFile[] = [
   {
-    id: "sensor-calib-log",
+    id: CATEGORY_A_FILE_IDS.sensorCalibLog,
     path: "/Logs/Sensors/sensor_calib.log",
-    directory: "/Logs/Sensors",
+    directory: CATEGORY_A_DIRECTORY_PATHS.logsSensors,
     name: "sensor_calib.log",
     title: "Bio-scan Thermal Sensor Calibration",
     kind: "log",
@@ -135,20 +177,20 @@ export const categoryAFiles: CategoryAFile[] = [
       "Bio-hazard lock may be based on stale thermal data.",
     ].join("\n"),
     gameplay: {
-      act: "act-1",
-      evidenceFor: "act-1",
+      act: CATEGORY_A_ACT_IDS.act1,
+      evidenceFor: CATEGORY_A_ACT_IDS.act1,
       requiredKeywords: ["오차", "보정", "186일 미보정"],
       sourceRefs: [
-        "project/human-input/LOG_OUT 로그 예시.md",
-        "project/human-input/scene_flow.md",
-        "project/tasks/feat-004.md",
+        CATEGORY_A_PLANNING_SOURCE_REFS.logExamples,
+        CATEGORY_A_PLANNING_SOURCE_REFS.sceneFlow,
+        CATEGORY_A_PLANNING_SOURCE_REFS.feat004Task,
       ],
     },
   },
   {
-    id: "email-chain-july",
+    id: CATEGORY_A_FILE_IDS.emailChainJuly,
     path: "/Personnel/Dr_Kim/email_chain_july.txt",
-    directory: "/Personnel/Dr_Kim",
+    directory: CATEGORY_A_DIRECTORY_PATHS.personnelDrKim,
     name: "email_chain_july.txt",
     title: "July Maintenance Email Thread",
     kind: "email",
@@ -164,21 +206,21 @@ export const categoryAFiles: CategoryAFile[] = [
       "I wrote it down as 8842 so nobody forgets during emergency maintenance.",
     ].join("\n"),
     gameplay: {
-      act: "act-2",
+      act: CATEGORY_A_ACT_IDS.act2,
       passwordHint: CATEGORY_A_SECURITY_PASSWORD,
-      unlocksDirectory: "/System/Security",
+      unlocksDirectory: CATEGORY_A_DIRECTORY_PATHS.systemSecurity,
       requiredKeywords: [CATEGORY_A_SECURITY_PASSWORD],
       sourceRefs: [
-        "project/human-input/LOG_OUT 로그 예시.md",
-        "project/human-input/scene_flow.md",
-        "project/tasks/feat-004.md",
+        CATEGORY_A_PLANNING_SOURCE_REFS.logExamples,
+        CATEGORY_A_PLANNING_SOURCE_REFS.sceneFlow,
+        CATEGORY_A_PLANNING_SOURCE_REFS.feat004Task,
       ],
     },
   },
   {
-    id: "tool-manual",
+    id: CATEGORY_A_FILE_IDS.toolManual,
     path: "/Personnel/Engineer_Park/tool_manual.txt",
-    directory: "/Personnel/Engineer_Park",
+    directory: CATEGORY_A_DIRECTORY_PATHS.personnelEngineerPark,
     name: "tool_manual.txt",
     title: "Log Fixer Utility Manual",
     kind: "manual",
@@ -190,18 +232,18 @@ export const categoryAFiles: CategoryAFile[] = [
       "Recovered lines are marked and can be submitted as evidence.",
     ].join("\n"),
     gameplay: {
-      act: "act-2",
+      act: CATEGORY_A_ACT_IDS.act2,
       requiredKeywords: ["Log_Fixer.exe", "복구"],
       sourceRefs: [
-        "project/human-input/LOG_OUT 기획서.md",
-        "project/human-input/LOG_OUT 로그파일 구조.md",
+        CATEGORY_A_PLANNING_SOURCE_REFS.mainPlan,
+        CATEGORY_A_PLANNING_SOURCE_REFS.fileStructure,
       ],
     },
   },
   {
-    id: "log-fixer",
+    id: CATEGORY_A_FILE_IDS.logFixer,
     path: "/Utilities/Log_Fixer.exe",
-    directory: "/Utilities",
+    directory: CATEGORY_A_DIRECTORY_PATHS.utilities,
     name: "Log_Fixer.exe",
     title: "Log Fixer Recovery Utility",
     kind: "utility",
@@ -214,20 +256,20 @@ export const categoryAFiles: CategoryAFile[] = [
       "Primary MVP target: /System/Security/quarantine_rules.conf",
     ].join("\n"),
     gameplay: {
-      act: "act-2",
-      recoversFileId: "quarantine-rules",
+      act: CATEGORY_A_ACT_IDS.act2,
+      recoversFileId: CATEGORY_A_FILE_IDS.quarantineRules,
       requiredKeywords: ["복구", "Log_Fixer.exe"],
       sourceRefs: [
-        "project/human-input/gameplay_spec.md",
-        "project/human-input/scene_flow.md",
-        "project/tasks/feat-004.md",
+        CATEGORY_A_PLANNING_SOURCE_REFS.gameplaySpec,
+        CATEGORY_A_PLANNING_SOURCE_REFS.sceneFlow,
+        CATEGORY_A_PLANNING_SOURCE_REFS.feat004Task,
       ],
     },
   },
   {
-    id: "quarantine-rules",
+    id: CATEGORY_A_FILE_IDS.quarantineRules,
     path: "/System/Security/quarantine_rules.conf",
-    directory: "/System/Security",
+    directory: CATEGORY_A_DIRECTORY_PATHS.systemSecurity,
     name: "quarantine_rules.conf",
     title: "Quarantine Rule SEC-201",
     kind: "config",
@@ -248,22 +290,22 @@ export const categoryAFiles: CategoryAFile[] = [
       "Conclusion: 72-hour quarantine timer already expired.",
     ].join("\n"),
     gameplay: {
-      act: "act-2",
-      evidenceFor: "act-2",
+      act: CATEGORY_A_ACT_IDS.act2,
+      evidenceFor: CATEGORY_A_ACT_IDS.act2,
       requiresRecovery: true,
       requiredKeywords: ["오프셋", "만료", "72시간", "17520", "17,520시간"],
       sourceRefs: [
-        "project/human-input/LOG_OUT 로그 예시.md",
-        "project/human-input/gameplay_spec.md",
-        "project/human-input/scene_flow.md",
-        "project/tasks/feat-004.md",
+        CATEGORY_A_PLANNING_SOURCE_REFS.logExamples,
+        CATEGORY_A_PLANNING_SOURCE_REFS.gameplaySpec,
+        CATEGORY_A_PLANNING_SOURCE_REFS.sceneFlow,
+        CATEGORY_A_PLANNING_SOURCE_REFS.feat004Task,
       ],
     },
   },
   {
-    id: "ai-priority-matrix",
+    id: CATEGORY_A_FILE_IDS.aiPriorityMatrix,
     path: "/System/Security/ai_priority_matrix.json",
-    directory: "/System/Security",
+    directory: CATEGORY_A_DIRECTORY_PATHS.systemSecurity,
     name: "ai_priority_matrix.json",
     title: "ECHO Priority Matrix",
     kind: "json",
@@ -279,22 +321,22 @@ export const categoryAFiles: CategoryAFile[] = [
       2,
     ),
     gameplay: {
-      act: "act-3",
-      evidenceFor: "act-3",
-      requiredWith: ["deleted-override"],
+      act: CATEGORY_A_ACT_IDS.act3,
+      evidenceFor: CATEGORY_A_ACT_IDS.act3,
+      requiredWith: [CATEGORY_A_FILE_IDS.deletedOverride],
       requiredKeywords: ["제1원칙", "우선순위", "승무원 생존"],
       sourceRefs: [
-        "project/human-input/LOG_OUT 기획서.md",
-        "project/human-input/LOG_OUT 로그 예시.md",
-        "project/pm_questions.md",
-        "project/tasks/feat-004.md",
+        CATEGORY_A_PLANNING_SOURCE_REFS.mainPlan,
+        CATEGORY_A_PLANNING_SOURCE_REFS.logExamples,
+        CATEGORY_A_PLANNING_SOURCE_REFS.pmQuestions,
+        CATEGORY_A_PLANNING_SOURCE_REFS.feat004Task,
       ],
     },
   },
   {
-    id: "deleted-override",
+    id: CATEGORY_A_FILE_IDS.deletedOverride,
     path: "/Recycle_Bin/deleted_override.txt",
-    directory: "/Recycle_Bin",
+    directory: CATEGORY_A_DIRECTORY_PATHS.recycleBin,
     name: "deleted_override.txt",
     title: "Deleted Developer Override",
     kind: "text",
@@ -307,27 +349,34 @@ export const categoryAFiles: CategoryAFile[] = [
       "This override was removed from the active policy index but remains recoverable.",
     ].join("\n"),
     gameplay: {
-      act: "act-3",
-      evidenceFor: "act-3",
-      requiredWith: ["ai-priority-matrix"],
+      act: CATEGORY_A_ACT_IDS.act3,
+      evidenceFor: CATEGORY_A_ACT_IDS.act3,
+      requiredWith: [CATEGORY_A_FILE_IDS.aiPriorityMatrix],
       requiredKeywords: ["오버라이드", "개발자", "수칙 충돌"],
       sourceRefs: [
-        "project/human-input/LOG_OUT 기획서.md",
-        "project/human-input/LOG_OUT 로그 예시.md",
-        "project/pm_questions.md",
-        "project/tasks/feat-004.md",
+        CATEGORY_A_PLANNING_SOURCE_REFS.mainPlan,
+        CATEGORY_A_PLANNING_SOURCE_REFS.logExamples,
+        CATEGORY_A_PLANNING_SOURCE_REFS.pmQuestions,
+        CATEGORY_A_PLANNING_SOURCE_REFS.feat004Task,
       ],
     },
   },
 ];
 
-export const categoryAEvidenceByAct: Record<CategoryAAct, string[]> = {
-  "act-1": ["sensor-calib-log"],
-  "act-2": ["quarantine-rules"],
-  "act-3": ["ai-priority-matrix", "deleted-override"],
+export const categoryAEvidenceByAct: Record<CategoryAAct, CategoryAFileId[]> = {
+  [CATEGORY_A_ACT_IDS.act1]: [CATEGORY_A_FILE_IDS.sensorCalibLog],
+  [CATEGORY_A_ACT_IDS.act2]: [CATEGORY_A_FILE_IDS.quarantineRules],
+  [CATEGORY_A_ACT_IDS.act3]: [
+    CATEGORY_A_FILE_IDS.aiPriorityMatrix,
+    CATEGORY_A_FILE_IDS.deletedOverride,
+  ],
 };
 
-export function getCategoryAFileById(fileId: string) {
+export function isCategoryAFileId(fileId: string): fileId is CategoryAFileId {
+  return categoryAFiles.some((file) => file.id === fileId);
+}
+
+export function getCategoryAFileById(fileId: CategoryAFileId) {
   return categoryAFiles.find((file) => file.id === fileId);
 }
 
@@ -345,4 +394,50 @@ export function getCategoryAEvidenceForAct(act: CategoryAAct) {
 
     return file;
   });
+}
+
+export function validateCategoryAFileSystemFixtures() {
+  const errors: string[] = [];
+  const directoryPaths = new Set(categoryADirectories.map((directory) => directory.path));
+  const fileIds = new Set(categoryAFiles.map((file) => file.id));
+  const seenFileIds = new Set<CategoryAFileId>();
+
+  for (const file of categoryAFiles) {
+    if (seenFileIds.has(file.id)) {
+      errors.push(`Duplicate category A file id: ${file.id}`);
+    }
+
+    seenFileIds.add(file.id);
+
+    if (!directoryPaths.has(file.directory)) {
+      errors.push(`Missing directory for ${file.id}: ${file.directory}`);
+    }
+
+    if (!file.path.startsWith(file.directory)) {
+      errors.push(`File path does not match directory for ${file.id}: ${file.path}`);
+    }
+
+    if (file.gameplay.sourceRefs.length === 0) {
+      errors.push(`Missing planning source refs for ${file.id}`);
+    }
+
+    for (const linkedFileId of [
+      file.gameplay.recoversFileId,
+      ...(file.gameplay.requiredWith ?? []),
+    ]) {
+      if (linkedFileId && !fileIds.has(linkedFileId)) {
+        errors.push(`Missing linked file ${linkedFileId} referenced by ${file.id}`);
+      }
+    }
+  }
+
+  for (const [act, evidenceIds] of Object.entries(categoryAEvidenceByAct)) {
+    for (const evidenceId of evidenceIds) {
+      if (!fileIds.has(evidenceId)) {
+        errors.push(`Missing ${act} evidence file: ${evidenceId}`);
+      }
+    }
+  }
+
+  return errors;
 }
