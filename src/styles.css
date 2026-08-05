@@ -292,7 +292,7 @@ h1 {
 
 .hud-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -318,6 +318,17 @@ h1 {
 
 .alert-card {
   border-color: rgba(245, 254, 117, 0.24);
+}
+
+.objective-hud-card {
+  border-color: rgba(89, 216, 255, 0.28);
+  background:
+    linear-gradient(180deg, rgba(89, 216, 255, 0.09), rgba(3, 10, 9, 0.92)),
+    rgba(4, 18, 16, 0.86);
+}
+
+.objective-hud-card strong {
+  color: #59d8ff;
 }
 
 .power-warning .alert-card,
@@ -385,6 +396,24 @@ h1 {
   font-size: 0.72rem;
 }
 
+.file-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 16px 0;
+}
+
+.file-legend span {
+  border: 1px solid rgba(112, 247, 207, 0.16);
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: #9fbdb5;
+  background: rgba(216, 255, 244, 0.04);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .file-tree,
 .message-list,
 .log-document {
@@ -430,6 +459,11 @@ h1 {
   background: rgba(245, 254, 117, 0.08);
 }
 
+.attached-file {
+  border-color: rgba(89, 216, 255, 0.36);
+  box-shadow: 0 0 0 1px rgba(89, 216, 255, 0.08) inset;
+}
+
 .file-row:disabled {
   color: rgba(216, 255, 244, 0.38);
   cursor: not-allowed;
@@ -445,6 +479,11 @@ h1 {
 .corrupted-file {
   border-color: rgba(255, 92, 67, 0.28);
   background: rgba(255, 92, 67, 0.055);
+}
+
+.recovered-file {
+  border-color: rgba(112, 247, 207, 0.34);
+  background: rgba(112, 247, 207, 0.08);
 }
 
 .file-icon {
@@ -513,6 +552,13 @@ h1 {
   display: block;
   margin-top: 8px;
   color: #ffb3a5;
+  font-size: 0.72rem;
+}
+
+.soft-hint {
+  display: block;
+  margin-top: 8px;
+  color: #9fbdb5;
   font-size: 0.72rem;
 }
 
@@ -632,6 +678,42 @@ pre {
   min-width: 0;
 }
 
+.objective-card {
+  display: grid;
+  gap: 8px;
+  margin: 14px 14px 0;
+  padding: 14px;
+  border: 1px solid rgba(89, 216, 255, 0.24);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(89, 216, 255, 0.13), transparent 42%),
+    rgba(3, 13, 16, 0.72);
+}
+
+.objective-card span,
+.feedback-card strong {
+  color: #59d8ff;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.objective-card strong {
+  color: #f7fffb;
+  line-height: 1.35;
+}
+
+.objective-card p,
+.objective-card small {
+  margin: 0;
+  color: #c8eee6;
+}
+
+.objective-card small {
+  color: #9fbdb5;
+  font-size: 0.74rem;
+}
+
 .message-list {
   flex: 1;
   display: grid;
@@ -668,6 +750,12 @@ pre {
   border-top: 1px solid rgba(112, 247, 207, 0.18);
 }
 
+.interaction-hint {
+  margin: 0;
+  color: #9fbdb5;
+  font-size: 0.76rem;
+}
+
 .attached-files {
   display: flex;
   flex-wrap: wrap;
@@ -700,6 +788,28 @@ pre {
   padding: 10px 12px;
   color: #d8fff4;
   background: rgba(1, 8, 7, 0.72);
+}
+
+.feedback-card {
+  border: 1px solid rgba(255, 176, 67, 0.28);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(255, 176, 67, 0.07);
+}
+
+.feedback-card p {
+  margin: 6px 0 0;
+  color: #f7fffb;
+  font-size: 0.8rem;
+}
+
+.success-feedback {
+  border-color: rgba(112, 247, 207, 0.3);
+  background: rgba(112, 247, 207, 0.075);
+}
+
+.success-feedback strong {
+  color: #70f7cf;
 }
 
 .evidence-form > button {

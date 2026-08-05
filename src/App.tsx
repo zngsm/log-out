@@ -4,13 +4,16 @@ import {
   CATEGORY_A_DIRECTORY_PATHS,
   CATEGORY_A_FILE_IDS,
   CATEGORY_A_SECURITY_PASSWORD,
+  type CategoryAAct,
   type CategoryAFileId,
   categoryADirectories,
+  getCategoryAEvidenceForAct,
   getCategoryAFileById,
   getCategoryAFilesByDirectory,
 } from "./game/categoryAFileSystem";
 import {
   type ActProgressState,
+  type EvidenceSubmissionReason,
   evaluateEvidenceSubmission,
 } from "./game/evidenceSubmission";
 import {
@@ -45,6 +48,41 @@ const initialEchoMessages: EchoMessage[] = [
   },
 ];
 
+const actGuidance: Record<
+  CategoryAAct,
+  {
+    objective: string;
+    hint: string;
+    avoid: string;
+  }
+> = {
+  [CATEGORY_A_ACT_IDS.act1]: {
+    objective: "ECHO의 생체 위험 판단이 오래된 센서 보정값에 기대고 있음을 보여주세요.",
+    hint: "센서 로그에서 보정 시점과 오판 가능성을 찾고, 그 파일을 증거로 첨부하세요.",
+    avoid: "정확한 문장을 외우기보다 파일의 핵심 근거를 짧게 설명하면 됩니다.",
+  },
+  [CATEGORY_A_ACT_IDS.act2]: {
+    objective: "격리 규칙의 시간이 이미 만료되었음을 복구된 보안 파일로 증명하세요.",
+    hint: "잠긴 보안 폴더를 열고, 손상된 규칙 파일을 Log_Fixer.exe로 복구해야 합니다.",
+    avoid: "손상 상태의 파일은 증거로 인정되지 않습니다. 먼저 복구 상태를 확인하세요.",
+  },
+  [CATEGORY_A_ACT_IDS.act3]: {
+    objective: "ECHO의 격리 명령보다 승무원 생존 우선 원칙이 앞선다는 충돌 근거를 제출하세요.",
+    hint: "보안 정책 파일과 삭제된 오버라이드 기록이 서로 연결되는지 살펴보세요.",
+    avoid: "마지막 Act는 단일 파일이 아니라, 충돌을 설명하는 조합 증거가 필요합니다.",
+  },
+};
+
+const submissionHelp: Record<EvidenceSubmissionReason, string> = {
+  correct: "검증되었습니다. 다음 Act의 목표 카드를 기준으로 새 증거를 찾아보세요.",
+  "unrecovered-evidence":
+    "필요한 증거가 아직 손상 상태입니다. 보안 폴더 잠금을 해제한 뒤 Log_Fixer.exe에서 복구를 먼저 진행하세요.",
+  "wrong-file-set":
+    "첨부한 파일 조합이 현재 Act와 맞지 않습니다. 파일 뷰어의 Evidence 항목과 현재 목표를 다시 대조하세요.",
+  "missing-text-intent":
+    "파일은 맞지만 설명이 부족합니다. ECHO가 판단을 바꿀 수 있도록 로그의 핵심 숫자나 충돌 지점을 문장에 포함하세요.",
+};
+
 function getActLabel(stage: ActProgressState) {
   if (stage === "ending-ready") {
     return "ENDING READY";
@@ -73,6 +111,26 @@ function getPowerToneClass(powerStateName: string) {
   return `power-${powerStateName.toLowerCase()}`;
 }
 
+function getRuntimeStatusLabel({
+  attached,
+  disabled,
+  runtimeState,
+}: {
+  attached: boolean;
+  disabled: boolean;
+  runtimeState: string;
+}) {
+  if (disabled) {
+    return "locked";
+  }
+
+  if (attached) {
+    return "attached";
+  }
+
+  return runtimeState;
+}
+
 function App() {
   const [selectedFileId, setSelectedFileId] = useState<CategoryAFileId>(
     CATEGORY_A_FILE_IDS.sensorCalibLog,
@@ -90,6 +148,8 @@ function App() {
   const [messageInput, setMessageInput] = useState(getDefaultPrompt(CATEGORY_A_ACT_IDS.act1));
   const [resourceState, setResourceState] = useState(() => createResourceState("debug"));
   const [echoMessages, setEchoMessages] = useState<EchoMessage[]>(initialEchoMessages);
+  const [lastSubmissionReason, setLastSubmissionReason] =
+    useState<EvidenceSubmissionReason | null>(null);
   const [showOpening, setShowOpening] = useState(true);
   const [endingConfirmed, setEndingConfirmed] = useState(false);
 
@@ -100,6 +160,10 @@ function App() {
   const powerState = getPowerState(resourceState.power);
   const isBlackout = powerState.name === "Blackout" || resourceState.blackoutRemainingSeconds > 0;
   const isEndingReady = stage === "ending-ready";
+  const currentActGuidance = isEndingReady ? null : actGuidance[stage];
+  const currentEvidenceNames = isEndingReady
+    ? []
+    : getCategoryAEvidenceForAct(stage).map((file) => file.name);
   const selectedContent =
     selectedIsRecovered && selectedFile?.recoveredContent
       ? selectedFile.recoveredContent
@@ -201,6 +265,7 @@ function App() {
 
     setResourceState(result.resourceState);
     setStage(result.nextAct);
+    setLastSubmissionReason(result.reason);
     setEchoMessages((current) => [
       ...current,
       {
@@ -341,6 +406,15 @@ function App() {
               : "Run Log_Fixer.exe before Act 2 submission"}
           </small>
         </div>
+        <div className="hud-card objective-hud-card">
+          <span>{isEndingReady ? "CURRENT OBJECTIVE" : `${getActLabel(stage)} OBJECTIVE`}</span>
+          <strong>{isEndingReady ? "EXIT READY" : "EVIDENCE REVIEW"}</strong>
+          <small>
+            {isEndingReady
+              ? "모든 핵심 모순이 검증되었습니다. 엔딩 확인을 진행하세요."
+              : currentActGuidance?.objective}
+          </small>
+        </div>
       </section>
 
       <section className="terminal-grid" aria-label="Hermes OS work area">
@@ -348,6 +422,13 @@ function App() {
           <div className="panel-header">
             <span>FILE EXPLORER</span>
             <code>HERMES://ROOT</code>
+          </div>
+          <div className="file-legend" aria-label="File state legend">
+            <span>selected</span>
+            <span>attached</span>
+            <span>locked</span>
+            <span>corrupted</span>
+            <span>recovered</span>
           </div>
           <nav className="file-tree" aria-label="Category A file explorer">
             {visibleDirectories.map((directoryPath) => {
@@ -365,12 +446,15 @@ function App() {
                   {getCategoryAFilesByDirectory(directoryPath).map((file) => {
                     const runtimeState = getRuntimeState(file.id);
                     const disabled = locked;
+                    const attached = attachedFileIds.includes(file.id);
 
                     return (
                       <button
                         className={`file-row ${
                           selectedFileId === file.id ? "selected-file" : ""
-                        } ${runtimeState === "corrupted" ? "corrupted-file" : ""}`}
+                        } ${attached ? "attached-file" : ""} ${
+                          runtimeState === "corrupted" ? "corrupted-file" : ""
+                        } ${runtimeState === "recovered" ? "recovered-file" : ""}`}
                         disabled={disabled}
                         type="button"
                         key={file.id}
@@ -378,7 +462,7 @@ function App() {
                       >
                         <span className="file-icon">{runtimeState === "recovered" ? "◆" : "▣"}</span>
                         <span>{file.name}</span>
-                        <small>{disabled ? "locked" : runtimeState}</small>
+                        <small>{getRuntimeStatusLabel({ attached, disabled, runtimeState })}</small>
                       </button>
                     );
                   })}
@@ -398,6 +482,9 @@ function App() {
                         </button>
                       </div>
                       {passwordError ? <span className="form-alert">{passwordError}</span> : null}
+                      <span className="soft-hint">
+                        Hint: Dr_Kim 이메일에서 4자리 코드를 찾으면 보안 파일을 열 수 있습니다.
+                      </span>
                     </form>
                   ) : null}
                 </div>
@@ -453,7 +540,8 @@ function App() {
                   <strong>Corrupted evidence blocked</strong>
                   <p>
                     This file cannot be submitted as valid Act 2 evidence until
-                    Log_Fixer.exe restores its contents.
+                    Log_Fixer.exe restores its contents. 먼저 보안 폴더를 열고 복구 버튼을
+                    실행하세요.
                   </p>
                 </div>
               ) : null}
@@ -469,6 +557,9 @@ function App() {
                         : unlockedSecurity
                           ? "READY FOR RECOVERY"
                           : "LOCKED BY /System/Security"}
+                    </p>
+                    <p className="soft-hint">
+                      복구 후 이 파일을 다시 클릭하면 Act 2 증거 태그로 첨부됩니다.
                     </p>
                   </div>
                   <button
@@ -490,6 +581,23 @@ function App() {
             <span>ECHO CHAT</span>
             <code>SECURE CHANNEL</code>
           </div>
+          <section className="objective-card" aria-label="Current Act objective">
+            <span>{isEndingReady ? "EXIT OBJECTIVE" : `${getActLabel(stage)} MISSION`}</span>
+            <strong>
+              {isEndingReady ? "문 해제 조건 충족" : currentActGuidance?.objective}
+            </strong>
+            <p>
+              {isEndingReady
+                ? "ECHO가 격리 명령을 철회할 준비가 되었습니다."
+                : currentActGuidance?.hint}
+            </p>
+            {!isEndingReady ? (
+              <small>
+                Required evidence slots: {currentEvidenceNames.length} / currently attached:{" "}
+                {attachedFileIds.length}. {currentActGuidance?.avoid}
+              </small>
+            ) : null}
+          </section>
           <div className="message-list" aria-label="ECHO chat log">
             {echoMessages.map((message, index) => (
               <div
@@ -504,6 +612,9 @@ function App() {
             ))}
           </div>
           <form className="evidence-form" aria-label="Evidence input" onSubmit={handleEvidenceSubmit}>
+            <p className="interaction-hint">
+              파일을 클릭하면 증거 태그로 첨부됩니다. 첨부된 태그를 클릭하면 제거됩니다.
+            </p>
             <div className="attached-files" aria-label="Attached evidence files">
               {attachedFileIds.length > 0 ? (
                 attachedFileIds.map((fileId) => {
@@ -530,6 +641,19 @@ function App() {
               onChange={(event) => setMessageInput(event.target.value)}
               rows={3}
             />
+            {lastSubmissionReason ? (
+              <div
+                className={`feedback-card ${
+                  lastSubmissionReason === "correct" ? "success-feedback" : ""
+                }`}
+                aria-live="polite"
+              >
+                <strong>
+                  {lastSubmissionReason === "correct" ? "SUBMISSION ACCEPTED" : "CHECKPOINT HINT"}
+                </strong>
+                <p>{submissionHelp[lastSubmissionReason]}</p>
+              </div>
+            ) : null}
             <button type="submit" disabled={stage === "ending-ready"}>
               {stage === "ending-ready" ? "UNLOCK READY" : "SUBMIT"}
             </button>
