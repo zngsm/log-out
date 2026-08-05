@@ -6,7 +6,7 @@
   background:
     radial-gradient(circle at 20% 0%, rgba(33, 216, 170, 0.26), transparent 32%),
     radial-gradient(circle at 90% 10%, rgba(255, 72, 45, 0.18), transparent 28%),
-    linear-gradient(135deg, #020503 0%, #07100f 48%, #010303 100%);
+    linear-gradient(135deg, #020503 0%, #07100f 48%, #030712 100%);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -47,6 +47,7 @@ button {
 .game-shell::before {
   position: fixed;
   inset: 0;
+  z-index: 1;
   pointer-events: none;
   content: "";
   background:
@@ -54,6 +55,27 @@ button {
     linear-gradient(90deg, rgba(216, 255, 244, 0.03) 1px, transparent 1px);
   background-size: 38px 38px;
   mask-image: linear-gradient(to bottom, black, transparent 88%);
+}
+
+.scene-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.62;
+}
+
+.scene-backdrop canvas {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.system-topbar,
+.hud-grid,
+.terminal-grid {
+  position: relative;
+  z-index: 2;
 }
 
 .system-topbar {

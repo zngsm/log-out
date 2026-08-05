@@ -1,3 +1,5 @@
+import { SpaceshipComputerScene } from "./game/SpaceshipComputerScene";
+
 const fileTree = [
   {
     section: "/Logs/Sensors",
@@ -31,6 +33,10 @@ const echoMessages = [
 function App() {
   return (
     <main className="game-shell">
+      <section className="scene-backdrop" aria-label="Hermes control room 3D placeholder">
+        <SpaceshipComputerScene />
+      </section>
+
       <section className="system-topbar" aria-label="Hermes OS status">
         <div>
           <p className="eyebrow">HERMES OS / CONTROL ROOM TERMINAL</p>
