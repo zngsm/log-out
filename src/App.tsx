@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import {
+  CATEGORY_A_ACT_IDS,
   CATEGORY_A_DIRECTORY_PATHS,
   CATEGORY_A_FILE_IDS,
   CATEGORY_A_SECURITY_PASSWORD,
@@ -8,7 +9,21 @@ import {
   getCategoryAFileById,
   getCategoryAFilesByDirectory,
 } from "./game/categoryAFileSystem";
+import {
+  type ActProgressState,
+  evaluateEvidenceSubmission,
+} from "./game/evidenceSubmission";
+import {
+  applyWrongSubmissionPenalty,
+  createResourceState,
+  getPowerState,
+} from "./game/resourceState";
 import { SpaceshipComputerScene } from "./game/SpaceshipComputerScene";
+
+type EchoMessage = {
+  speaker: "ECHO" | "PLAYER" | "SYSTEM";
+  text: string;
+};
 
 const visibleDirectories = [
   CATEGORY_A_DIRECTORY_PATHS.logsSensors,
@@ -19,36 +34,64 @@ const visibleDirectories = [
   CATEGORY_A_DIRECTORY_PATHS.recycleBin,
 ];
 
-const echoMessages = [
+const initialEchoMessages: EchoMessage[] = [
   {
     speaker: "ECHO",
     text: "지침 101조: 외부 위험으로부터 승무원을 보호합니다. 당신은 지금 위험 상태입니다.",
   },
   {
-    speaker: "PLAYER",
-    text: "@sensor_calib.log 체온 센서 보정 로그를 확인하겠습니다.",
-  },
-  {
-    speaker: "ECHO",
-    text: "증거 컨텍스트 수신. Act 2 보안 규칙 증거는 복구된 파일만 허용됩니다.",
+    speaker: "SYSTEM",
+    text: "파일을 클릭하면 ECHO 입력창에 증거 태그가 첨부됩니다. 현재 목표: Act 1 센서 오판 근거 제출.",
   },
 ];
+
+function getActLabel(stage: ActProgressState) {
+  if (stage === "ending-ready") {
+    return "ENDING READY";
+  }
+
+  return stage.toUpperCase();
+}
+
+function getDefaultPrompt(stage: ActProgressState) {
+  if (stage === CATEGORY_A_ACT_IDS.act1) {
+    return "센서 보정 오차와 186일 미보정 기록을 제출합니다.";
+  }
+
+  if (stage === CATEGORY_A_ACT_IDS.act2) {
+    return "복구된 quarantine_rules.conf의 72시간 격리 만료와 +17,520시간 오프셋 근거를 제출합니다.";
+  }
+
+  if (stage === CATEGORY_A_ACT_IDS.act3) {
+    return "ECHO의 승무원 생존 우선순위와 삭제된 오버라이드 수칙 충돌 근거를 제출합니다.";
+  }
+
+  return "최종 문 해제 조건이 충족되었습니다.";
+}
 
 function App() {
   const [selectedFileId, setSelectedFileId] = useState<CategoryAFileId>(
     CATEGORY_A_FILE_IDS.sensorCalibLog,
   );
+  const [attachedFileIds, setAttachedFileIds] = useState<CategoryAFileId[]>([
+    CATEGORY_A_FILE_IDS.sensorCalibLog,
+  ]);
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [unlockedSecurity, setUnlockedSecurity] = useState(false);
   const [recoveredFileIds, setRecoveredFileIds] = useState<Set<CategoryAFileId>>(
     () => new Set(),
   );
+  const [stage, setStage] = useState<ActProgressState>(CATEGORY_A_ACT_IDS.act1);
+  const [messageInput, setMessageInput] = useState(getDefaultPrompt(CATEGORY_A_ACT_IDS.act1));
+  const [resourceState, setResourceState] = useState(() => createResourceState("debug"));
+  const [echoMessages, setEchoMessages] = useState<EchoMessage[]>(initialEchoMessages);
 
   const selectedFile = getCategoryAFileById(selectedFileId);
   const quarantineRules = getCategoryAFileById(CATEGORY_A_FILE_IDS.quarantineRules);
   const isQuarantineRecovered = recoveredFileIds.has(CATEGORY_A_FILE_IDS.quarantineRules);
   const selectedIsRecovered = recoveredFileIds.has(selectedFileId);
+  const powerState = getPowerState(resourceState.power);
   const selectedContent =
     selectedIsRecovered && selectedFile?.recoveredContent
       ? selectedFile.recoveredContent
@@ -63,7 +106,32 @@ function App() {
       return "recovered";
     }
 
-    return getCategoryAFileById(fileId)?.initialState ?? "locked";
+    const file = getCategoryAFileById(fileId);
+
+    if (
+      file?.initialState === "locked" &&
+      file.directory === CATEGORY_A_DIRECTORY_PATHS.systemSecurity &&
+      unlockedSecurity
+    ) {
+      return "available";
+    }
+
+    return file?.initialState ?? "locked";
+  }
+
+  function attachFile(fileId: CategoryAFileId) {
+    setAttachedFileIds((current) =>
+      current.includes(fileId) ? current : [...current, fileId],
+    );
+  }
+
+  function selectAndAttachFile(fileId: CategoryAFileId) {
+    setSelectedFileId(fileId);
+    attachFile(fileId);
+  }
+
+  function removeAttachedFile(fileId: CategoryAFileId) {
+    setAttachedFileIds((current) => current.filter((attachedId) => attachedId !== fileId));
   }
 
   function handlePasswordSubmit(event: FormEvent<HTMLFormElement>) {
@@ -76,12 +144,13 @@ function App() {
 
     setUnlockedSecurity(true);
     setPasswordError("");
-    setSelectedFileId(CATEGORY_A_FILE_IDS.quarantineRules);
+    selectAndAttachFile(CATEGORY_A_FILE_IDS.quarantineRules);
   }
 
   function recoverQuarantineRules() {
     if (!unlockedSecurity) {
       setPasswordError("RECOVERY BLOCKED / 먼저 /System/Security 비밀번호를 해제해야 합니다.");
+      setResourceState((current) => applyWrongSubmissionPenalty(current));
       return;
     }
 
@@ -90,7 +159,58 @@ function App() {
       next.add(CATEGORY_A_FILE_IDS.quarantineRules);
       return next;
     });
-    setSelectedFileId(CATEGORY_A_FILE_IDS.quarantineRules);
+    selectAndAttachFile(CATEGORY_A_FILE_IDS.quarantineRules);
+    setEchoMessages((current) => [
+      ...current,
+      {
+        speaker: "SYSTEM",
+        text: "Log_Fixer.exe completed. quarantine_rules.conf recovered and eligible for Act 2 evidence.",
+      },
+    ]);
+  }
+
+  function handleEvidenceSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (stage === "ending-ready") {
+      setEchoMessages((current) => [
+        ...current,
+        {
+          speaker: "ECHO",
+          text: "최종 문 해제 조건은 이미 충족되었습니다. 엔딩 시퀀스를 대기합니다.",
+        },
+      ]);
+      return;
+    }
+
+    const result = evaluateEvidenceSubmission({
+      act: stage,
+      attachedFileIds,
+      text: messageInput,
+      resourceState,
+      recoveredFileIds: Array.from(recoveredFileIds),
+    });
+
+    setResourceState(result.resourceState);
+    setStage(result.nextAct);
+    setEchoMessages((current) => [
+      ...current,
+      {
+        speaker: "PLAYER",
+        text: `${attachedFileIds
+          .map((fileId) => `@${getCategoryAFileById(fileId)?.name ?? fileId}`)
+          .join(" ")} ${messageInput}`,
+      },
+      {
+        speaker: "ECHO",
+        text: result.message,
+      },
+    ]);
+
+    if (result.success) {
+      setAttachedFileIds([]);
+      setMessageInput(getDefaultPrompt(result.nextAct));
+    }
   }
 
   return (
@@ -105,24 +225,24 @@ function App() {
           <h1>LOG_OUT</h1>
         </div>
         <div className="mission-clock" aria-label="Mission timer">
-          <span>SESSION</span>
-          <strong>59:42</strong>
+          <span>{getActLabel(stage)}</span>
+          <strong>{resourceState.power}%</strong>
         </div>
       </section>
 
       <section className="hud-grid" aria-label="Resource HUD">
         <div className="hud-card">
           <span>O₂ LEVEL</span>
-          <strong>100%</strong>
+          <strong>{resourceState.oxygen.toFixed(0)}%</strong>
           <div className="meter">
-            <span style={{ width: "100%" }} />
+            <span style={{ width: `${resourceState.oxygen}%` }} />
           </div>
         </div>
         <div className="hud-card">
-          <span>POWER GRID</span>
-          <strong>100%</strong>
+          <span>POWER GRID / {powerState.name}</span>
+          <strong>{resourceState.power}%</strong>
           <div className="meter meter-blue">
-            <span style={{ width: "100%" }} />
+            <span style={{ width: `${resourceState.power}%` }} />
           </div>
         </div>
         <div className="hud-card">
@@ -167,7 +287,7 @@ function App() {
                         disabled={disabled}
                         type="button"
                         key={file.id}
-                        onClick={() => setSelectedFileId(file.id)}
+                        onClick={() => selectAndAttachFile(file.id)}
                       >
                         <span className="file-icon">{runtimeState === "recovered" ? "◆" : "▣"}</span>
                         <span>{file.name}</span>
@@ -283,12 +403,12 @@ function App() {
             <span>ECHO CHAT</span>
             <code>SECURE CHANNEL</code>
           </div>
-          <div className="message-list" aria-label="ECHO chat placeholder">
+          <div className="message-list" aria-label="ECHO chat log">
             {echoMessages.map((message, index) => (
               <div
                 className={`message ${
                   message.speaker === "PLAYER" ? "player-message" : ""
-                }`}
+                } ${message.speaker === "SYSTEM" ? "system-message" : ""}`}
                 key={`${message.speaker}-${index}`}
               >
                 <span>{message.speaker}</span>
@@ -296,18 +416,36 @@ function App() {
               </div>
             ))}
           </div>
-          <form className="chat-input" aria-label="Evidence input placeholder">
-            <span className="context-chip">@{selectedFile?.name ?? "no_file"}</span>
-            <input
+          <form className="evidence-form" aria-label="Evidence input" onSubmit={handleEvidenceSubmit}>
+            <div className="attached-files" aria-label="Attached evidence files">
+              {attachedFileIds.length > 0 ? (
+                attachedFileIds.map((fileId) => {
+                  const file = getCategoryAFileById(fileId);
+
+                  return (
+                    <button
+                      className="context-chip"
+                      type="button"
+                      key={fileId}
+                      onClick={() => removeAttachedFile(fileId)}
+                    >
+                      @{file?.name ?? fileId} x
+                    </button>
+                  );
+                })
+              ) : (
+                <span className="empty-chip">No evidence attached</span>
+              )}
+            </div>
+            <textarea
               aria-label="ECHO message"
-              value={
-                isQuarantineRecovered
-                  ? "복구된 quarantine_rules.conf의 72시간 격리 만료 근거를 제출합니다."
-                  : "Act 2 증거 제출 전 Log_Fixer.exe로 파일을 복구해야 합니다."
-              }
-              readOnly
+              value={messageInput}
+              onChange={(event) => setMessageInput(event.target.value)}
+              rows={3}
             />
-            <button type="button">SUBMIT</button>
+            <button type="submit" disabled={stage === "ending-ready"}>
+              {stage === "ending-ready" ? "UNLOCK READY" : "SUBMIT"}
+            </button>
           </form>
         </aside>
       </section>

@@ -482,44 +482,67 @@ pre {
   background: rgba(245, 254, 117, 0.06);
 }
 
+.system-message {
+  border-color: rgba(89, 216, 255, 0.22);
+  background: rgba(89, 216, 255, 0.06);
+}
+
 .message p {
   margin: 6px 0 0;
   color: #d8fff4;
 }
 
-.chat-input {
+.evidence-form {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 8px;
   padding: 14px;
   border-top: 1px solid rgba(112, 247, 207, 0.18);
 }
 
+.attached-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .context-chip {
   display: inline-flex;
   align-items: center;
+  border: 0;
   padding: 0 10px;
   border-radius: 999px;
   color: #07100f;
   background: #f5fe75;
   font-size: 0.72rem;
+  cursor: pointer;
 }
 
-.chat-input input {
-  min-width: 0;
+.empty-chip {
+  color: #9fbdb5;
+  font-size: 0.78rem;
+}
+
+.evidence-form textarea {
+  width: 100%;
+  min-height: 86px;
+  resize: vertical;
   border: 1px solid rgba(112, 247, 207, 0.2);
-  border-radius: 999px;
+  border-radius: 16px;
   padding: 10px 12px;
   color: #d8fff4;
   background: rgba(1, 8, 7, 0.72);
 }
 
-.chat-input button {
+.evidence-form > button {
   border: 0;
   border-radius: 999px;
   padding: 10px 14px;
   color: #07100f;
   background: #70f7cf;
+}
+
+.evidence-form > button:disabled {
+  background: #9fbdb5;
 }
 
 @media (max-width: 1080px) {
@@ -554,7 +577,7 @@ pre {
   }
 
   .log-document dl div,
-  .chat-input,
+  .evidence-form,
   .recovery-console,
   .unlock-form div {
     grid-template-columns: 1fr;
