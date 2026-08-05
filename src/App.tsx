@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   CATEGORY_A_ACT_IDS,
   CATEGORY_A_DIRECTORY_PATHS,
@@ -18,6 +18,7 @@ import {
 } from "./game/evidenceSubmission";
 import {
   applyWrongSubmissionPenalty,
+  advanceResourceTime,
   createResourceState,
   getPowerState,
 } from "./game/resourceState";
@@ -200,6 +201,24 @@ function App() {
     selectedIsRecovered && selectedFile?.recoveredContent
       ? selectedFile.recoveredContent
       : selectedFile?.content;
+
+  useEffect(() => {
+    if (showOpening || isEndingReady || resourceState.outcome === "lost") {
+      return undefined;
+    }
+
+    let previousTick = Date.now();
+
+    const timerId = window.setInterval(() => {
+      const currentTick = Date.now();
+      const deltaSeconds = (currentTick - previousTick) / 1000;
+      previousTick = currentTick;
+
+      setResourceState((current) => advanceResourceTime(current, deltaSeconds));
+    }, 1000);
+
+    return () => window.clearInterval(timerId);
+  }, [isEndingReady, resourceState.outcome, showOpening]);
 
   function isDirectoryLocked(directoryPath: string) {
     return directoryPath === CATEGORY_A_DIRECTORY_PATHS.systemSecurity && !unlockedSecurity;
