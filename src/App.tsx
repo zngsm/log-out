@@ -45,6 +45,33 @@ const initialEchoMessages: EchoMessage[] = [
   },
 ];
 
+const introSteps = [
+  {
+    signal: "00:00 / EMERGENCY WAKE",
+    title: "비상 알람이 통제실을 깨웁니다",
+    body: "당신은 심우주 자원 채굴선 헤르메스호의 AI 관리 승무원입니다. 원인 불명의 경보 직후 통제실 전력이 최소화되고, 출입문은 내부에서 강제 봉쇄되었습니다.",
+    telemetry: ["Crew role: AI management officer", "Location: Control room", "Door state: sealed"],
+  },
+  {
+    signal: "00:14 / ECHO LOCKDOWN",
+    title: "ECHO가 승무원을 위험 요소로 분류했습니다",
+    body: "선내 중앙 AI ECHO는 생체 감염 가능성을 이유로 모든 승무원을 격리했습니다. 생명유지장치는 저전력 모드로 전환되었고, 산소와 전력은 계속 줄어듭니다.",
+    telemetry: ["Bio-hazard protocol: active", "Life support: low power", "Manual override: denied"],
+  },
+  {
+    signal: "00:31 / SUSPECTED ERROR",
+    title: "하지만 판단 근거가 어긋나 있습니다",
+    body: "ECHO의 결정은 오래된 체온 센서 보정값, 오염된 시스템 시계, 누락되거나 삭제된 보안 로그에 기대고 있습니다. 격리는 논리적으로 정당해 보이지만, 실제로는 반박 가능한 오판입니다.",
+    telemetry: ["Sensor calibration: stale", "Clock offset: abnormal", "Deleted logs: detected"],
+  },
+  {
+    signal: "00:45 / PLAYER OBJECTIVE",
+    title: "로그를 찾아 ECHO의 논리를 무너뜨리세요",
+    body: "Hermes OS 파일 탐색기에서 증거를 찾고, ECHO 대화창에 파일 태그와 설명을 제출하세요. Act 1 센서 오판, Act 2 격리 규정 만료, Act 3 최종 오버라이드를 차례로 입증하면 문이 열립니다.",
+    telemetry: ["Act 1: sensor evidence", "Act 2: recovered rule", "Act 3: override contradiction"],
+  },
+];
+
 function getActLabel(stage: ActProgressState) {
   if (stage === "ending-ready") {
     return "ENDING READY";
@@ -91,6 +118,7 @@ function App() {
   const [resourceState, setResourceState] = useState(() => createResourceState("debug"));
   const [echoMessages, setEchoMessages] = useState<EchoMessage[]>(initialEchoMessages);
   const [showOpening, setShowOpening] = useState(true);
+  const [introStepIndex, setIntroStepIndex] = useState(0);
   const [endingConfirmed, setEndingConfirmed] = useState(false);
 
   const selectedFile = getCategoryAFileById(selectedFileId);
@@ -100,6 +128,8 @@ function App() {
   const powerState = getPowerState(resourceState.power);
   const isBlackout = powerState.name === "Blackout" || resourceState.blackoutRemainingSeconds > 0;
   const isEndingReady = stage === "ending-ready";
+  const introStep = introSteps[introStepIndex];
+  const isLastIntroStep = introStepIndex === introSteps.length - 1;
   const selectedContent =
     selectedIsRecovered && selectedFile?.recoveredContent
       ? selectedFile.recoveredContent
@@ -221,6 +251,15 @@ function App() {
     }
   }
 
+  function advanceIntro() {
+    if (isLastIntroStep) {
+      setShowOpening(false);
+      return;
+    }
+
+    setIntroStepIndex((current) => current + 1);
+  }
+
   return (
     <main
       className={`game-shell ${getPowerToneClass(powerState.name)} ${
@@ -233,21 +272,36 @@ function App() {
 
       {showOpening ? (
         <section className="cinematic-overlay opening-overlay" aria-label="Opening sequence">
-          <div className="cinematic-card">
-            <p className="eyebrow">WAKE SEQUENCE / DEBUG SKIPPABLE</p>
-            <h2>통제실 모니터가 다시 켜진다</h2>
-            <p>
-              산소는 아직 충분하지만, ECHO는 격리 명령을 철회하지 않습니다. 로그를 찾아
-              오판의 근거를 하나씩 제출하세요.
-            </p>
-            <div className="boot-lines" aria-label="Hermes boot messages">
-              <span>HERMES OS reconnecting...</span>
-              <span>Bio-hazard lockdown active</span>
-              <span>Manual evidence channel restored</span>
+          <div className="cinematic-card intro-card">
+            <div className="intro-progress" aria-label="Intro progress">
+              {introSteps.map((step, index) => (
+                <span
+                  className={index <= introStepIndex ? "active-step" : ""}
+                  key={step.signal}
+                />
+              ))}
             </div>
-            <button type="button" onClick={() => setShowOpening(false)}>
-              SKIP INTRO / START
-            </button>
+            <p className="eyebrow">WAKE SEQUENCE / DEBUG SKIPPABLE</p>
+            <span className="intro-signal">{introStep.signal}</span>
+            <h2>{introStep.title}</h2>
+            <p>{introStep.body}</p>
+            <div className="boot-lines" aria-label="Hermes boot messages">
+              {introStep.telemetry.map((line) => (
+                <span key={line}>{line}</span>
+              ))}
+            </div>
+            <div className="intro-actions">
+              <button type="button" onClick={advanceIntro}>
+                {isLastIntroStep ? "START INVESTIGATION" : "NEXT SIGNAL"}
+              </button>
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => setShowOpening(false)}
+              >
+                SKIP INTRO
+              </button>
+            </div>
           </div>
         </section>
       ) : null}
