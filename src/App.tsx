@@ -27,6 +27,8 @@ type EchoMessage = {
 
 const visibleDirectories = [
   CATEGORY_A_DIRECTORY_PATHS.logsSensors,
+  CATEGORY_A_DIRECTORY_PATHS.logsLifeSupport,
+  CATEGORY_A_DIRECTORY_PATHS.logsEvents,
   CATEGORY_A_DIRECTORY_PATHS.personnelDrKim,
   CATEGORY_A_DIRECTORY_PATHS.personnelEngineerPark,
   CATEGORY_A_DIRECTORY_PATHS.utilities,
