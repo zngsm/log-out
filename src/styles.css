@@ -151,7 +151,7 @@ button {
 }
 
 .cinematic-card {
-  width: min(680px, 100%);
+  width: min(760px, 100%);
   border: 1px solid rgba(112, 247, 207, 0.28);
   border-radius: 28px;
   padding: clamp(24px, 5vw, 46px);
@@ -837,6 +837,68 @@ pre {
     grid-column: 1 / -1;
     min-height: 360px;
   }
+}
+
+.intro-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.intro-card::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background:
+    linear-gradient(90deg, transparent, rgba(245, 254, 117, 0.08), transparent),
+    linear-gradient(rgba(112, 247, 207, 0.04) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 10px;
+  mix-blend-mode: screen;
+}
+
+.intro-progress {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.intro-progress span {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(216, 255, 244, 0.16);
+}
+
+.intro-progress .active-step {
+  background: linear-gradient(90deg, #70f7cf, #f5fe75);
+  box-shadow: 0 0 18px rgba(112, 247, 207, 0.34);
+}
+
+.intro-signal {
+  display: inline-flex;
+  margin-bottom: 12px;
+  border: 1px solid rgba(245, 254, 117, 0.24);
+  border-radius: 999px;
+  padding: 5px 10px;
+  color: #f5fe75;
+  background: rgba(245, 254, 117, 0.07);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+}
+
+.intro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.cinematic-card .ghost-button {
+  color: #d8fff4;
+  border: 1px solid rgba(112, 247, 207, 0.2);
+  background: rgba(216, 255, 244, 0.06);
 }
 
 @media (max-width: 760px) {
