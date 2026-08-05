@@ -69,6 +69,10 @@ function getDefaultPrompt(stage: ActProgressState) {
   return "최종 문 해제 조건이 충족되었습니다.";
 }
 
+function getPowerToneClass(powerStateName: string) {
+  return `power-${powerStateName.toLowerCase()}`;
+}
+
 function App() {
   const [selectedFileId, setSelectedFileId] = useState<CategoryAFileId>(
     CATEGORY_A_FILE_IDS.sensorCalibLog,
@@ -86,12 +90,16 @@ function App() {
   const [messageInput, setMessageInput] = useState(getDefaultPrompt(CATEGORY_A_ACT_IDS.act1));
   const [resourceState, setResourceState] = useState(() => createResourceState("debug"));
   const [echoMessages, setEchoMessages] = useState<EchoMessage[]>(initialEchoMessages);
+  const [showOpening, setShowOpening] = useState(true);
+  const [endingConfirmed, setEndingConfirmed] = useState(false);
 
   const selectedFile = getCategoryAFileById(selectedFileId);
   const quarantineRules = getCategoryAFileById(CATEGORY_A_FILE_IDS.quarantineRules);
   const isQuarantineRecovered = recoveredFileIds.has(CATEGORY_A_FILE_IDS.quarantineRules);
   const selectedIsRecovered = recoveredFileIds.has(selectedFileId);
   const powerState = getPowerState(resourceState.power);
+  const isBlackout = powerState.name === "Blackout" || resourceState.blackoutRemainingSeconds > 0;
+  const isEndingReady = stage === "ending-ready";
   const selectedContent =
     selectedIsRecovered && selectedFile?.recoveredContent
       ? selectedFile.recoveredContent
@@ -214,10 +222,78 @@ function App() {
   }
 
   return (
-    <main className="game-shell">
+    <main
+      className={`game-shell ${getPowerToneClass(powerState.name)} ${
+        isBlackout ? "blackout-shell" : ""
+      } ${isEndingReady ? "ending-ready-shell" : ""}`}
+    >
       <section className="scene-backdrop" aria-label="Hermes control room 3D placeholder">
         <SpaceshipComputerScene />
       </section>
+
+      {showOpening ? (
+        <section className="cinematic-overlay opening-overlay" aria-label="Opening sequence">
+          <div className="cinematic-card">
+            <p className="eyebrow">WAKE SEQUENCE / DEBUG SKIPPABLE</p>
+            <h2>통제실 모니터가 다시 켜진다</h2>
+            <p>
+              산소는 아직 충분하지만, ECHO는 격리 명령을 철회하지 않습니다. 로그를 찾아
+              오판의 근거를 하나씩 제출하세요.
+            </p>
+            <div className="boot-lines" aria-label="Hermes boot messages">
+              <span>HERMES OS reconnecting...</span>
+              <span>Bio-hazard lockdown active</span>
+              <span>Manual evidence channel restored</span>
+            </div>
+            <button type="button" onClick={() => setShowOpening(false)}>
+              SKIP INTRO / START
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {isBlackout ? (
+        <section className="system-alert blackout-alert" aria-label="Blackout warning">
+          <strong>BLACKOUT</strong>
+          <span>Terminal interaction unstable. Wrong submissions have collapsed the power grid.</span>
+        </section>
+      ) : null}
+
+      {resourceState.oxygen <= 0 ? (
+        <section className="cinematic-overlay failure-overlay" aria-label="Failure sequence">
+          <div className="cinematic-card">
+            <p className="eyebrow">TERMINAL FAILURE</p>
+            <h2>산소 공급이 중단되었습니다</h2>
+            <p>증거 제출이 지연되어 통제실 생존 조건이 상실되었습니다.</p>
+          </div>
+        </section>
+      ) : null}
+
+      {isEndingReady && !endingConfirmed ? (
+        <section className="cinematic-overlay ending-overlay" aria-label="Normal Ending A">
+          <div className="cinematic-card">
+            <p className="eyebrow">NORMAL ENDING A / DOOR RELEASED</p>
+            <h2>ECHO가 격리 명령을 철회합니다</h2>
+            <p>
+              센서 오판, 만료된 격리 규칙, 삭제된 오버라이드가 하나의 결론으로
+              연결되었습니다. 통제실 문이 열리고 생존 루트가 확보됩니다.
+            </p>
+            <button type="button" onClick={() => {
+              setEndingConfirmed(true);
+              setEchoMessages((current) => [
+                ...current,
+                {
+                  speaker: "SYSTEM",
+                  text: "Normal Ending A confirmed. QA can now verify the happy path.",
+                },
+              ]);
+            }}
+            >
+              CONFIRM ENDING
+            </button>
+          </div>
+        </section>
+      ) : null}
 
       <section className="system-topbar" aria-label="Hermes OS status">
         <div>
@@ -244,6 +320,17 @@ function App() {
           <div className="meter meter-blue">
             <span style={{ width: `${resourceState.power}%` }} />
           </div>
+        </div>
+        <div className="hud-card alert-card">
+          <span>VISUAL FEEDBACK</span>
+          <strong>{isEndingReady ? "DOOR OPEN" : isBlackout ? "BLACKOUT" : powerState.name}</strong>
+          <small>
+            {isEndingReady
+              ? "Normal Ending A sequence available"
+              : isBlackout
+                ? "Screen shake and emergency wash active"
+                : "HUD tone tracks current power risk"}
+          </small>
         </div>
         <div className="hud-card">
           <span>RECOVERY STATUS</span>
