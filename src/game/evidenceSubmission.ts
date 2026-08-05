@@ -13,6 +13,12 @@ import {
 
 export type ActProgressState = CategoryAAct | "ending-ready";
 
+export type EvidenceSubmissionReason =
+  | "correct"
+  | "unrecovered-evidence"
+  | "wrong-file-set"
+  | "missing-text-intent";
+
 export type EvidenceSubmissionPayload = {
   act: CategoryAAct;
   attachedFileIds: CategoryAFileId[];
@@ -23,6 +29,7 @@ export type EvidenceSubmissionPayload = {
 
 export type EvidenceSubmissionResult = {
   success: boolean;
+  reason: EvidenceSubmissionReason;
   nextAct: ActProgressState;
   resourceState: ResourceState;
   message: string;
@@ -88,6 +95,7 @@ export function evaluateEvidenceSubmission(
   if (unrecoveredRequiredEvidence.length > 0) {
     return {
       success: false,
+      reason: "unrecovered-evidence",
       nextAct: payload.act,
       resourceState: applyWrongSubmissionPenalty(payload.resourceState),
       message:
@@ -100,6 +108,7 @@ export function evaluateEvidenceSubmission(
   if (!hasSameFileSet(requiredFileIds, payload.attachedFileIds)) {
     return {
       success: false,
+      reason: "wrong-file-set",
       nextAct: payload.act,
       resourceState: applyWrongSubmissionPenalty(payload.resourceState),
       message: "현재 Act에 필요한 증거 파일 조합이 아닙니다. 첨부한 로그를 다시 확인하세요.",
@@ -111,6 +120,7 @@ export function evaluateEvidenceSubmission(
   if (!hasRequiredTextIntent(payload.act, payload.text)) {
     return {
       success: false,
+      reason: "missing-text-intent",
       nextAct: payload.act,
       resourceState: applyWrongSubmissionPenalty(payload.resourceState),
       message: "증거는 맞지만 설명 의도가 부족합니다. ECHO가 납득할 핵심 근거를 적어야 합니다.",
@@ -121,6 +131,7 @@ export function evaluateEvidenceSubmission(
 
   return {
     success: true,
+    reason: "correct",
     nextAct: nextActByAct[payload.act],
     resourceState: payload.resourceState,
     message:
