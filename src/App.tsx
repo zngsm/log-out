@@ -219,6 +219,26 @@ function getRecoveryDelayMs(powerStateName: string) {
   return 0;
 }
 
+function getFileIconLabel(fileName: string, runtimeState: string) {
+  if (runtimeState === "locked") {
+    return "LOCK";
+  }
+
+  if (runtimeState === "corrupted") {
+    return "ERR";
+  }
+
+  if (fileName.endsWith(".exe")) {
+    return "EXE";
+  }
+
+  if (fileName.endsWith(".png")) {
+    return "IMG";
+  }
+
+  return "FILE";
+}
+
 function App() {
   const [selectedFileId, setSelectedFileId] = useState<CategoryAFileId>(
     CATEGORY_A_FILE_IDS.sensorCalibLog,
@@ -250,6 +270,11 @@ function App() {
   );
   const [pendingFileId, setPendingFileId] = useState<CategoryAFileId | null>(null);
   const [resourceEvent, setResourceEvent] = useState<string | null>(null);
+  const [activeDirectoryPath, setActiveDirectoryPath] = useState<string>(
+    CATEGORY_A_DIRECTORY_PATHS.logsSensors,
+  );
+  const [fileSearch, setFileSearch] = useState("");
+  const [copiedPath, setCopiedPath] = useState("");
 
   const selectedFile = getCategoryAFileById(selectedFileId);
   const quarantineRules = getCategoryAFileById(CATEGORY_A_FILE_IDS.quarantineRules);
@@ -280,6 +305,22 @@ function App() {
   );
   const fileAccessDelayMs = getFileAccessDelayMs(powerState.name);
   const recoveryDelayMs = getRecoveryDelayMs(powerState.name);
+  const normalizedFileSearch = fileSearch.trim().toLowerCase();
+
+  function getVisibleFilesForDirectory(directoryPath: string) {
+    const files = getCategoryAFilesByDirectory(directoryPath);
+
+    if (!normalizedFileSearch) {
+      return files;
+    }
+
+    return files.filter((file) =>
+      [file.name, file.title, file.path, file.kind, file.role]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedFileSearch),
+    );
+  }
 
   useEffect(() => {
     if (appPhase !== "gameplay" || isEndingReady || resourceState.outcome === "lost") {
@@ -393,14 +434,19 @@ function App() {
     );
   }
 
-  function selectAndAttachFile(fileId: CategoryAFileId) {
+  function selectFile(fileId: CategoryAFileId, shouldAttach = false) {
     if (interactionLocked) {
       return;
     }
 
     const commitSelection = () => {
       setSelectedFileId(fileId);
-      attachFile(fileId);
+      setActiveDirectoryPath(getCategoryAFileById(fileId)?.directory ?? activeDirectoryPath);
+
+      if (shouldAttach) {
+        attachFile(fileId);
+      }
+
       setPendingFileId(null);
     };
 
@@ -411,6 +457,10 @@ function App() {
     }
 
     commitSelection();
+  }
+
+  function selectAndAttachFile(fileId: CategoryAFileId) {
+    selectFile(fileId, true);
   }
 
   function removeAttachedFile(fileId: CategoryAFileId) {
@@ -477,6 +527,31 @@ function App() {
     }
 
     commitRecovery();
+  }
+
+  function copySelectedPath() {
+    if (!selectedFile) {
+      return;
+    }
+
+    setCopiedPath(selectedFile.path);
+    void navigator.clipboard?.writeText(selectedFile.path);
+    window.setTimeout(() => setCopiedPath(""), 1400);
+  }
+
+  function openSelectedWithRecoveryTool() {
+    if (!selectedFile) {
+      return;
+    }
+
+    setSelectedFileId(CATEGORY_A_FILE_IDS.logFixer);
+    setEchoMessages((current) => [
+      ...current,
+      {
+        speaker: "SYSTEM",
+        text: `Hermes OS routed ${selectedFile.name} to /Utilities/Log_Fixer.exe.`,
+      },
+    ]);
   }
 
   function handleEvidenceSubmit(event: FormEvent<HTMLFormElement>) {
@@ -910,6 +985,15 @@ function App() {
             <span>FILE EXPLORER</span>
             <code>HERMES://ROOT</code>
           </div>
+          <div className="os-path-bar" aria-label="Hermes path and search controls">
+            <code>{activeDirectoryPath}</code>
+            <input
+              aria-label="Search Hermes files"
+              placeholder="search files, paths, roles"
+              value={fileSearch}
+              onChange={(event) => setFileSearch(event.target.value)}
+            />
+          </div>
           <div className="file-legend" aria-label="File state legend">
             <span>selected</span>
             <span>attached</span>
@@ -917,20 +1001,39 @@ function App() {
             <span>corrupted</span>
             <span>recovered</span>
           </div>
+          <div className="directory-rail" aria-label="Directory navigation">
+            {visibleDirectories.map((directoryPath) => (
+              <button
+                className={activeDirectoryPath === directoryPath ? "active-directory" : ""}
+                type="button"
+                key={directoryPath}
+                onClick={() => setActiveDirectoryPath(directoryPath)}
+              >
+                {directoryPath}
+              </button>
+            ))}
+          </div>
           <nav className="file-tree" aria-label="Category A file explorer">
             {visibleDirectories.map((directoryPath) => {
               const directory = categoryADirectories.find(
                 (candidate) => candidate.path === directoryPath,
               );
               const locked = isDirectoryLocked(directoryPath);
+              const files = getVisibleFilesForDirectory(directoryPath);
 
               return (
-                <div className="file-group" key={directoryPath}>
+                <div
+                  className={`file-group ${
+                    activeDirectoryPath === directoryPath ? "active-file-group" : ""
+                  }`}
+                  key={directoryPath}
+                >
                   <p>
                     {directoryPath}
+                    <span className="status-pill">{files.length} ITEMS</span>
                     {locked ? <span className="status-pill locked-pill">LOCKED</span> : null}
                   </p>
-                  {getCategoryAFilesByDirectory(directoryPath).map((file) => {
+                  {files.map((file) => {
                     const runtimeState = getRuntimeState(file.id);
                     const disabled = locked || interactionLocked;
                     const attached = attachedFileIds.includes(file.id);
@@ -945,10 +1048,16 @@ function App() {
                         disabled={disabled}
                         type="button"
                         key={file.id}
-                        onClick={() => selectAndAttachFile(file.id)}
+                        onClick={() => selectFile(file.id)}
+                        onDoubleClick={() => selectAndAttachFile(file.id)}
                       >
-                        <span className="file-icon">{runtimeState === "recovered" ? "◆" : "▣"}</span>
-                        <span>{file.name}</span>
+                        <span className="file-icon">
+                          {getFileIconLabel(file.name, runtimeState)}
+                        </span>
+                        <span>
+                          {file.name}
+                          <em>{file.kind} / {file.role}</em>
+                        </span>
                         <small>
                           {pendingFileId === file.id
                             ? "accessing"
@@ -961,6 +1070,9 @@ function App() {
                       </button>
                     );
                   })}
+                  {files.length === 0 ? (
+                    <span className="empty-directory">No matching files</span>
+                  ) : null}
                   {directory?.lockedBy ? (
                     <form className="unlock-form" onSubmit={handlePasswordSubmit}>
                       <label htmlFor="security-password">Security password</label>
@@ -995,10 +1107,38 @@ function App() {
           </div>
           {selectedFile ? (
             <article className="log-document">
+              <div className="viewer-window-chrome" aria-label="Hermes viewer window chrome">
+                <span />
+                <span />
+                <span />
+                <code>{selectedFile.path}</code>
+              </div>
               <p className="log-kicker">
                 {selectedFile.kind.toUpperCase()} / {getRuntimeState(selectedFile.id).toUpperCase()}
               </p>
               <h2>{selectedFile.title}</h2>
+              <div className="context-action-bar" aria-label="File context actions">
+                <button
+                  type="button"
+                  onClick={() => selectAndAttachFile(selectedFile.id)}
+                  disabled={interactionLocked}
+                >
+                  ATTACH TO ECHO
+                </button>
+                <button type="button" onClick={copySelectedPath}>
+                  {copiedPath === selectedFile.path ? "PATH COPIED" : "COPY PATH"}
+                </button>
+                <button
+                  type="button"
+                  onClick={openSelectedWithRecoveryTool}
+                  disabled={
+                    selectedFile.id === CATEGORY_A_FILE_IDS.logFixer ||
+                    getRuntimeState(selectedFile.id) !== "corrupted"
+                  }
+                >
+                  OPEN WITH LOG_FIXER
+                </button>
+              </div>
               <dl>
                 <div>
                   <dt>Path</dt>
@@ -1019,6 +1159,17 @@ function App() {
                         }`
                       : "not evidence"}
                   </dd>
+                </div>
+                <div>
+                  <dt>State</dt>
+                  <dd>
+                    {getRuntimeState(selectedFile.id)} / attached{" "}
+                    {attachedFileIds.includes(selectedFile.id) ? "yes" : "no"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Source</dt>
+                  <dd>{selectedFile.gameplay.sourceRefs.join(", ")}</dd>
                 </div>
               </dl>
               {selectedFile.id === CATEGORY_A_FILE_IDS.emailChainJuly ? (
@@ -1064,6 +1215,20 @@ function App() {
                   >
                     {isQuarantineRecovered ? "RECOVERED" : "RUN LOG_FIXER"}
                   </button>
+                </div>
+              ) : null}
+              {selectedFile.id === CATEGORY_A_FILE_IDS.sensorDiagram ? (
+                <div className="sensor-diagram-placeholder" aria-label="Sensor diagram placeholder">
+                  <div>
+                    <span>SENSOR-BIO-04</span>
+                    <i />
+                    <strong>CONTROL ROOM MODULE #04</strong>
+                  </div>
+                  <p>
+                    Missing final asset fallback for
+                    `public/assets/images/sensor_diagram.png`. This placeholder preserves
+                    the viewer route until the production schematic is supplied.
+                  </p>
                 </div>
               ) : null}
               <pre>{selectedContent}</pre>

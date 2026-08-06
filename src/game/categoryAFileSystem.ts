@@ -8,6 +8,7 @@ export const CATEGORY_A_ACT_IDS = {
 
 export const CATEGORY_A_FILE_IDS = {
   sensorCalibLog: "sensor-calib-log",
+  sensorDiagram: "sensor-diagram",
   tempHistory: "temp-history",
   dailyRoutine: "daily-routine",
   airFlow: "air-flow",
@@ -239,6 +240,36 @@ export const categoryAFiles: CategoryAFile[] = [
       sourceRefs: [
         CATEGORY_A_PLANNING_SOURCE_REFS.logExamples,
         CATEGORY_A_PLANNING_SOURCE_REFS.fileStructure,
+      ],
+    },
+  },
+  {
+    id: CATEGORY_A_FILE_IDS.sensorDiagram,
+    path: "/Logs/Sensors/sensor_diagram.png",
+    directory: CATEGORY_A_DIRECTORY_PATHS.logsSensors,
+    name: "sensor_diagram.png",
+    title: "Bio-scan Array #04 Sensor Diagram",
+    kind: "text",
+    initialState: "available",
+    role: "flavor",
+    content: [
+      "[IMAGE PLACEHOLDER: sensor_diagram.png]",
+      "Asset path: public/assets/images/sensor_diagram.png",
+      "",
+      "Diagram labels expected:",
+      "- SENSOR-BIO-04 thermal scan head",
+      "- Control Room Module #04 mounting point",
+      "- Calibration service port",
+      "- Manual scan cross-check path",
+      "",
+      "Production note: If the image asset is missing, Hermes OS displays this schematic placeholder.",
+    ].join("\n"),
+    gameplay: {
+      act: CATEGORY_A_ACT_IDS.act1,
+      requiredKeywords: ["SENSOR-BIO-04", "Calibration"],
+      sourceRefs: [
+        CATEGORY_A_PLANNING_SOURCE_REFS.fileStructure,
+        CATEGORY_A_PLANNING_SOURCE_REFS.logExamples,
       ],
     },
   },
