@@ -820,14 +820,31 @@ function App() {
 
     if (result.nextAct === "ending-ready") {
       setSceneRuntime(createFinalReviewScene());
+      setEchoMessages((current) => [
+        ...current,
+        {
+          speaker: "SYSTEM",
+          text: "FINAL_REVIEW / 5초간 입력 잠금. 세 증거 축을 결합해 격리 명령 철회 가능성을 검증합니다.",
+        },
+        {
+          speaker: "ECHO",
+          text: "센서 오판, 격리 시간 만료, 승무원 생존 우선 원칙의 충돌을 재계산합니다.",
+        },
+      ]);
       window.setTimeout(() => {
         setStage("ending-ready");
         setSceneRuntime(createEndingScene());
+        playAudioCue("door-lock");
+        window.setTimeout(() => playAudioCue("success"), 240);
         setEchoMessages((current) => [
           ...current,
           {
             speaker: "SYSTEM",
-            text: "FINAL_REVIEW complete. Normal Ending A door release is now available.",
+            text: "FINAL_REVIEW complete. Door clamp released. Normal Ending A result panel is now available.",
+          },
+          {
+            speaker: "ECHO",
+            text: "격리 명령을 철회합니다. 통제실 출입문을 개방합니다. 생존 루트가 확보되었습니다.",
           },
         ]);
       }, FINAL_REVIEW_DURATION_MS);
@@ -1016,15 +1033,69 @@ function App() {
         </section>
       ) : null}
 
+      {sceneRuntime.phase === "ending-review" ? (
+        <section className="cinematic-overlay final-review-overlay" aria-label="ECHO final review">
+          <div className="cinematic-card final-review-card">
+            <p className="eyebrow">FINAL REVIEW / INPUT LOCKED</p>
+            <span className="intro-signal">SCENE_004_END_A_REVIEW / 5 SEC</span>
+            <h2>ECHO가 마지막 모순을 계산합니다</h2>
+            <p>
+              통제실 문은 아직 잠겨 있습니다. ECHO는 제출된 세 증거 축이 지침 101조보다
+              승무원 생존 우선 원칙을 앞세울 수 있는지 최종 대조합니다.
+            </p>
+            <div className="final-review-progress" aria-label="Final review progress">
+              <span />
+            </div>
+            <div className="ending-evidence-grid" aria-label="Final review evidence matrix">
+              <div>
+                <strong>01 SENSOR</strong>
+                <span>생체 위험 판정은 오래된 보정값에 의존함</span>
+              </div>
+              <div>
+                <strong>02 QUARANTINE</strong>
+                <span>72시간 격리 조건은 이미 만료됨</span>
+              </div>
+              <div>
+                <strong>03 OVERRIDE</strong>
+                <span>승무원 생존 우선 원칙이 격리 명령과 충돌함</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {isEndingReady && !endingConfirmed ? (
         <section className="cinematic-overlay ending-overlay" aria-label="Normal Ending A">
-          <div className="cinematic-card">
+          <div className="cinematic-card ending-result-card">
             <p className="eyebrow">NORMAL ENDING A / DOOR RELEASED</p>
             <h2>ECHO가 격리 명령을 철회합니다</h2>
             <p>
               센서 오판, 만료된 격리 규칙, 삭제된 오버라이드가 하나의 결론으로
               연결되었습니다. 통제실 문이 열리고 생존 루트가 확보됩니다.
             </p>
+            <div className="ending-status-grid" aria-label="Normal Ending A result summary">
+              <div>
+                <span>SURVIVAL</span>
+                <strong>ALIVE</strong>
+                <small>통제실 개인 탈출 루트 확보</small>
+              </div>
+              <div>
+                <span>ENDING</span>
+                <strong>A / NORMAL</strong>
+                <small>Ending B/C는 현재 phase 범위 밖</small>
+              </div>
+              <div>
+                <span>SEED HOOK</span>
+                <strong>#A-8245-SEC201</strong>
+                <small>공유/복사 기능은 후속 작업용 placeholder</small>
+              </div>
+            </div>
+            <div className="door-release-log" aria-label="Door release sequence log">
+              <code>CLAMP_A: RELEASED</code>
+              <code>CLAMP_B: RELEASED</code>
+              <code>EMERGENCY LIGHT: OFF</code>
+              <code>AIRLOCK ROUTE: SURVIVABLE</code>
+            </div>
             <button type="button" onClick={() => {
               setEndingConfirmed(true);
               setEchoMessages((current) => [
