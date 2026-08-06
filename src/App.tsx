@@ -275,6 +275,7 @@ function App() {
   );
   const [fileSearch, setFileSearch] = useState("");
   const [copiedPath, setCopiedPath] = useState("");
+  const [showDebugHints, setShowDebugHints] = useState(false);
 
   const selectedFile = getCategoryAFileById(selectedFileId);
   const quarantineRules = getCategoryAFileById(CATEGORY_A_FILE_IDS.quarantineRules);
@@ -1138,6 +1139,13 @@ function App() {
                 >
                   OPEN WITH LOG_FIXER
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDebugHints((current) => !current)}
+                  disabled={!selectedFile.gameplay.debugHint}
+                >
+                  {showDebugHints ? "HIDE QA HINT" : "SHOW QA HINT"}
+                </button>
               </div>
               <dl>
                 <div>
@@ -1229,6 +1237,12 @@ function App() {
                     `public/assets/images/sensor_diagram.png`. This placeholder preserves
                     the viewer route until the production schematic is supplied.
                   </p>
+                </div>
+              ) : null}
+              {showDebugHints && selectedFile.gameplay.debugHint ? (
+                <div className="debug-hint-card" aria-label="QA debug hint">
+                  <strong>QA / ACCESSIBILITY HINT</strong>
+                  <p>{selectedFile.gameplay.debugHint}</p>
                 </div>
               ) : null}
               <pre>{selectedContent}</pre>

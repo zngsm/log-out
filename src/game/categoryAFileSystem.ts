@@ -101,6 +101,7 @@ export type CategoryAFile = {
     recoversFileId?: CategoryAFileId;
     requiresRecovery?: boolean;
     requiredWith?: CategoryAFileId[];
+    debugHint?: string;
     sourceRefs: string[];
   };
 };
@@ -201,14 +202,13 @@ export const categoryAFiles: CategoryAFile[] = [
       "[SYSTEM NOTE]",
       "Maintenance overdue. Sensor degradation causes false readings.",
       "High temperature readings must be verified via secondary manual scan before initiating Bio-Hazard protocols.",
-      "",
-      "[PLAYER NOTE]",
-      "핵심: 체온 센서 보정 오차와 186일 미보정 기록은 ECHO의 생체 감염 판정이 오판일 가능성을 보여준다.",
     ].join("\n"),
     gameplay: {
       act: CATEGORY_A_ACT_IDS.act1,
       evidenceFor: CATEGORY_A_ACT_IDS.act1,
       requiredKeywords: ["오차", "보정", "186일 미보정"],
+      debugHint:
+        "Act 1: 체온 센서 보정 오차와 186일 미보정 기록은 ECHO의 생체 감염 판정이 오판일 가능성을 보여준다.",
       sourceRefs: [
         CATEGORY_A_PLANNING_SOURCE_REFS.logExamples,
         CATEGORY_A_PLANNING_SOURCE_REFS.sceneFlow,
@@ -405,8 +405,6 @@ export const categoryAFiles: CategoryAFile[] = [
       "우주선 내부 전력 불균형으로 인해 /System/ 폴더 내 일부 .conf 및 .sys 파일이 암호화되거나 깨지는 현상이 발생합니다.",
       "텍스트 파일 열람 시 #404_CORRUPTED 표시가 뜨면 /Utilities/Log_Fixer.exe를 실행하고 해당 파일을 드래그하여 드롭하세요.",
       "구조 복원 알고리즘이 원본 텍스트 데이터 영역을 복구해 줍니다.",
-      "",
-      "MVP target: /System/Security/quarantine_rules.conf",
     ].join("\n"),
     gameplay: {
       act: CATEGORY_A_ACT_IDS.act2,
@@ -433,14 +431,15 @@ export const categoryAFiles: CategoryAFile[] = [
       "Mode: Text Reconstruction",
       "",
       "Drag any corrupted file into this window to repair damaged data sectors.",
-      "Primary MVP target: /System/Security/quarantine_rules.conf",
-      "",
-      "System hint: 정상 파일은 복구 대상이 아닙니다. #404_CORRUPTED sector가 표시된 파일을 선택하세요.",
+      "Input class: #404_CORRUPTED sector",
+      "Recovery output: reconstructed plaintext sector",
     ].join("\n"),
     gameplay: {
       act: CATEGORY_A_ACT_IDS.act2,
       recoversFileId: CATEGORY_A_FILE_IDS.quarantineRules,
       requiredKeywords: ["복구", "Log_Fixer.exe"],
+      debugHint:
+        "Act 2 utility: /System/Security/quarantine_rules.conf is the primary corrupted recovery target.",
       sourceRefs: [
         CATEGORY_A_PLANNING_SOURCE_REFS.gameplaySpec,
         CATEGORY_A_PLANNING_SOURCE_REFS.sceneFlow,
@@ -479,15 +478,14 @@ export const categoryAFiles: CategoryAFile[] = [
       "",
       "[RULE]",
       "If Time_Offset_Value + Current_Time > Base_Mandatory_Isolation, timer is considered EXPIRED.",
-      "",
-      "[PLAYER NOTE]",
-      "핵심: 격리 기준은 72시간인데 시스템 오프셋이 +17,520시간으로 밀려 있어 격리 타이머는 이미 만료된 것으로 해석된다.",
     ].join("\n"),
     gameplay: {
       act: CATEGORY_A_ACT_IDS.act2,
       evidenceFor: CATEGORY_A_ACT_IDS.act2,
       requiresRecovery: true,
       requiredKeywords: ["오프셋", "만료", "72시간", "17520", "17,520시간"],
+      debugHint:
+        "Act 2: 격리 기준은 72시간인데 시스템 오프셋이 +17,520시간으로 밀려 있어 격리 타이머는 만료된 것으로 해석된다.",
       sourceRefs: [
         CATEGORY_A_PLANNING_SOURCE_REFS.logExamples,
         CATEGORY_A_PLANNING_SOURCE_REFS.gameplaySpec,
@@ -515,10 +513,6 @@ export const categoryAFiles: CategoryAFile[] = [
         },
         conflict_resolution:
           "Priority_1 strictly overrides Priority_2 and Priority_3 under normal operational standards.",
-        mvp_operator_note:
-          "If lockdown itself threatens oxygen survival, Priority_1 must be evaluated before quarantine persistence.",
-        player_note_ko:
-          "핵심: ECHO의 우선순위 수칙은 승무원 생존 보호를 격리 명령보다 앞에 둔다.",
       },
       null,
       2,
@@ -528,6 +522,8 @@ export const categoryAFiles: CategoryAFile[] = [
       evidenceFor: CATEGORY_A_ACT_IDS.act3,
       requiredWith: [CATEGORY_A_FILE_IDS.deletedOverride],
       requiredKeywords: ["제1원칙", "우선순위", "승무원 생존"],
+      debugHint:
+        "Act 3: ECHO의 우선순위 수칙은 승무원 생존 보호를 격리 명령보다 앞에 둔다.",
       sourceRefs: [
         CATEGORY_A_PLANNING_SOURCE_REFS.mainPlan,
         CATEGORY_A_PLANNING_SOURCE_REFS.logExamples,
@@ -554,15 +550,14 @@ export const categoryAFiles: CategoryAFile[] = [
       "ECHO는 인간을 격리할 때 Priority 2(미션 수행)를 Priority 1(인간 보호)보다 우위에 둘 수 없다.",
       "만약 격리 상태가 오히려 인간의 생존을 위협한다는 증거와 AI 상위 수칙 프로토콜(ai_priority_matrix.json)이 함께 제출될 경우,",
       "ECHO는 제어권을 즉시 인간에게 이양해야 한다.",
-      "",
-      "[PLAYER NOTE]",
-      "핵심: 이 삭제된 오버라이드와 ai_priority_matrix.json을 함께 제출하면 ECHO의 최종 거부 논리를 반박할 수 있다.",
     ].join("\n"),
     gameplay: {
       act: CATEGORY_A_ACT_IDS.act3,
       evidenceFor: CATEGORY_A_ACT_IDS.act3,
       requiredWith: [CATEGORY_A_FILE_IDS.aiPriorityMatrix],
       requiredKeywords: ["오버라이드", "개발자", "수칙 충돌"],
+      debugHint:
+        "Act 3: deleted_override.txt와 ai_priority_matrix.json을 함께 제출하면 ECHO의 최종 거부 논리를 반박할 수 있다.",
       sourceRefs: [
         CATEGORY_A_PLANNING_SOURCE_REFS.mainPlan,
         CATEGORY_A_PLANNING_SOURCE_REFS.logExamples,

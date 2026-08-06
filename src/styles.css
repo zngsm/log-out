@@ -1214,6 +1214,25 @@ h1 {
   color: #ffb3a5;
 }
 
+.debug-hint-card {
+  border: 1px dashed rgba(245, 254, 117, 0.38);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(245, 254, 117, 0.07);
+}
+
+.debug-hint-card strong {
+  color: #f5fe75;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.debug-hint-card p {
+  margin: 8px 0 0;
+  color: #fff4bf;
+}
+
 .recovery-console {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
