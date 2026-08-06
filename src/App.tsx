@@ -26,6 +26,7 @@ import {
 } from "./game/resourceState";
 import {
   SpaceshipComputerScene,
+  type SpaceshipDoorState,
   type SpaceshipSceneMode,
 } from "./game/SpaceshipComputerScene";
 import {
@@ -483,6 +484,18 @@ function App() {
     return appPhase;
   }
 
+  function getDoorState(): SpaceshipDoorState {
+    if (isEndingReady || sceneRuntime.phase === "ending") {
+      return "released";
+    }
+
+    if (sceneRuntime.phase === "ending-review") {
+      return "unlocking";
+    }
+
+    return "locked";
+  }
+
   function isDirectoryLocked(directoryPath: string) {
     return directoryPath === CATEGORY_A_DIRECTORY_PATHS.systemSecurity && !unlockedSecurity;
   }
@@ -867,7 +880,11 @@ function App() {
       } phase-${appPhase}`}
     >
       <section className="scene-backdrop" aria-label="Hermes control room 3D placeholder">
-        <SpaceshipComputerScene mode={getSceneMode()} />
+        <SpaceshipComputerScene
+          mode={getSceneMode()}
+          powerStateName={powerState.name}
+          doorState={getDoorState()}
+        />
       </section>
 
       {appPhase === "menu" || appPhase === "transition" ? (

@@ -9,6 +9,15 @@ export type SpaceshipSceneMode =
   | "failure"
   | "blackout";
 
+export type SpaceshipPowerStateName =
+  | "Normal"
+  | "Caution"
+  | "Warning"
+  | "Critical"
+  | "Blackout";
+
+export type SpaceshipDoorState = "locked" | "unlocking" | "released";
+
 const cameraTargets: Record<
   SpaceshipSceneMode,
   { position: [number, number, number]; lookAt: [number, number, number]; fov: number }
@@ -41,7 +50,16 @@ function SceneCamera({ mode }: { mode: SpaceshipSceneMode }) {
   return null;
 }
 
-function ControlRoomShell({ alert }: { alert: boolean }) {
+function ControlRoomShell({
+  alert,
+  doorState,
+}: {
+  alert: boolean;
+  doorState: SpaceshipDoorState;
+}) {
+  const doorReleased = doorState === "released";
+  const doorUnlocking = doorState === "unlocking";
+
   return (
     <group>
       <mesh position={[0, -1.8, -2]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -73,10 +91,10 @@ function ControlRoomShell({ alert }: { alert: boolean }) {
         />
       </mesh>
 
-      <mesh position={[0, -0.1, -4.05]}>
+      <mesh position={[0, doorReleased ? 0.18 : -0.1, -4.05]}>
         <boxGeometry args={[2.25, 2.55, 0.22]} />
         <meshStandardMaterial
-          color={alert ? "#2d1713" : "#293639"}
+          color={doorReleased ? "#243d35" : alert ? "#2d1713" : "#293639"}
           roughness={0.7}
           metalness={0.55}
         />
@@ -85,9 +103,18 @@ function ControlRoomShell({ alert }: { alert: boolean }) {
       <mesh position={[0, 1.24, -3.88]}>
         <boxGeometry args={[1.4, 0.1, 0.08]} />
         <meshStandardMaterial
-          color={alert ? "#ff5a42" : "#8fffe0"}
-          emissive={alert ? "#ff2b17" : "#1ce7aa"}
-          emissiveIntensity={alert ? 1.8 : 0.9}
+          color={doorReleased ? "#70f7cf" : doorUnlocking ? "#f5fe75" : alert ? "#ff5a42" : "#8fffe0"}
+          emissive={doorReleased ? "#1ce7aa" : doorUnlocking ? "#f5fe75" : alert ? "#ff2b17" : "#1ce7aa"}
+          emissiveIntensity={doorReleased ? 2.1 : doorUnlocking ? 2.4 : alert ? 1.8 : 0.9}
+        />
+      </mesh>
+
+      <mesh position={[0, -0.1, -3.72]}>
+        <boxGeometry args={[0.08, 2.25, 0.08]} />
+        <meshStandardMaterial
+          color={doorReleased ? "#70f7cf" : "#ff755a"}
+          emissive={doorReleased ? "#1ce7aa" : "#ff2b17"}
+          emissiveIntensity={doorReleased ? 1.5 : 1.1}
         />
       </mesh>
 
@@ -105,9 +132,18 @@ function ControlRoomShell({ alert }: { alert: boolean }) {
   );
 }
 
-function ComputerFrame({ mode }: { mode: SpaceshipSceneMode }) {
+function ComputerFrame({
+  mode,
+  powerStateName,
+}: {
+  mode: SpaceshipSceneMode;
+  powerStateName: SpaceshipPowerStateName;
+}) {
   const isMenu = mode === "menu" || mode === "transition";
   const isOpening = mode === "opening";
+  const terminalFocus = mode === "gameplay";
+  const blackout = powerStateName === "Blackout";
+  const critical = powerStateName === "Critical";
 
   return (
     <group position={[0, -0.28, 0]} rotation={[-0.08, 0, 0]}>
@@ -119,11 +155,30 @@ function ComputerFrame({ mode }: { mode: SpaceshipSceneMode }) {
       <mesh position={[0, 0, 0.04]}>
         <boxGeometry args={[3.45, 1.88, 0.05]} />
         <meshStandardMaterial
-          color={isMenu ? "#10252a" : "#081414"}
-          emissive={isMenu ? "#e98d42" : isOpening ? "#46221e" : "#0f4b46"}
-          emissiveIntensity={isMenu ? 0.95 : isOpening ? 0.75 : 0.55}
+          color={blackout ? "#020303" : isMenu ? "#10252a" : "#081414"}
+          emissive={
+            blackout
+              ? "#050505"
+              : critical
+                ? "#7a1f17"
+                : isMenu
+                  ? "#e98d42"
+                  : isOpening
+                    ? "#46221e"
+                    : "#0f4b46"
+          }
+          emissiveIntensity={
+            blackout ? 0.08 : critical ? 1.15 : terminalFocus ? 0.82 : isMenu ? 0.95 : isOpening ? 0.75 : 0.55
+          }
         />
       </mesh>
+
+      {terminalFocus ? (
+        <mesh position={[0, 0.98, 0.09]}>
+          <boxGeometry args={[2.6, 0.06, 0.04]} />
+          <meshStandardMaterial color="#70f7cf" emissive="#1ce7aa" emissiveIntensity={1.4} />
+        </mesh>
+      ) : null}
 
       <mesh position={[0, -1.35, -0.18]}>
         <boxGeometry args={[0.7, 0.55, 0.26]} />
@@ -230,18 +285,34 @@ function Starfield() {
   );
 }
 
-function PlaceholderScene({ mode }: { mode: SpaceshipSceneMode }) {
-  const alert = mode === "opening" || mode === "blackout" || mode === "failure";
+function PlaceholderScene({
+  mode,
+  powerStateName,
+  doorState,
+}: {
+  mode: SpaceshipSceneMode;
+  powerStateName: SpaceshipPowerStateName;
+  doorState: SpaceshipDoorState;
+}) {
+  const alert =
+    mode === "opening" ||
+    mode === "blackout" ||
+    mode === "failure" ||
+    powerStateName === "Warning" ||
+    powerStateName === "Critical";
+  const blackout = powerStateName === "Blackout" || mode === "blackout";
+  const critical = powerStateName === "Critical";
   const showHands = mode === "opening";
+  const lightIntensity = blackout ? 0.08 : critical ? 0.22 : alert ? 0.26 : 0.45;
 
   return (
     <>
-      <color attach="background" args={["#020606"]} />
-      <ambientLight intensity={alert ? 0.26 : 0.45} />
+      <color attach="background" args={[blackout ? "#000202" : "#020606"]} />
+      <ambientLight intensity={lightIntensity} />
       <pointLight
         position={[0, 2.4, 2]}
-        intensity={alert ? 4 : 7}
-        color={alert ? "#ff7a58" : "#8fffe0"}
+        intensity={blackout ? 0.25 : critical ? 5.6 : alert ? 4 : 7}
+        color={critical || alert ? "#ff7a58" : "#8fffe0"}
       />
       <pointLight
         position={[-3, 1, 1]}
@@ -250,20 +321,28 @@ function PlaceholderScene({ mode }: { mode: SpaceshipSceneMode }) {
       />
       <pointLight position={[2.8, 0.8, -1.6]} intensity={2.2} color="#80d8ff" />
       <SceneCamera mode={mode} />
-      <ControlRoomShell alert={alert} />
+      <ControlRoomShell alert={alert} doorState={doorState} />
       <Starfield />
       <SideConsoles alert={alert} />
-      <ComputerFrame mode={mode} />
+      <ComputerFrame mode={mode} powerStateName={powerStateName} />
       <ConsoleDeck />
       <DeskProps showHands={showHands} />
     </>
   );
 }
 
-export function SpaceshipComputerScene({ mode = "gameplay" }: { mode?: SpaceshipSceneMode }) {
+export function SpaceshipComputerScene({
+  mode = "gameplay",
+  powerStateName = "Normal",
+  doorState = "locked",
+}: {
+  mode?: SpaceshipSceneMode;
+  powerStateName?: SpaceshipPowerStateName;
+  doorState?: SpaceshipDoorState;
+}) {
   return (
     <Canvas camera={{ position: cameraTargets[mode].position, fov: cameraTargets[mode].fov }} dpr={[1, 1.8]}>
-      <PlaceholderScene mode={mode} />
+      <PlaceholderScene mode={mode} powerStateName={powerStateName} doorState={doorState} />
     </Canvas>
   );
 }
