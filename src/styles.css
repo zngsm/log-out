@@ -169,6 +169,7 @@ button {
 }
 
 .phase-gameplay {
+  padding: 0;
   background:
     radial-gradient(circle at 18% 0%, rgba(112, 247, 207, 0.16), transparent 32%),
     radial-gradient(circle at 100% 0%, rgba(255, 92, 67, 0.11), transparent 28%),
@@ -178,6 +179,64 @@ button {
 .phase-gameplay .scene-backdrop {
   visibility: hidden;
   opacity: 0;
+}
+
+.terminal-screen-surface {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  padding: clamp(16px, 2vw, 28px);
+  overflow: auto;
+  background:
+    linear-gradient(rgba(112, 247, 207, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(112, 247, 207, 0.026) 1px, transparent 1px),
+    radial-gradient(circle at 18% 8%, rgba(112, 247, 207, 0.18), transparent 34%),
+    radial-gradient(circle at 92% 4%, rgba(255, 92, 67, 0.12), transparent 26%),
+    linear-gradient(180deg, rgba(2, 13, 10, 0.98), rgba(1, 8, 7, 1));
+  background-size: 38px 38px, 38px 38px, auto, auto, auto;
+  box-shadow:
+    0 0 0 1px rgba(112, 247, 207, 0.2) inset,
+    0 0 0 14px rgba(1, 5, 5, 0.88) inset,
+    0 0 110px rgba(112, 247, 207, 0.14) inset;
+  transform-origin: 50% 52%;
+  animation: terminal-screen-zoom 720ms cubic-bezier(0.14, 0.86, 0.22, 1) both;
+}
+
+.terminal-screen-surface::before {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+  background:
+    linear-gradient(
+      180deg,
+      rgba(216, 255, 244, 0.075),
+      transparent 10%,
+      transparent 90%,
+      rgba(112, 247, 207, 0.075)
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(216, 255, 244, 0.028),
+      rgba(216, 255, 244, 0.028) 1px,
+      transparent 1px,
+      transparent 5px
+    );
+  mix-blend-mode: screen;
+}
+
+.terminal-screen-surface::after {
+  position: fixed;
+  inset: 10px;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+  border: 1px solid rgba(112, 247, 207, 0.2);
+  border-radius: 22px;
+  box-shadow:
+    0 0 42px rgba(112, 247, 207, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.035) inset;
 }
 
 .system-topbar,
@@ -2111,6 +2170,29 @@ pre {
     box-shadow:
       0 0 54px rgba(245, 254, 117, 0.32),
       0 0 26px rgba(245, 254, 117, 0.24) inset;
+  }
+}
+
+@keyframes terminal-screen-zoom {
+  0% {
+    border-radius: 28px;
+    filter: brightness(0.72) blur(1px);
+    opacity: 0.72;
+    transform: perspective(1100px) translateY(8vh) scale(0.42) rotateX(7deg);
+  }
+
+  62% {
+    border-radius: 20px;
+    filter: brightness(1.12) blur(0);
+    opacity: 1;
+    transform: perspective(1100px) translateY(1vh) scale(1.025) rotateX(0deg);
+  }
+
+  100% {
+    border-radius: 0;
+    filter: brightness(1) blur(0);
+    opacity: 1;
+    transform: perspective(1100px) translateY(0) scale(1) rotateX(0deg);
   }
 }
 

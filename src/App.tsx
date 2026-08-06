@@ -1117,7 +1117,7 @@ function App() {
       ) : null}
 
       {appPhase === "gameplay" ? (
-        <>
+        <section className="terminal-screen-surface" aria-label="Hermes OS monitor screen">
       {logFixerOpen ? (
         <section className="log-fixer-modal" aria-label="Log Fixer mini program">
           <form className="log-fixer-window" onSubmit={runLogFixerProgram}>
@@ -1672,7 +1672,7 @@ function App() {
           </form>
         </aside>
       </section>
-        </>
+        </section>
       ) : null}
     </main>
   );
