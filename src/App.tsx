@@ -13,6 +13,7 @@ import {
 } from "./game/categoryAFileSystem";
 import {
   type ActProgressState,
+  type EvidenceSubmissionResult,
   type EvidenceSubmissionReason,
   evaluateEvidenceSubmission,
 } from "./game/evidenceSubmission";
@@ -32,6 +33,20 @@ import {
   getOpeningBeat,
   openingTimeline,
 } from "./game/openingTimeline";
+import {
+  ACT_SUCCESS_DURATION_MS,
+  ECHO_REVIEW_DURATION_MS,
+  FINAL_REVIEW_DURATION_MS,
+  createActEntryScene,
+  createActSuccessScene,
+  createBlackoutScene,
+  createEchoReviewScene,
+  createEndingScene,
+  createFailureScene,
+  createFinalReviewScene,
+  createMenuScene,
+  createOpeningScene,
+} from "./game/sceneRuntime";
 
 type EchoMessage = {
   speaker: "ECHO" | "PLAYER" | "SYSTEM";
@@ -168,6 +183,7 @@ function App() {
   const [openingElapsedSeconds, setOpeningElapsedSeconds] = useState(0);
   const [openingSpeed, setOpeningSpeed] = useState(1);
   const [endingConfirmed, setEndingConfirmed] = useState(false);
+  const [sceneRuntime, setSceneRuntime] = useState(() => createMenuScene());
 
   const selectedFile = getCategoryAFileById(selectedFileId);
   const quarantineRules = getCategoryAFileById(CATEGORY_A_FILE_IDS.quarantineRules);
@@ -175,7 +191,8 @@ function App() {
   const selectedIsRecovered = recoveredFileIds.has(selectedFileId);
   const powerState = getPowerState(resourceState.power);
   const isBlackout = powerState.name === "Blackout" || resourceState.blackoutRemainingSeconds > 0;
-  const interactionLocked = getInteractionLocked(resourceState);
+  const resourceInteractionLocked = getInteractionLocked(resourceState);
+  const interactionLocked = resourceInteractionLocked || sceneRuntime.inputLocked;
   const isEndingReady = stage === "ending-ready";
   const currentActGuidance = isEndingReady ? null : actGuidance[stage];
   const currentEvidenceNames = isEndingReady
@@ -225,7 +242,7 @@ function App() {
         const next = Math.min(current + deltaSeconds, OPENING_DURATION_SECONDS);
 
         if (next >= OPENING_DURATION_SECONDS) {
-          window.setTimeout(() => setAppPhase("gameplay"), 0);
+          window.setTimeout(() => enterGameplay(), 0);
         }
 
         return next;
@@ -234,6 +251,26 @@ function App() {
 
     return () => window.clearInterval(timerId);
   }, [appPhase, openingSpeed]);
+
+  useEffect(() => {
+    if (resourceState.outcome === "lost") {
+      setSceneRuntime(createFailureScene());
+      return;
+    }
+
+    if (isBlackout) {
+      setSceneRuntime(createBlackoutScene());
+      return;
+    }
+
+    if (
+      sceneRuntime.phase === "blackout" &&
+      appPhase === "gameplay" &&
+      stage !== "ending-ready"
+    ) {
+      setSceneRuntime(createActEntryScene(stage));
+    }
+  }, [appPhase, isBlackout, resourceState.outcome, sceneRuntime.phase, stage]);
 
   function getSceneMode(): SpaceshipSceneMode {
     if (resourceState.outcome === "lost") {
@@ -245,6 +282,10 @@ function App() {
     }
 
     if (isEndingReady) {
+      return "ending";
+    }
+
+    if (sceneRuntime.phase === "ending-review") {
       return "ending";
     }
 
@@ -373,40 +414,104 @@ function App() {
       resourceState,
       recoveredFileIds: Array.from(recoveredFileIds),
     });
+    const submittedAct = stage;
+    const submittedFiles = attachedFileIds;
+    const submittedText = messageInput;
 
-    setResourceState(result.resourceState);
-    setStage(result.nextAct);
-    setLastSubmissionReason(result.reason);
+    setSceneRuntime(createEchoReviewScene(submittedAct));
+    setLastSubmissionReason(null);
     setEchoMessages((current) => [
       ...current,
       {
         speaker: "PLAYER",
-        text: `${attachedFileIds
+        text: `${submittedFiles
           .map((fileId) => `@${getCategoryAFileById(fileId)?.name ?? fileId}`)
-          .join(" ")} ${messageInput}`,
+          .join(" ")} ${submittedText}`,
       },
+      {
+        speaker: "SYSTEM",
+        text: "ECHO_REVIEW / 입력 채널 잠금. 제출된 증거의 규칙 충돌 여부를 대조합니다.",
+      },
+    ]);
+
+    window.setTimeout(
+      () => revealEvidenceSubmissionResult(result, submittedAct),
+      ECHO_REVIEW_DURATION_MS,
+    );
+  }
+
+  function revealEvidenceSubmissionResult(
+    result: EvidenceSubmissionResult,
+    submittedAct: CategoryAAct,
+  ) {
+    setResourceState(result.resourceState);
+    setLastSubmissionReason(result.reason);
+    setEchoMessages((current) => [
+      ...current,
       {
         speaker: "ECHO",
         text: result.message,
       },
     ]);
 
-    if (result.success) {
-      setAttachedFileIds([]);
-      setMessageInput(getDefaultPrompt(result.nextAct));
+    if (!result.success) {
+      if (
+        result.resourceState.blackoutRemainingSeconds > 0 ||
+        getPowerState(result.resourceState.power).name === "Blackout"
+      ) {
+        setSceneRuntime(createBlackoutScene());
+        return;
+      }
+
+      setSceneRuntime(createActEntryScene(submittedAct));
+      return;
     }
+
+    setAttachedFileIds([]);
+    setMessageInput(getDefaultPrompt(result.nextAct));
+
+    if (result.nextAct === "ending-ready") {
+      setSceneRuntime(createFinalReviewScene());
+      window.setTimeout(() => {
+        setStage("ending-ready");
+        setSceneRuntime(createEndingScene());
+        setEchoMessages((current) => [
+          ...current,
+          {
+            speaker: "SYSTEM",
+            text: "FINAL_REVIEW complete. Normal Ending A door release is now available.",
+          },
+        ]);
+      }, FINAL_REVIEW_DURATION_MS);
+      return;
+    }
+
+    const nextAct = result.nextAct;
+    setSceneRuntime(createActSuccessScene(submittedAct));
+    window.setTimeout(() => {
+      setStage(nextAct);
+      setSceneRuntime(createActEntryScene(nextAct));
+    }, ACT_SUCCESS_DURATION_MS);
   }
 
   function startOpeningSequence() {
     setAppPhase("transition");
     setOpeningElapsedSeconds(0);
     setOpeningSpeed(1);
-    window.setTimeout(() => setAppPhase("opening"), 900);
+    window.setTimeout(() => {
+      setSceneRuntime(createOpeningScene());
+      setAppPhase("opening");
+    }, 900);
+  }
+
+  function enterGameplay() {
+    setAppPhase("gameplay");
+    setSceneRuntime(createActEntryScene(CATEGORY_A_ACT_IDS.act1));
   }
 
   function skipToTerminal() {
     setOpeningElapsedSeconds(OPENING_DURATION_SECONDS);
-    setAppPhase("gameplay");
+    enterGameplay();
   }
 
   function toggleOpeningSpeed() {
@@ -618,6 +723,14 @@ function App() {
               : "Run Log_Fixer.exe before Act 2 submission"}
           </small>
         </div>
+        <div className="hud-card scene-hud-card">
+          <span>SCENE RUNTIME</span>
+          <strong>{sceneRuntime.id}</strong>
+          <small>
+            {sceneRuntime.inputLocked ? "INPUT LOCKED" : "INPUT READY"} /{" "}
+            {sceneRuntime.exitCondition}
+          </small>
+        </div>
         <div className="hud-card objective-hud-card">
           <span>{isEndingReady ? "CURRENT OBJECTIVE" : `${getActLabel(stage)} OBJECTIVE`}</span>
           <strong>{isEndingReady ? "EXIT READY" : "EVIDENCE REVIEW"}</strong>
@@ -676,7 +789,9 @@ function App() {
                         <span>{file.name}</span>
                         <small>
                           {interactionLocked
-                            ? "blackout"
+                            ? resourceInteractionLocked
+                              ? "blackout"
+                              : "scene-lock"
                             : getRuntimeStatusLabel({ attached, disabled, runtimeState })}
                         </small>
                       </button>
@@ -814,6 +929,14 @@ function App() {
               </small>
             ) : null}
           </section>
+          <section className="scene-runtime-card" aria-label="Inspectable scene runtime">
+            <span>{sceneRuntime.phase}</span>
+            <strong>{sceneRuntime.label}</strong>
+            <p>{sceneRuntime.line}</p>
+            <small>
+              id: {sceneRuntime.id} / exit: {sceneRuntime.exitCondition}
+            </small>
+          </section>
           <div className="message-list" aria-label="ECHO chat log">
             {echoMessages.map((message, index) => (
               <div
@@ -860,9 +983,18 @@ function App() {
               disabled={interactionLocked}
             />
             {interactionLocked ? (
-              <div className="feedback-card blackout-feedback" aria-live="polite">
-                <strong>BLACKOUT LOCK</strong>
-                <p>전력 복구 중입니다. 파일 선택, 증거 제출, 보안 입력, 복구 실행이 잠시 중단됩니다.</p>
+              <div
+                className={`feedback-card ${
+                  resourceInteractionLocked ? "blackout-feedback" : "scene-lock-feedback"
+                }`}
+                aria-live="polite"
+              >
+                <strong>{resourceInteractionLocked ? "BLACKOUT LOCK" : "SCENE LOCK"}</strong>
+                <p>
+                  {resourceInteractionLocked
+                    ? "전력 복구 중입니다. 파일 선택, 증거 제출, 보안 입력, 복구 실행이 잠시 중단됩니다."
+                    : "ECHO가 현재 제출 내용을 검토 중입니다. 씬 전환이 끝날 때까지 입력이 잠깁니다."}
+                </p>
               </div>
             ) : null}
             {lastSubmissionReason ? (

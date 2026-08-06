@@ -624,6 +624,20 @@ h1 {
   color: #59d8ff;
 }
 
+.scene-hud-card {
+  border-color: rgba(255, 185, 102, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 185, 102, 0.08), rgba(3, 10, 9, 0.92)),
+    rgba(4, 18, 16, 0.86);
+}
+
+.scene-hud-card strong {
+  color: #ffd092;
+  font-size: clamp(0.9rem, 2vw, 1.18rem);
+  line-height: 1.15;
+  word-break: break-word;
+}
+
 .power-warning .alert-card,
 .power-critical .alert-card,
 .blackout-shell .alert-card {
@@ -971,7 +985,8 @@ pre {
   min-width: 0;
 }
 
-.objective-card {
+.objective-card,
+.scene-runtime-card {
   display: grid;
   gap: 8px;
   margin: 14px 14px 0;
@@ -997,14 +1012,36 @@ pre {
 }
 
 .objective-card p,
-.objective-card small {
+.objective-card small,
+.scene-runtime-card p,
+.scene-runtime-card small {
   margin: 0;
   color: #c8eee6;
 }
 
-.objective-card small {
+.objective-card small,
+.scene-runtime-card small {
   color: #9fbdb5;
   font-size: 0.74rem;
+}
+
+.scene-runtime-card {
+  border-color: rgba(255, 185, 102, 0.24);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 185, 102, 0.11), transparent 42%),
+    rgba(18, 12, 7, 0.72);
+}
+
+.scene-runtime-card span {
+  color: #ffd092;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.scene-runtime-card strong {
+  color: #fff4df;
+  line-height: 1.35;
 }
 
 .message-list {
@@ -1125,6 +1162,15 @@ pre {
 
 .blackout-feedback strong {
   color: #ffb3a5;
+}
+
+.scene-lock-feedback {
+  border-color: rgba(255, 185, 102, 0.32);
+  background: rgba(255, 185, 102, 0.08);
+}
+
+.scene-lock-feedback strong {
+  color: #ffd092;
 }
 
 .evidence-form > button {
