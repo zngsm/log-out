@@ -168,6 +168,18 @@ button {
   opacity: 0.88;
 }
 
+.phase-gameplay {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(112, 247, 207, 0.16), transparent 32%),
+    radial-gradient(circle at 100% 0%, rgba(255, 92, 67, 0.11), transparent 28%),
+    linear-gradient(180deg, #020806 0%, #041310 48%, #010605 100%);
+}
+
+.phase-gameplay .scene-backdrop {
+  visibility: hidden;
+  opacity: 0;
+}
+
 .system-topbar,
 .hud-grid,
 .terminal-grid {
