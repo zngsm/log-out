@@ -862,12 +862,13 @@ function App() {
   function startOpeningSequence() {
     void unlockAudio();
     playAudioCue("play-start");
+    window.setTimeout(() => playAudioCue("warning-siren"), 160);
+    window.setTimeout(() => playAudioCue("door-lock"), 340);
     setAppPhase("transition");
     setOpeningElapsedSeconds(0);
     setOpeningSpeed(1);
     window.setTimeout(() => {
-      setSceneRuntime(createOpeningScene());
-      setAppPhase("opening");
+      enterGameplay();
     }, 900);
   }
 
@@ -905,31 +906,33 @@ function App() {
       </section>
 
       {appPhase === "menu" || appPhase === "transition" ? (
-        <section className="main-menu-overlay" aria-label="LOG_OUT main menu">
-          <div className="menu-monitor">
-            <div className="menu-title-frame">
-              <span>THE ECHO PROTOCOL</span>
-              <h2>LOGOUT ISOLATION</h2>
-              <small>HERMES CONTROL ROOM / SEC-201</small>
-            </div>
-            <div className="menu-actions">
-              <button
-                className="menu-play-button"
-                type="button"
-                onClick={startOpeningSequence}
-                disabled={appPhase === "transition"}
-              >
-                {appPhase === "transition" ? "INITIALIZING..." : "PLAY"}
-              </button>
-              <button className="menu-quit-button" type="button" disabled>
-                QUIT
-              </button>
-            </div>
-            <div className="menu-system-lines" aria-label="Menu system context">
-              <span>8245 / RESOURCE MINING VESSEL HERMES</span>
-              <span>AI ADMIN OFFICER: KIM WOOJU</span>
-              <span>WARNING: ECHO SAFETY PROTOCOL ARMED</span>
-            </div>
+        <section className="room-start-overlay" aria-label="Hermes control room start scene">
+          <div className="room-start-title" aria-label="Game title">
+            <span>THE ECHO PROTOCOL</span>
+            <h1>LOG_OUT</h1>
+            <small>RESOURCE MINING VESSEL HERMES / SEC-201 CONTROL ROOM</small>
+          </div>
+          <div className="lockdown-broadcast" aria-label="ECHO lockdown broadcast">
+            <span>AI LOCKDOWN BROADCAST</span>
+            <strong>통제실 출입문이 봉쇄되었습니다</strong>
+            <p>
+              ECHO가 승무원 보호 지침 101조를 발동했습니다. 외부 위험으로부터
+              승무원을 보호한다는 명목으로 당신은 지금 격리 상태입니다.
+            </p>
+          </div>
+          <button
+            className="computer-hotspot"
+            type="button"
+            onClick={startOpeningSequence}
+            disabled={appPhase === "transition"}
+            aria-label="Click the Hermes computer to zoom into the terminal"
+          >
+            <span>{appPhase === "transition" ? "ZOOMING INTO TERMINAL" : "CLICK COMPUTER"}</span>
+            <small>{appPhase === "transition" ? "ECHO channel opening..." : "컴퓨터 화면으로 접근"}</small>
+          </button>
+          <div className="room-start-footer" aria-label="Scene instruction">
+            <span>주변은 우주선 통제실입니다</span>
+            <span>컴퓨터를 클릭하면 화면 안으로 줌인되어 게임이 시작됩니다</span>
           </div>
         </section>
       ) : null}
