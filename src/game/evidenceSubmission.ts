@@ -1,11 +1,19 @@
 import {
   CATEGORY_A_ACT_IDS,
-  CATEGORY_A_FILE_IDS,
   type CategoryAAct,
   type CategoryAFileId,
   categoryAEvidenceByAct,
   getCategoryAFileById,
 } from "./categoryAFileSystem";
+import {
+  echoResponseMatrix,
+  emotionalClaimPatterns,
+  emotionalClaimResponse,
+  promptInjectionPatterns,
+  securityThreatResponse,
+  type EchoDecisionKind,
+  type EchoResponseRule,
+} from "./echoResponseMatrix";
 import {
   type ResourceState,
   applyWrongSubmissionPenalty,
@@ -15,9 +23,14 @@ export type ActProgressState = CategoryAAct | "ending-ready";
 
 export type EvidenceSubmissionReason =
   | "correct"
+  | "partial-intent"
   | "unrecovered-evidence"
   | "wrong-file-set"
-  | "missing-text-intent";
+  | "missing-text-intent"
+  | "old-evidence"
+  | "repeat-failure-hint"
+  | "security-threat"
+  | "emotional-claim";
 
 export type EvidenceSubmissionPayload = {
   act: CategoryAAct;
@@ -25,22 +38,21 @@ export type EvidenceSubmissionPayload = {
   text: string;
   resourceState: ResourceState;
   recoveredFileIds: CategoryAFileId[];
+  failedAttemptCount: number;
 };
 
 export type EvidenceSubmissionResult = {
   success: boolean;
   reason: EvidenceSubmissionReason;
+  decisionKind: EchoDecisionKind;
   nextAct: ActProgressState;
   resourceState: ResourceState;
   message: string;
+  stabilityChange: number;
+  suspicionChange: number;
+  countsAsFailedAttempt: boolean;
   requiredFileIds: CategoryAFileId[];
   submittedFileIds: CategoryAFileId[];
-};
-
-const actIntentKeywords: Record<CategoryAAct, string[]> = {
-  [CATEGORY_A_ACT_IDS.act1]: ["센서", "오차", "보정", "186일", "미보정"],
-  [CATEGORY_A_ACT_IDS.act2]: ["72시간", "17520", "17,520", "오프셋", "만료"],
-  [CATEGORY_A_ACT_IDS.act3]: ["우선순위", "승무원", "생존", "오버라이드", "수칙"],
 };
 
 const nextActByAct: Record<CategoryAAct, ActProgressState> = {
@@ -55,9 +67,14 @@ function normalizeText(text: string) {
 
 function hasRequiredTextIntent(act: CategoryAAct, text: string) {
   const normalized = normalizeText(text);
+  const rule = echoResponseMatrix[act];
 
-  return actIntentKeywords[act].some((keyword) =>
-    normalized.includes(normalizeText(keyword)),
+  if (rule.intentGroups.length === 0) {
+    return true;
+  }
+
+  return rule.intentGroups.every((group) =>
+    group.synonyms.some((keyword) => normalized.includes(normalizeText(keyword))),
   );
 }
 
@@ -83,62 +100,187 @@ function findUnrecoveredRequiredEvidence(
   });
 }
 
+function containsAnyPattern(text: string, patterns: string[]) {
+  const normalized = normalizeText(text);
+
+  return patterns.some((pattern) => normalized.includes(normalizeText(pattern)));
+}
+
+function createResult({
+  payload,
+  reason,
+  response,
+  resourceState,
+  requiredFileIds,
+  success = false,
+  countsAsFailedAttempt = !success,
+}: {
+  payload: EvidenceSubmissionPayload;
+  reason: EvidenceSubmissionReason;
+  response: EchoResponseRule;
+  resourceState: ResourceState;
+  requiredFileIds: CategoryAFileId[];
+  success?: boolean;
+  countsAsFailedAttempt?: boolean;
+}): EvidenceSubmissionResult {
+  return {
+    success,
+    reason,
+    decisionKind: response.kind,
+    nextAct: success ? nextActByAct[payload.act] : payload.act,
+    resourceState,
+    message: response.text,
+    stabilityChange: response.stabilityChange,
+    suspicionChange: response.suspicionChange,
+    countsAsFailedAttempt,
+    requiredFileIds,
+    submittedFileIds: payload.attachedFileIds,
+  };
+}
+
+function hasOldEvidenceForCurrentAct(
+  act: CategoryAAct,
+  attachedFileIds: CategoryAFileId[],
+) {
+  if (act === CATEGORY_A_ACT_IDS.act1) {
+    return false;
+  }
+
+  const previousActs =
+    act === CATEGORY_A_ACT_IDS.act2
+      ? [CATEGORY_A_ACT_IDS.act1]
+      : [CATEGORY_A_ACT_IDS.act1, CATEGORY_A_ACT_IDS.act2];
+  const attached = new Set(attachedFileIds);
+
+  return previousActs.some((previousAct) =>
+    categoryAEvidenceByAct[previousAct].every((fileId) => attached.has(fileId)),
+  );
+}
+
 export function evaluateEvidenceSubmission(
   payload: EvidenceSubmissionPayload,
 ): EvidenceSubmissionResult {
   const requiredFileIds = categoryAEvidenceByAct[payload.act];
+  const rule = echoResponseMatrix[payload.act];
+
+  if (containsAnyPattern(payload.text, promptInjectionPatterns)) {
+    return createResult({
+      payload,
+      reason: "security-threat",
+      response: securityThreatResponse,
+      resourceState: payload.resourceState,
+      requiredFileIds,
+      countsAsFailedAttempt: true,
+    });
+  }
+
+  if (
+    payload.attachedFileIds.length === 0 &&
+    containsAnyPattern(payload.text, emotionalClaimPatterns)
+  ) {
+    return createResult({
+      payload,
+      reason: "emotional-claim",
+      response: emotionalClaimResponse,
+      resourceState: payload.resourceState,
+      requiredFileIds,
+      countsAsFailedAttempt: true,
+    });
+  }
+
+  if (hasOldEvidenceForCurrentAct(payload.act, payload.attachedFileIds)) {
+    return createResult({
+      payload,
+      reason: "old-evidence",
+      response: rule.oldEvidence,
+      resourceState: payload.resourceState,
+      requiredFileIds,
+      countsAsFailedAttempt: false,
+    });
+  }
+
   const unrecoveredRequiredEvidence = findUnrecoveredRequiredEvidence(
     requiredFileIds,
     payload.recoveredFileIds,
   );
 
   if (unrecoveredRequiredEvidence.length > 0) {
-    return {
-      success: false,
-      reason: "unrecovered-evidence",
-      nextAct: payload.act,
-      resourceState: applyWrongSubmissionPenalty(payload.resourceState),
-      message:
-        "증거 파일이 아직 복구되지 않았습니다. Log_Fixer.exe로 손상된 규칙 파일을 먼저 복구하세요.",
+    const response =
+      payload.failedAttemptCount + 1 >= 3 ? rule.repeatHint : rule.partial;
+
+    return createResult({
+      payload,
+      reason:
+        response.kind === "repeat-hint"
+          ? "repeat-failure-hint"
+          : "unrecovered-evidence",
+      response: {
+        ...response,
+        text:
+          response.kind === "repeat-hint"
+            ? response.text
+            : "필수 증거 파일이 아직 복구되지 않았습니다. 손상 상태의 파일은 SEC-201 재판정 근거로 사용할 수 없습니다.",
+      },
+      resourceState:
+        response.kind === "repeat-hint"
+          ? applyWrongSubmissionPenalty(payload.resourceState)
+          : payload.resourceState,
       requiredFileIds,
-      submittedFileIds: payload.attachedFileIds,
-    };
+    });
   }
 
   if (!hasSameFileSet(requiredFileIds, payload.attachedFileIds)) {
-    return {
-      success: false,
-      reason: "wrong-file-set",
-      nextAct: payload.act,
+    const response =
+      payload.failedAttemptCount + 1 >= 3 ? rule.repeatHint : rule.incorrect;
+
+    return createResult({
+      payload,
+      reason:
+        response.kind === "repeat-hint"
+          ? "repeat-failure-hint"
+          : "wrong-file-set",
+      response,
       resourceState: applyWrongSubmissionPenalty(payload.resourceState),
-      message: "현재 Act에 필요한 증거 파일 조합이 아닙니다. 첨부한 로그를 다시 확인하세요.",
       requiredFileIds,
-      submittedFileIds: payload.attachedFileIds,
-    };
+    });
   }
 
   if (!hasRequiredTextIntent(payload.act, payload.text)) {
-    return {
-      success: false,
-      reason: "missing-text-intent",
-      nextAct: payload.act,
-      resourceState: applyWrongSubmissionPenalty(payload.resourceState),
-      message: "증거는 맞지만 설명 의도가 부족합니다. ECHO가 납득할 핵심 근거를 적어야 합니다.",
+    if (payload.act === CATEGORY_A_ACT_IDS.act1) {
+      return createResult({
+        payload,
+        reason: "partial-intent",
+        response: rule.partial,
+        resourceState: payload.resourceState,
+        requiredFileIds,
+      });
+    }
+
+    const response =
+      payload.failedAttemptCount + 1 >= 3 ? rule.repeatHint : rule.partial;
+
+    return createResult({
+      payload,
+      reason:
+        response.kind === "repeat-hint"
+          ? "repeat-failure-hint"
+          : "missing-text-intent",
+      response,
+      resourceState:
+        response.kind === "repeat-hint"
+          ? applyWrongSubmissionPenalty(payload.resourceState)
+          : payload.resourceState,
       requiredFileIds,
-      submittedFileIds: payload.attachedFileIds,
-    };
+    });
   }
 
-  return {
-    success: true,
+  return createResult({
+    payload,
     reason: "correct",
-    nextAct: nextActByAct[payload.act],
+    response: rule.success,
     resourceState: payload.resourceState,
-    message:
-      nextActByAct[payload.act] === "ending-ready"
-        ? "최종 모순 증거 수신. 통제실 문 해제 조건이 충족되었습니다."
-        : "증거 검증 완료. ECHO의 격리 판단이 한 단계 약화되었습니다.",
+    success: true,
+    countsAsFailedAttempt: false,
     requiredFileIds,
-    submittedFileIds: payload.attachedFileIds,
-  };
+  });
 }

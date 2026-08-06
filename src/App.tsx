@@ -104,13 +104,33 @@ const actGuidance: Record<
 
 const submissionHelp: Record<EvidenceSubmissionReason, string> = {
   correct: "검증되었습니다. 다음 Act의 목표 카드를 기준으로 새 증거를 찾아보세요.",
+  "partial-intent":
+    "핵심 파일은 맞지만 논리 설명이 부족합니다. Act 1 partial success는 전력 패널티 없이 추가 설명을 요구합니다.",
   "unrecovered-evidence":
-    "필요한 증거가 아직 손상 상태입니다. 보안 폴더 잠금을 해제한 뒤 Log_Fixer.exe에서 복구를 먼저 진행하세요.",
+    "필요한 증거가 아직 손상 상태입니다. 보안 폴더 잠금을 해제한 뒤 Log_Fixer.exe에서 복구를 먼저 진행하세요. 복구 누락은 즉시 전력 패널티를 주지 않습니다.",
   "wrong-file-set":
     "첨부한 파일 조합이 현재 Act와 맞지 않습니다. 파일 뷰어의 Evidence 항목과 현재 목표를 다시 대조하세요.",
   "missing-text-intent":
     "파일은 맞지만 설명이 부족합니다. ECHO가 판단을 바꿀 수 있도록 로그의 핵심 숫자나 충돌 지점을 문장에 포함하세요.",
+  "old-evidence":
+    "이미 지나간 쟁점의 증거입니다. 전력 패널티 없이 현재 Act의 청구 항목으로 되돌립니다.",
+  "repeat-failure-hint":
+    "반복 실패가 감지되어 ECHO가 역추론 힌트를 제공합니다. 이 경우에도 잘못된 제출 위험은 유지됩니다.",
+  "security-threat":
+    "프롬프트 조작이나 비인가 명령으로 분류되었습니다. ECHO 의심도가 크게 상승합니다.",
+  "emotional-claim":
+    "감정적 호소만으로는 격리 해제가 불가능합니다. 증거 파일과 규칙 충돌을 제시해야 합니다.",
 };
+
+const initialFailedAttemptsByAct: Record<CategoryAAct, number> = {
+  [CATEGORY_A_ACT_IDS.act1]: 0,
+  [CATEGORY_A_ACT_IDS.act2]: 0,
+  [CATEGORY_A_ACT_IDS.act3]: 0,
+};
+
+function clampEchoMetric(value: number) {
+  return Math.min(100, Math.max(0, value));
+}
 
 function getActLabel(stage: ActProgressState) {
   if (stage === "ending-ready") {
@@ -184,6 +204,11 @@ function App() {
   const [openingSpeed, setOpeningSpeed] = useState(1);
   const [endingConfirmed, setEndingConfirmed] = useState(false);
   const [sceneRuntime, setSceneRuntime] = useState(() => createMenuScene());
+  const [echoStability, setEchoStability] = useState(100);
+  const [echoSuspicion, setEchoSuspicion] = useState(0);
+  const [failedAttemptsByAct, setFailedAttemptsByAct] = useState(
+    initialFailedAttemptsByAct,
+  );
 
   const selectedFile = getCategoryAFileById(selectedFileId);
   const quarantineRules = getCategoryAFileById(CATEGORY_A_FILE_IDS.quarantineRules);
@@ -413,6 +438,7 @@ function App() {
       text: messageInput,
       resourceState,
       recoveredFileIds: Array.from(recoveredFileIds),
+      failedAttemptCount: failedAttemptsByAct[stage],
     });
     const submittedAct = stage;
     const submittedFiles = attachedFileIds;
@@ -446,11 +472,25 @@ function App() {
   ) {
     setResourceState(result.resourceState);
     setLastSubmissionReason(result.reason);
+    setEchoStability((current) => clampEchoMetric(current + result.stabilityChange));
+    setEchoSuspicion((current) => clampEchoMetric(current + result.suspicionChange));
+    setFailedAttemptsByAct((current) => ({
+      ...current,
+      [submittedAct]: result.success
+        ? 0
+        : result.countsAsFailedAttempt
+          ? current[submittedAct] + 1
+          : current[submittedAct],
+    }));
     setEchoMessages((current) => [
       ...current,
       {
         speaker: "ECHO",
-        text: result.message,
+        text: `${result.message} [stability ${result.stabilityChange >= 0 ? "+" : ""}${
+          result.stabilityChange
+        } / suspicion ${result.suspicionChange >= 0 ? "+" : ""}${
+          result.suspicionChange
+        }]`,
       },
     ]);
 
@@ -729,6 +769,14 @@ function App() {
           <small>
             {sceneRuntime.inputLocked ? "INPUT LOCKED" : "INPUT READY"} /{" "}
             {sceneRuntime.exitCondition}
+          </small>
+        </div>
+        <div className="hud-card echo-state-card">
+          <span>ECHO STATE / {lastSubmissionReason ?? "monitoring"}</span>
+          <strong>{echoStability}% STABLE</strong>
+          <small>
+            suspicion {echoSuspicion}% / failed attempts{" "}
+            {isEndingReady ? 0 : failedAttemptsByAct[stage]}
           </small>
         </div>
         <div className="hud-card objective-hud-card">
