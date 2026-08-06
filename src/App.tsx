@@ -54,6 +54,8 @@ type EchoMessage = {
 };
 
 type AppPhase = "menu" | "transition" | "opening" | "gameplay";
+type LogFixerMode = "Header Repair" | "Offset Correction" | "Text Reconstruction";
+type LogFixerStatus = "idle" | "running" | "success" | "error";
 
 const visibleDirectories = [
   CATEGORY_A_DIRECTORY_PATHS.logsSensors,
@@ -65,6 +67,14 @@ const visibleDirectories = [
   CATEGORY_A_DIRECTORY_PATHS.systemSecurity,
   CATEGORY_A_DIRECTORY_PATHS.recycleBin,
 ];
+
+const logFixerModes: LogFixerMode[] = [
+  "Header Repair",
+  "Offset Correction",
+  "Text Reconstruction",
+];
+
+const LOG_FIXER_TARGET_PATH = "/System/Security/quarantine_rules.conf";
 
 const initialEchoMessages: EchoMessage[] = [
   {
@@ -276,6 +286,15 @@ function App() {
   const [fileSearch, setFileSearch] = useState("");
   const [copiedPath, setCopiedPath] = useState("");
   const [showDebugHints, setShowDebugHints] = useState(false);
+  const [logFixerOpen, setLogFixerOpen] = useState(false);
+  const [logFixerPathInput, setLogFixerPathInput] = useState(LOG_FIXER_TARGET_PATH);
+  const [logFixerMode, setLogFixerMode] = useState<LogFixerMode>("Header Repair");
+  const [logFixerStatus, setLogFixerStatus] = useState<LogFixerStatus>("idle");
+  const [logFixerProgress, setLogFixerProgress] = useState(0);
+  const [logFixerLines, setLogFixerLines] = useState<string[]>([
+    "Log_Fixer.exe v1.2 ready.",
+    "Manual requires mode [3] Text Reconstruction for #404_CORRUPTED sectors.",
+  ]);
 
   const selectedFile = getCategoryAFileById(selectedFileId);
   const quarantineRules = getCategoryAFileById(CATEGORY_A_FILE_IDS.quarantineRules);
@@ -490,44 +509,102 @@ function App() {
     selectAndAttachFile(CATEGORY_A_FILE_IDS.quarantineRules);
   }
 
-  function recoverQuarantineRules() {
+  function completeQuarantineRulesRecovery() {
+    setRecoveredFileIds((current) => {
+      const next = new Set(current);
+      next.add(CATEGORY_A_FILE_IDS.quarantineRules);
+      return next;
+    });
+    selectAndAttachFile(CATEGORY_A_FILE_IDS.quarantineRules);
+    setEchoMessages((current) => [
+      ...current,
+      {
+        speaker: "SYSTEM",
+        text:
+          recoveryDelayMs > 0
+            ? "Log_Fixer.exe completed after degraded-power retry. quarantine_rules.conf recovered."
+            : "Log_Fixer.exe completed. quarantine_rules.conf recovered and eligible for Act 2 evidence.",
+      },
+    ]);
+  }
+
+  function openLogFixerProgram(targetPath = LOG_FIXER_TARGET_PATH) {
+    setSelectedFileId(CATEGORY_A_FILE_IDS.logFixer);
+    setLogFixerOpen(true);
+    setLogFixerPathInput(targetPath);
+    setLogFixerStatus("idle");
+    setLogFixerProgress(0);
+    setLogFixerLines([
+      "CUI window attached to Hermes OS.",
+      `TARGET=${targetPath}`,
+      "Select repair mode. Manual hint: Text Reconstruction.",
+    ]);
+  }
+
+  function runLogFixerProgram(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+
     if (interactionLocked) {
       setPasswordError("BLACKOUT / 전력 복구 후 Log_Fixer.exe를 다시 실행하세요.");
       return;
     }
 
     if (!unlockedSecurity) {
-      setPasswordError("RECOVERY BLOCKED / 먼저 /System/Security 비밀번호를 해제해야 합니다.");
-      setResourceState((current) => applyWrongSubmissionPenalty(current));
-      return;
-    }
-
-    const commitRecovery = () => {
-      setRecoveredFileIds((current) => {
-        const next = new Set(current);
-        next.add(CATEGORY_A_FILE_IDS.quarantineRules);
-        return next;
-      });
-      selectAndAttachFile(CATEGORY_A_FILE_IDS.quarantineRules);
-      setEchoMessages((current) => [
+      setLogFixerStatus("error");
+      setLogFixerLines((current) => [
         ...current,
-        {
-          speaker: "SYSTEM",
-          text:
-            recoveryDelayMs > 0
-              ? "Log_Fixer.exe completed after degraded-power retry. quarantine_rules.conf recovered."
-              : "Log_Fixer.exe completed. quarantine_rules.conf recovered and eligible for Act 2 evidence.",
-        },
+        "ERR_ACCESS_DENIED: /System/Security remains locked. Enter security password first.",
       ]);
-    };
-
-    if (recoveryDelayMs > 0) {
-      setPasswordError(`RECOVERY DELAY / ${powerState.name} power state slows Log_Fixer.`);
-      window.setTimeout(commitRecovery, recoveryDelayMs);
       return;
     }
 
-    commitRecovery();
+    if (logFixerPathInput.trim() !== LOG_FIXER_TARGET_PATH) {
+      setLogFixerStatus("error");
+      setLogFixerLines((current) => [
+        ...current,
+        `ERR_TARGET_UNSUPPORTED: ${logFixerPathInput || "(empty path)"}`,
+        "Recoverable error. Enter /System/Security/quarantine_rules.conf.",
+      ]);
+      return;
+    }
+
+    if (logFixerMode !== "Text Reconstruction") {
+      setLogFixerStatus("error");
+      setLogFixerLines((current) => [
+        ...current,
+        `ERR_MODE_MISMATCH: ${logFixerMode}`,
+        "Recoverable error. #404_CORRUPTED sector requires Text Reconstruction.",
+      ]);
+      return;
+    }
+
+    setLogFixerStatus("running");
+    setLogFixerProgress(0);
+    setLogFixerLines((current) => [
+      ...current,
+      "MODE=Text Reconstruction accepted.",
+      "Scanning sector headers...",
+    ]);
+
+    const totalDelayMs = 1400 + recoveryDelayMs;
+    const ticks = [
+      { progress: 24, line: "0x00AF :: #404_CORRUPTED_SECTOR_START located." },
+      { progress: 52, line: "0x04C1 :: byte stream re-indexed [████░░░░]." },
+      { progress: 78, line: "0x091D :: TIME_OFFSET_VALUE fragment restored." },
+      { progress: 100, line: "RESTORED: Time_Offset_Value +17520_HOURS." },
+    ];
+
+    ticks.forEach((tick, index) => {
+      window.setTimeout(() => {
+        setLogFixerProgress(tick.progress);
+        setLogFixerLines((current) => [...current, tick.line]);
+
+        if (tick.progress === 100) {
+          setLogFixerStatus("success");
+          completeQuarantineRulesRecovery();
+        }
+      }, ((index + 1) / ticks.length) * totalDelayMs);
+    });
   }
 
   function copySelectedPath() {
@@ -545,7 +622,7 @@ function App() {
       return;
     }
 
-    setSelectedFileId(CATEGORY_A_FILE_IDS.logFixer);
+    openLogFixerProgram(selectedFile.path);
     setEchoMessages((current) => [
       ...current,
       {
@@ -886,6 +963,65 @@ function App() {
 
       {appPhase === "gameplay" ? (
         <>
+      {logFixerOpen ? (
+        <section className="log-fixer-modal" aria-label="Log Fixer mini program">
+          <form className="log-fixer-window" onSubmit={runLogFixerProgram}>
+            <div className="log-fixer-titlebar">
+              <span>Log_Fixer.exe / CUI Recovery Shell</span>
+              <button type="button" onClick={() => setLogFixerOpen(false)}>
+                CLOSE
+              </button>
+            </div>
+            <label>
+              Target path
+              <input
+                value={logFixerPathInput}
+                onChange={(event) => setLogFixerPathInput(event.target.value)}
+                placeholder="/System/Security/quarantine_rules.conf"
+              />
+            </label>
+            <fieldset>
+              <legend>Repair mode</legend>
+              {logFixerModes.map((mode) => (
+                <label key={mode}>
+                  <input
+                    type="radio"
+                    name="log-fixer-mode"
+                    value={mode}
+                    checked={logFixerMode === mode}
+                    onChange={() => setLogFixerMode(mode)}
+                  />
+                  {mode}
+                </label>
+              ))}
+            </fieldset>
+            <div className="log-fixer-progress" aria-label="Log Fixer progress">
+              <span style={{ width: `${logFixerProgress}%` }} />
+            </div>
+            <div className="byte-scroll" aria-label="Log Fixer byte scroll">
+              {logFixerLines.slice(-8).map((line, index) => (
+                <code key={`${line}-${index}`}>{line}</code>
+              ))}
+            </div>
+            {logFixerStatus === "success" ? (
+              <div className="restored-line-highlight">
+                quarantine_rules.conf restored and attached to ECHO.
+              </div>
+            ) : null}
+            <button
+              className="log-fixer-run"
+              type="submit"
+              disabled={logFixerStatus === "running" || isQuarantineRecovered}
+            >
+              {logFixerStatus === "running"
+                ? "RECONSTRUCTING..."
+                : isQuarantineRecovered
+                  ? "RECOVERED"
+                  : "RUN REPAIR"}
+            </button>
+          </form>
+        </section>
+      ) : null}
       <section className="system-topbar" aria-label="Hermes OS status">
         <div>
           <p className="eyebrow">HERMES OS / CONTROL ROOM TERMINAL</p>
@@ -1202,7 +1338,7 @@ function App() {
               {selectedFile.id === CATEGORY_A_FILE_IDS.logFixer ? (
                 <div className="recovery-console">
                   <div>
-                    <span>PRIMARY TARGET</span>
+                    <span>LOG_FIXER MINI PROGRAM</span>
                     <strong>{quarantineRules?.path}</strong>
                     <p>
                       Status:{" "}
@@ -1213,15 +1349,15 @@ function App() {
                           : "LOCKED BY /System/Security"}
                     </p>
                     <p className="soft-hint">
-                      복구 후 이 파일을 다시 클릭하면 Act 2 증거 태그로 첨부됩니다.
+                      Manual mode required: Text Reconstruction. Wrong targets and modes are recoverable.
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={recoverQuarantineRules}
+                    onClick={() => openLogFixerProgram()}
                     disabled={isQuarantineRecovered || interactionLocked}
                   >
-                    {isQuarantineRecovered ? "RECOVERED" : "RUN LOG_FIXER"}
+                    {isQuarantineRecovered ? "RECOVERED" : "OPEN CUI"}
                   </button>
                 </div>
               ) : null}
