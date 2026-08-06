@@ -180,6 +180,45 @@ function getRuntimeStatusLabel({
   return runtimeState;
 }
 
+function formatClock(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60)
+    .toString()
+    .padStart(2, "0");
+  const seconds = Math.floor(totalSeconds % 60)
+    .toString()
+    .padStart(2, "0");
+
+  return `${minutes}:${seconds}`;
+}
+
+function getFileAccessDelayMs(powerStateName: string) {
+  if (powerStateName === "Caution") {
+    return 350;
+  }
+
+  if (powerStateName === "Warning") {
+    return 650;
+  }
+
+  if (powerStateName === "Critical") {
+    return 950;
+  }
+
+  return 0;
+}
+
+function getRecoveryDelayMs(powerStateName: string) {
+  if (powerStateName === "Warning") {
+    return 900;
+  }
+
+  if (powerStateName === "Critical") {
+    return 1600;
+  }
+
+  return 0;
+}
+
 function App() {
   const [selectedFileId, setSelectedFileId] = useState<CategoryAFileId>(
     CATEGORY_A_FILE_IDS.sensorCalibLog,
@@ -209,6 +248,8 @@ function App() {
   const [failedAttemptsByAct, setFailedAttemptsByAct] = useState(
     initialFailedAttemptsByAct,
   );
+  const [pendingFileId, setPendingFileId] = useState<CategoryAFileId | null>(null);
+  const [resourceEvent, setResourceEvent] = useState<string | null>(null);
 
   const selectedFile = getCategoryAFileById(selectedFileId);
   const quarantineRules = getCategoryAFileById(CATEGORY_A_FILE_IDS.quarantineRules);
@@ -232,6 +273,13 @@ function App() {
     selectedIsRecovered && selectedFile?.recoveredContent
       ? selectedFile.recoveredContent
       : selectedFile?.content;
+  const elapsedLabel = formatClock(resourceState.elapsedSeconds);
+  const sessionLengthSeconds = resourceState.mode === "debug" ? 15 * 60 : 60 * 60;
+  const remainingLabel = formatClock(
+    Math.max(0, sessionLengthSeconds - resourceState.elapsedSeconds),
+  );
+  const fileAccessDelayMs = getFileAccessDelayMs(powerState.name);
+  const recoveryDelayMs = getRecoveryDelayMs(powerState.name);
 
   useEffect(() => {
     if (appPhase !== "gameplay" || isEndingReady || resourceState.outcome === "lost") {
@@ -350,8 +398,19 @@ function App() {
       return;
     }
 
-    setSelectedFileId(fileId);
-    attachFile(fileId);
+    const commitSelection = () => {
+      setSelectedFileId(fileId);
+      attachFile(fileId);
+      setPendingFileId(null);
+    };
+
+    if (fileAccessDelayMs > 0) {
+      setPendingFileId(fileId);
+      window.setTimeout(commitSelection, fileAccessDelayMs);
+      return;
+    }
+
+    commitSelection();
   }
 
   function removeAttachedFile(fileId: CategoryAFileId) {
@@ -392,19 +451,32 @@ function App() {
       return;
     }
 
-    setRecoveredFileIds((current) => {
-      const next = new Set(current);
-      next.add(CATEGORY_A_FILE_IDS.quarantineRules);
-      return next;
-    });
-    selectAndAttachFile(CATEGORY_A_FILE_IDS.quarantineRules);
-    setEchoMessages((current) => [
-      ...current,
-      {
-        speaker: "SYSTEM",
-        text: "Log_Fixer.exe completed. quarantine_rules.conf recovered and eligible for Act 2 evidence.",
-      },
-    ]);
+    const commitRecovery = () => {
+      setRecoveredFileIds((current) => {
+        const next = new Set(current);
+        next.add(CATEGORY_A_FILE_IDS.quarantineRules);
+        return next;
+      });
+      selectAndAttachFile(CATEGORY_A_FILE_IDS.quarantineRules);
+      setEchoMessages((current) => [
+        ...current,
+        {
+          speaker: "SYSTEM",
+          text:
+            recoveryDelayMs > 0
+              ? "Log_Fixer.exe completed after degraded-power retry. quarantine_rules.conf recovered."
+              : "Log_Fixer.exe completed. quarantine_rules.conf recovered and eligible for Act 2 evidence.",
+        },
+      ]);
+    };
+
+    if (recoveryDelayMs > 0) {
+      setPasswordError(`RECOVERY DELAY / ${powerState.name} power state slows Log_Fixer.`);
+      window.setTimeout(commitRecovery, recoveryDelayMs);
+      return;
+    }
+
+    commitRecovery();
   }
 
   function handleEvidenceSubmit(event: FormEvent<HTMLFormElement>) {
@@ -494,6 +566,15 @@ function App() {
       },
     ]);
 
+    if (result.resourceState.power < resourceState.power) {
+      setResourceEvent(
+        result.resourceState.blackoutRemainingSeconds > 0
+          ? "BLACKOUT REBOOT / grid collapse detected"
+          : `POWER SURGE / -${resourceState.power - result.resourceState.power}% grid integrity`,
+      );
+      window.setTimeout(() => setResourceEvent(null), 1200);
+    }
+
     if (!result.success) {
       if (
         result.resourceState.blackoutRemainingSeconds > 0 ||
@@ -564,6 +645,8 @@ function App() {
         isBlackout ? "blackout-shell" : ""
       } ${interactionLocked ? "interaction-locked-shell" : ""} ${
         isEndingReady ? "ending-ready-shell" : ""
+      } ${resourceEvent ? "resource-event-shell" : ""} ${
+        powerState.name === "Critical" ? "critical-shake-shell" : ""
       } phase-${appPhase}`}
     >
       <section className="scene-backdrop" aria-label="Hermes control room 3D placeholder">
@@ -675,7 +758,17 @@ function App() {
       {isBlackout ? (
         <section className="system-alert blackout-alert" aria-label="Blackout warning">
           <strong>BLACKOUT</strong>
-          <span>Terminal interaction unstable. Wrong submissions have collapsed the power grid.</span>
+          <span>
+            Reboot lock active. Recovery in{" "}
+            {Math.ceil(resourceState.blackoutRemainingSeconds)}s.
+          </span>
+        </section>
+      ) : null}
+
+      {resourceEvent ? (
+        <section className="system-alert power-surge-alert" aria-label="Power surge warning">
+          <strong>{resourceEvent}</strong>
+          <span>ECHO warning: incorrect procedural claims destabilize Hermes power routing.</span>
         </section>
       ) : null}
 
@@ -732,6 +825,7 @@ function App() {
         <div className="hud-card">
           <span>O₂ LEVEL</span>
           <strong>{resourceState.oxygen.toFixed(0)}%</strong>
+          <small>drain x{powerState.oxygenMultiplier.toFixed(2)}</small>
           <div className="meter">
             <span style={{ width: `${resourceState.oxygen}%` }} />
           </div>
@@ -739,15 +833,35 @@ function App() {
         <div className="hud-card">
           <span>POWER GRID / {powerState.name}</span>
           <strong>{resourceState.power}%</strong>
+          <small>
+            {isBlackout
+              ? `reboot ${Math.ceil(resourceState.blackoutRemainingSeconds)}s`
+              : `file delay ${fileAccessDelayMs}ms / fixer delay ${recoveryDelayMs}ms`}
+          </small>
           <div className="meter meter-blue">
             <span style={{ width: `${resourceState.power}%` }} />
           </div>
         </div>
+        <div className="hud-card timer-hud-card">
+          <span>{resourceState.mode.toUpperCase()} SESSION</span>
+          <strong>{remainingLabel}</strong>
+          <small>elapsed {elapsedLabel} / deterministic resource timer</small>
+        </div>
         <div className="hud-card alert-card">
-          <span>VISUAL FEEDBACK</span>
-          <strong>{isEndingReady ? "DOOR OPEN" : isBlackout ? "BLACKOUT" : powerState.name}</strong>
+          <span>RED ALERT FEEDBACK</span>
+          <strong>
+            {resourceEvent
+              ? "POWER SURGE"
+              : isEndingReady
+                ? "DOOR OPEN"
+                : isBlackout
+                  ? "BLACKOUT"
+                  : powerState.name}
+          </strong>
           <small>
-            {isEndingReady
+            {resourceEvent
+              ? "monitor glow and surge alert active"
+              : isEndingReady
               ? "Normal Ending A sequence available"
               : isBlackout
                 ? "Screen shake and emergency wash active"
@@ -836,7 +950,9 @@ function App() {
                         <span className="file-icon">{runtimeState === "recovered" ? "◆" : "▣"}</span>
                         <span>{file.name}</span>
                         <small>
-                          {interactionLocked
+                          {pendingFileId === file.id
+                            ? "accessing"
+                            : interactionLocked
                             ? resourceInteractionLocked
                               ? "blackout"
                               : "scene-lock"
