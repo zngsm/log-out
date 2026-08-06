@@ -688,6 +688,38 @@ h1 {
   font-size: clamp(1.15rem, 3vw, 1.7rem);
 }
 
+.audio-hud-card {
+  border-color: rgba(112, 247, 207, 0.28);
+}
+
+.audio-hud-card strong {
+  color: #70f7cf;
+  font-size: clamp(1.15rem, 3vw, 1.7rem);
+}
+
+.audio-controls {
+  display: grid;
+  grid-template-columns: auto auto minmax(70px, 1fr);
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.audio-controls button {
+  border: 1px solid rgba(112, 247, 207, 0.2);
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #07100f;
+  background: #70f7cf;
+  cursor: pointer;
+  font-size: 0.62rem;
+}
+
+.audio-controls input {
+  min-width: 0;
+  accent-color: #70f7cf;
+}
+
 .power-warning .alert-card,
 .power-critical .alert-card,
 .blackout-shell .alert-card {

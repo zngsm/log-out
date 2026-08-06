@@ -47,6 +47,10 @@ import {
   createMenuScene,
   createOpeningScene,
 } from "./game/sceneRuntime";
+import {
+  createAudioRuntime,
+  type AudioCue,
+} from "./game/audioSystem";
 
 type EchoMessage = {
   speaker: "ECHO" | "PLAYER" | "SYSTEM";
@@ -75,6 +79,7 @@ const logFixerModes: LogFixerMode[] = [
 ];
 
 const LOG_FIXER_TARGET_PATH = "/System/Security/quarantine_rules.conf";
+const audioRuntime = createAudioRuntime();
 
 const initialEchoMessages: EchoMessage[] = [
   {
@@ -295,6 +300,9 @@ function App() {
     "Log_Fixer.exe v1.2 ready.",
     "Manual requires mode [3] Text Reconstruction for #404_CORRUPTED sectors.",
   ]);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [audioMuted, setAudioMuted] = useState(false);
+  const [audioVolume, setAudioVolume] = useState(0.55);
 
   const selectedFile = getCategoryAFileById(selectedFileId);
   const quarantineRules = getCategoryAFileById(CATEGORY_A_FILE_IDS.quarantineRules);
@@ -326,6 +334,18 @@ function App() {
   const fileAccessDelayMs = getFileAccessDelayMs(powerState.name);
   const recoveryDelayMs = getRecoveryDelayMs(powerState.name);
   const normalizedFileSearch = fileSearch.trim().toLowerCase();
+
+  function playAudioCue(cue: AudioCue) {
+    audioRuntime.playCue(cue);
+  }
+
+  async function unlockAudio() {
+    await audioRuntime.unlock();
+    audioRuntime.muted = audioMuted;
+    audioRuntime.volume = audioVolume;
+    setAudioEnabled(audioRuntime.enabled);
+    playAudioCue("ambient");
+  }
 
   function getVisibleFilesForDirectory(directoryPath: string) {
     const files = getCategoryAFilesByDirectory(directoryPath);
@@ -385,6 +405,43 @@ function App() {
 
     return () => window.clearInterval(timerId);
   }, [appPhase, openingSpeed]);
+
+  useEffect(() => {
+    if (!audioEnabled || appPhase !== "opening") {
+      return;
+    }
+
+    if (openingBeat.id === "alarm") {
+      playAudioCue("warning-siren");
+    }
+
+    if (openingBeat.id === "door-lock") {
+      playAudioCue("decompression");
+      window.setTimeout(() => playAudioCue("door-lock"), 180);
+    }
+
+    if (openingBeat.id === "crew-comms") {
+      playAudioCue("notification");
+    }
+
+    if (openingBeat.id === "echo-lockdown") {
+      playAudioCue("comm-glitch");
+      window.setTimeout(() => playAudioCue("echo-ping"), 200);
+      window.setTimeout(() => playAudioCue("typing"), 360);
+    }
+
+    if (openingBeat.id === "terminal-handoff") {
+      playAudioCue("hud-ignition");
+    }
+  }, [audioEnabled, appPhase, openingBeat.id]);
+
+  useEffect(() => {
+    audioRuntime.muted = audioMuted;
+  }, [audioMuted]);
+
+  useEffect(() => {
+    audioRuntime.volume = audioVolume;
+  }, [audioVolume]);
 
   useEffect(() => {
     if (resourceState.outcome === "lost") {
@@ -725,6 +782,9 @@ function App() {
           ? "BLACKOUT REBOOT / grid collapse detected"
           : `POWER SURGE / -${resourceState.power - result.resourceState.power}% grid integrity`,
       );
+      playAudioCue(
+        result.resourceState.blackoutRemainingSeconds > 0 ? "blackout" : "wrong-surge",
+      );
       window.setTimeout(() => setResourceEvent(null), 1200);
     }
 
@@ -743,6 +803,7 @@ function App() {
 
     setAttachedFileIds([]);
     setMessageInput(getDefaultPrompt(result.nextAct));
+    playAudioCue(result.nextAct === "ending-ready" ? "door-lock" : "success");
 
     if (result.nextAct === "ending-ready") {
       setSceneRuntime(createFinalReviewScene());
@@ -769,6 +830,8 @@ function App() {
   }
 
   function startOpeningSequence() {
+    void unlockAudio();
+    playAudioCue("play-start");
     setAppPhase("transition");
     setOpeningElapsedSeconds(0);
     setOpeningSpeed(1);
@@ -781,6 +844,7 @@ function App() {
   function enterGameplay() {
     setAppPhase("gameplay");
     setSceneRuntime(createActEntryScene(CATEGORY_A_ACT_IDS.act1));
+    playAudioCue("hud-ignition");
   }
 
   function skipToTerminal() {
@@ -1104,6 +1168,28 @@ function App() {
             suspicion {echoSuspicion}% / failed attempts{" "}
             {isEndingReady ? 0 : failedAttemptsByAct[stage]}
           </small>
+        </div>
+        <div className="hud-card audio-hud-card">
+          <span>AUDIO SYSTEM</span>
+          <strong>{audioMuted ? "MUTED" : audioEnabled ? "ONLINE" : "LOCKED"}</strong>
+          <small>synthetic fallback cues / volume {Math.round(audioVolume * 100)}%</small>
+          <div className="audio-controls">
+            <button type="button" onClick={() => void unlockAudio()}>
+              ENABLE
+            </button>
+            <button type="button" onClick={() => setAudioMuted((current) => !current)}>
+              {audioMuted ? "UNMUTE" : "MUTE"}
+            </button>
+            <input
+              aria-label="Audio volume"
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={audioVolume}
+              onChange={(event) => setAudioVolume(Number(event.target.value))}
+            />
+          </div>
         </div>
         <div className="hud-card objective-hud-card">
           <span>{isEndingReady ? "CURRENT OBJECTIVE" : `${getActLabel(stage)} OBJECTIVE`}</span>
