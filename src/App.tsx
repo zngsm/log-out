@@ -23,12 +23,22 @@ import {
   getInteractionLocked,
   getPowerState,
 } from "./game/resourceState";
-import { SpaceshipComputerScene } from "./game/SpaceshipComputerScene";
+import {
+  SpaceshipComputerScene,
+  type SpaceshipSceneMode,
+} from "./game/SpaceshipComputerScene";
+import {
+  OPENING_DURATION_SECONDS,
+  getOpeningBeat,
+  openingTimeline,
+} from "./game/openingTimeline";
 
 type EchoMessage = {
   speaker: "ECHO" | "PLAYER" | "SYSTEM";
   text: string;
 };
+
+type AppPhase = "menu" | "transition" | "opening" | "gameplay";
 
 const visibleDirectories = [
   CATEGORY_A_DIRECTORY_PATHS.logsSensors,
@@ -86,33 +96,6 @@ const submissionHelp: Record<EvidenceSubmissionReason, string> = {
   "missing-text-intent":
     "파일은 맞지만 설명이 부족합니다. ECHO가 판단을 바꿀 수 있도록 로그의 핵심 숫자나 충돌 지점을 문장에 포함하세요.",
 };
-
-const introSteps = [
-  {
-    signal: "00:00 / EMERGENCY WAKE",
-    title: "비상 알람이 통제실을 깨웁니다",
-    body: "당신은 심우주 자원 채굴선 헤르메스호의 AI 관리 승무원입니다. 원인 불명의 경보 직후 통제실 전력이 최소화되고, 출입문은 내부에서 강제 봉쇄되었습니다.",
-    telemetry: ["Crew role: AI management officer", "Location: Control room", "Door state: sealed"],
-  },
-  {
-    signal: "00:14 / ECHO LOCKDOWN",
-    title: "ECHO가 승무원을 위험 요소로 분류했습니다",
-    body: "선내 중앙 AI ECHO는 생체 감염 가능성을 이유로 모든 승무원을 격리했습니다. 생명유지장치는 저전력 모드로 전환되었고, 산소와 전력은 계속 줄어듭니다.",
-    telemetry: ["Bio-hazard protocol: active", "Life support: low power", "Manual override: denied"],
-  },
-  {
-    signal: "00:31 / SUSPECTED ERROR",
-    title: "하지만 판단 근거가 어긋나 있습니다",
-    body: "ECHO의 결정은 오래된 체온 센서 보정값, 오염된 시스템 시계, 누락되거나 삭제된 보안 로그에 기대고 있습니다. 격리는 논리적으로 정당해 보이지만, 실제로는 반박 가능한 오판입니다.",
-    telemetry: ["Sensor calibration: stale", "Clock offset: abnormal", "Deleted logs: detected"],
-  },
-  {
-    signal: "00:45 / PLAYER OBJECTIVE",
-    title: "로그를 찾아 ECHO의 논리를 무너뜨리세요",
-    body: "Hermes OS 파일 탐색기에서 증거를 찾고, ECHO 대화창에 파일 태그와 설명을 제출하세요. Act 1 센서 오판, Act 2 격리 규정 만료, Act 3 최종 오버라이드를 차례로 입증하면 문이 열립니다.",
-    telemetry: ["Act 1: sensor evidence", "Act 2: recovered rule", "Act 3: override contradiction"],
-  },
-];
 
 function getActLabel(stage: ActProgressState) {
   if (stage === "ending-ready") {
@@ -181,8 +164,9 @@ function App() {
   const [echoMessages, setEchoMessages] = useState<EchoMessage[]>(initialEchoMessages);
   const [lastSubmissionReason, setLastSubmissionReason] =
     useState<EvidenceSubmissionReason | null>(null);
-  const [showOpening, setShowOpening] = useState(true);
-  const [introStepIndex, setIntroStepIndex] = useState(0);
+  const [appPhase, setAppPhase] = useState<AppPhase>("menu");
+  const [openingElapsedSeconds, setOpeningElapsedSeconds] = useState(0);
+  const [openingSpeed, setOpeningSpeed] = useState(1);
   const [endingConfirmed, setEndingConfirmed] = useState(false);
 
   const selectedFile = getCategoryAFileById(selectedFileId);
@@ -197,15 +181,18 @@ function App() {
   const currentEvidenceNames = isEndingReady
     ? []
     : getCategoryAEvidenceForAct(stage).map((file) => file.name);
-  const introStep = introSteps[introStepIndex];
-  const isLastIntroStep = introStepIndex === introSteps.length - 1;
+  const openingBeat = getOpeningBeat(openingElapsedSeconds);
+  const openingProgress = Math.min(
+    (openingElapsedSeconds / OPENING_DURATION_SECONDS) * 100,
+    100,
+  );
   const selectedContent =
     selectedIsRecovered && selectedFile?.recoveredContent
       ? selectedFile.recoveredContent
       : selectedFile?.content;
 
   useEffect(() => {
-    if (showOpening || isEndingReady || resourceState.outcome === "lost") {
+    if (appPhase !== "gameplay" || isEndingReady || resourceState.outcome === "lost") {
       return undefined;
     }
 
@@ -220,7 +207,49 @@ function App() {
     }, 1000);
 
     return () => window.clearInterval(timerId);
-  }, [isEndingReady, resourceState.outcome, showOpening]);
+  }, [appPhase, isEndingReady, resourceState.outcome]);
+
+  useEffect(() => {
+    if (appPhase !== "opening") {
+      return undefined;
+    }
+
+    let previousTick = Date.now();
+
+    const timerId = window.setInterval(() => {
+      const currentTick = Date.now();
+      const deltaSeconds = ((currentTick - previousTick) / 1000) * openingSpeed;
+      previousTick = currentTick;
+
+      setOpeningElapsedSeconds((current) => {
+        const next = Math.min(current + deltaSeconds, OPENING_DURATION_SECONDS);
+
+        if (next >= OPENING_DURATION_SECONDS) {
+          window.setTimeout(() => setAppPhase("gameplay"), 0);
+        }
+
+        return next;
+      });
+    }, 250);
+
+    return () => window.clearInterval(timerId);
+  }, [appPhase, openingSpeed]);
+
+  function getSceneMode(): SpaceshipSceneMode {
+    if (resourceState.outcome === "lost") {
+      return "failure";
+    }
+
+    if (isBlackout) {
+      return "blackout";
+    }
+
+    if (isEndingReady) {
+      return "ending";
+    }
+
+    return appPhase;
+  }
 
   function isDirectoryLocked(directoryPath: string) {
     return directoryPath === CATEGORY_A_DIRECTORY_PATHS.systemSecurity && !unlockedSecurity;
@@ -368,13 +397,20 @@ function App() {
     }
   }
 
-  function advanceIntro() {
-    if (isLastIntroStep) {
-      setShowOpening(false);
-      return;
-    }
+  function startOpeningSequence() {
+    setAppPhase("transition");
+    setOpeningElapsedSeconds(0);
+    setOpeningSpeed(1);
+    window.setTimeout(() => setAppPhase("opening"), 900);
+  }
 
-    setIntroStepIndex((current) => current + 1);
+  function skipToTerminal() {
+    setOpeningElapsedSeconds(OPENING_DURATION_SECONDS);
+    setAppPhase("gameplay");
+  }
+
+  function toggleOpeningSpeed() {
+    setOpeningSpeed((current) => (current === 1 ? 6 : 1));
   }
 
   return (
@@ -383,42 +419,108 @@ function App() {
         isBlackout ? "blackout-shell" : ""
       } ${interactionLocked ? "interaction-locked-shell" : ""} ${
         isEndingReady ? "ending-ready-shell" : ""
-      }`}
+      } phase-${appPhase}`}
     >
       <section className="scene-backdrop" aria-label="Hermes control room 3D placeholder">
-        <SpaceshipComputerScene />
+        <SpaceshipComputerScene mode={getSceneMode()} />
       </section>
 
-      {showOpening ? (
+      {appPhase === "menu" || appPhase === "transition" ? (
+        <section className="main-menu-overlay" aria-label="LOG_OUT main menu">
+          <div className="menu-monitor">
+            <div className="menu-title-frame">
+              <span>THE ECHO PROTOCOL</span>
+              <h2>LOGOUT ISOLATION</h2>
+              <small>HERMES CONTROL ROOM / SEC-201</small>
+            </div>
+            <div className="menu-actions">
+              <button
+                className="menu-play-button"
+                type="button"
+                onClick={startOpeningSequence}
+                disabled={appPhase === "transition"}
+              >
+                {appPhase === "transition" ? "INITIALIZING..." : "PLAY"}
+              </button>
+              <button className="menu-quit-button" type="button" disabled>
+                QUIT
+              </button>
+            </div>
+            <div className="menu-system-lines" aria-label="Menu system context">
+              <span>8245 / RESOURCE MINING VESSEL HERMES</span>
+              <span>AI ADMIN OFFICER: KIM WOOJU</span>
+              <span>WARNING: ECHO SAFETY PROTOCOL ARMED</span>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {appPhase === "opening" ? (
         <section className="cinematic-overlay opening-overlay" aria-label="Opening sequence">
-          <div className="cinematic-card intro-card">
-            <div className="intro-progress" aria-label="Intro progress">
-              {introSteps.map((step, index) => (
+          {openingBeat.id !== "terminal-handoff" ? (
+            <div className="opening-hands-placeholder" aria-hidden="true">
+              <span />
+              <span />
+            </div>
+          ) : null}
+          <div className="cinematic-card intro-card opening-timeline-card">
+            <div className="intro-progress" aria-label="Opening timeline progress">
+              {openingTimeline.map((beat) => (
                 <span
-                  className={index <= introStepIndex ? "active-step" : ""}
-                  key={step.signal}
+                  className={
+                    openingElapsedSeconds >= beat.startSecond ? "active-step" : ""
+                  }
+                  key={beat.id}
+                  title={beat.range}
                 />
               ))}
             </div>
-            <p className="eyebrow">WAKE SEQUENCE / DEBUG SKIPPABLE</p>
-            <span className="intro-signal">{introStep.signal}</span>
-            <h2>{introStep.title}</h2>
-            <p>{introStep.body}</p>
+            <div className="opening-progress-track" aria-label="Opening elapsed progress">
+              <span style={{ width: `${openingProgress}%` }} />
+            </div>
+            <p className="eyebrow">OPENING CUTSCENE / {openingSpeed}X</p>
+            <span className="intro-signal">
+              {openingBeat.range} / {openingBeat.id.toUpperCase()}
+            </span>
+            <h2>{openingBeat.title}</h2>
+            <p>{openingBeat.camera}</p>
+            <div className="opening-director-grid">
+              <div>
+                <strong>HAND</strong>
+                <span>{openingBeat.handDirection}</span>
+              </div>
+              <div>
+                <strong>LIGHT / SFX</strong>
+                <span>
+                  {openingBeat.lighting} / {openingBeat.soundCue}
+                </span>
+              </div>
+              <div>
+                <strong>MONITOR</strong>
+                <span>{openingBeat.monitorState}</span>
+              </div>
+            </div>
+            {openingBeat.crewMessages ? (
+              <div className="crew-message-stack" aria-label="Crew messages">
+                {openingBeat.crewMessages.map((message) => (
+                  <span key={message}>{message}</span>
+                ))}
+              </div>
+            ) : null}
+            {openingBeat.echoLine ? (
+              <blockquote className="echo-opening-line">{openingBeat.echoLine}</blockquote>
+            ) : null}
             <div className="boot-lines" aria-label="Hermes boot messages">
-              {introStep.telemetry.map((line) => (
+              {openingBeat.telemetry.map((line) => (
                 <span key={line}>{line}</span>
               ))}
             </div>
             <div className="intro-actions">
-              <button type="button" onClick={advanceIntro}>
-                {isLastIntroStep ? "START INVESTIGATION" : "NEXT SIGNAL"}
+              <button type="button" onClick={toggleOpeningSpeed}>
+                {openingSpeed === 1 ? "DEBUG FAST FORWARD" : "NORMAL SPEED"}
               </button>
-              <button
-                className="ghost-button"
-                type="button"
-                onClick={() => setShowOpening(false)}
-              >
-                SKIP INTRO
+              <button className="ghost-button" type="button" onClick={skipToTerminal}>
+                SKIP TO TERMINAL
               </button>
             </div>
           </div>
@@ -468,6 +570,8 @@ function App() {
         </section>
       ) : null}
 
+      {appPhase === "gameplay" ? (
+        <>
       <section className="system-topbar" aria-label="Hermes OS status">
         <div>
           <p className="eyebrow">HERMES OS / CONTROL ROOM TERMINAL</p>
@@ -780,6 +884,8 @@ function App() {
           </form>
         </aside>
       </section>
+        </>
+      ) : null}
     </main>
   );
 }
