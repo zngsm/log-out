@@ -866,9 +866,10 @@ function App() {
     window.setTimeout(() => playAudioCue("door-lock"), 340);
     setAppPhase("transition");
     setOpeningElapsedSeconds(0);
-    setOpeningSpeed(1);
+    setOpeningSpeed(4);
     window.setTimeout(() => {
-      enterGameplay();
+      setSceneRuntime(createOpeningScene());
+      setAppPhase("opening");
     }, 900);
   }
 
