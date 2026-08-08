@@ -79,7 +79,7 @@ button {
 }
 
 .power-warning::after {
-  opacity: 0.2;
+  opacity: 0.24;
   background:
     repeating-linear-gradient(
       0deg,
@@ -89,6 +89,7 @@ button {
       transparent 9px
     ),
     radial-gradient(circle at 70% 20%, rgba(255, 176, 67, 0.28), transparent 38%);
+  animation: warning-scanline 900ms steps(2, end) infinite;
 }
 
 .power-critical::after,
@@ -128,6 +129,10 @@ button {
 
 .interaction-locked-shell {
   cursor: wait;
+}
+
+.power-critical {
+  cursor: cell;
 }
 
 .scene-backdrop {
@@ -1960,6 +1965,13 @@ pre {
   color: #ffb3a5;
 }
 
+.blackout-shell .terminal-screen-surface,
+.blackout-shell .terminal-grid,
+.blackout-shell .system-topbar,
+.blackout-shell .hud-grid {
+  filter: saturate(0.55) brightness(0.72);
+}
+
 .scene-lock-feedback {
   border-color: rgba(255, 185, 102, 0.32);
   background: rgba(255, 185, 102, 0.08);
@@ -2282,5 +2294,16 @@ pre {
 @keyframes critical-jitter {
   50% {
     transform: translate(1px, -1px);
+  }
+}
+
+@keyframes warning-scanline {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(2px);
   }
 }

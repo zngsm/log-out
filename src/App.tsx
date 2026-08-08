@@ -210,7 +210,7 @@ function formatClock(totalSeconds: number) {
 
 function getFileAccessDelayMs(powerStateName: string) {
   if (powerStateName === "Caution") {
-    return 350;
+    return 500;
   }
 
   if (powerStateName === "Warning") {
@@ -226,14 +226,34 @@ function getFileAccessDelayMs(powerStateName: string) {
 
 function getRecoveryDelayMs(powerStateName: string) {
   if (powerStateName === "Warning") {
-    return 900;
+    return 1400;
   }
 
   if (powerStateName === "Critical") {
-    return 1600;
+    return 2200;
   }
 
   return 0;
+}
+
+function getPressureFeedback(powerStateName: string) {
+  if (powerStateName === "Blackout") {
+    return "OS monitor forced reboot. 10-second silent lock, then emergency 10% power restore.";
+  }
+
+  if (powerStateName === "Critical") {
+    return "Red vignette, cursor instability, peripheral shutdown, O2 drain x2.00.";
+  }
+
+  if (powerStateName === "Warning") {
+    return "Red lighting, horizontal glitch, Log_Fixer runtime doubled, O2 drain x1.50.";
+  }
+
+  if (powerStateName === "Caution") {
+    return "Orange emergency wash, file/viewer access lag 0.5s, O2 drain x1.25.";
+  }
+
+  return "Cool-blue normal operation, no input delay, O2 drain x1.00.";
 }
 
 function getFileIconLabel(fileName: string, runtimeState: string) {
@@ -463,6 +483,31 @@ function App() {
       setSceneRuntime(createActEntryScene(stage));
     }
   }, [appPhase, isBlackout, resourceState.outcome, sceneRuntime.phase, stage]);
+
+  useEffect(() => {
+    if (appPhase !== "gameplay" || !audioEnabled) {
+      return;
+    }
+
+    if (isBlackout) {
+      playAudioCue("blackout");
+      return;
+    }
+
+    if (powerState.name === "Critical") {
+      playAudioCue("warning-siren");
+      return;
+    }
+
+    if (powerState.name === "Warning") {
+      playAudioCue("comm-glitch");
+      return;
+    }
+
+    if (powerState.name === "Caution") {
+      playAudioCue("wrong-surge");
+    }
+  }, [appPhase, audioEnabled, isBlackout, powerState.name]);
 
   function getSceneMode(): SpaceshipSceneMode {
     if (resourceState.outcome === "lost") {
@@ -1028,8 +1073,8 @@ function App() {
         <section className="system-alert blackout-alert" aria-label="Blackout warning">
           <strong>BLACKOUT</strong>
           <span>
-            Reboot lock active. Recovery in{" "}
-            {Math.ceil(resourceState.blackoutRemainingSeconds)}s.
+            OS monitor forced reboot. Silence window active. Recovery in{" "}
+            {Math.ceil(resourceState.blackoutRemainingSeconds)}s, then emergency grid returns at 10%.
           </span>
         </section>
       ) : null}
@@ -1217,8 +1262,8 @@ function App() {
           <strong>{resourceState.power}%</strong>
           <small>
             {isBlackout
-              ? `reboot ${Math.ceil(resourceState.blackoutRemainingSeconds)}s`
-              : `file delay ${fileAccessDelayMs}ms / fixer delay ${recoveryDelayMs}ms`}
+              ? `silent reboot ${Math.ceil(resourceState.blackoutRemainingSeconds)}s`
+              : `file delay ${fileAccessDelayMs}ms / fixer extra ${recoveryDelayMs}ms`}
           </small>
           <div className="meter meter-blue">
             <span style={{ width: `${resourceState.power}%` }} />
@@ -1247,7 +1292,7 @@ function App() {
               ? "Normal Ending A sequence available"
               : isBlackout
                 ? "Screen shake and emergency wash active"
-                : "HUD tone tracks current power risk"}
+                : getPressureFeedback(powerState.name)}
           </small>
         </div>
         <div className="hud-card">
