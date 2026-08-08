@@ -89,7 +89,7 @@ const initialEchoMessages: EchoMessage[] = [
   },
   {
     speaker: "SYSTEM",
-    text: "파일을 클릭하면 ECHO 입력창에 증거 태그가 첨부됩니다. 현재 목표: Act 1 센서 오판 근거 제출.",
+    text: "Hermes OS 파일 탐색 권한이 제한적으로 복구되었습니다. 파일을 읽고, 증거로 쓸 항목만 ECHO 채널에 첨부하십시오.",
   },
 ];
 
@@ -260,7 +260,6 @@ function App() {
     CATEGORY_A_FILE_IDS.sensorCalibLog,
   );
   const [attachedFileIds, setAttachedFileIds] = useState<CategoryAFileId[]>([
-    CATEGORY_A_FILE_IDS.sensorCalibLog,
   ]);
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -1468,18 +1467,20 @@ function App() {
                 </div>
                 <div>
                   <dt>Role</dt>
-                  <dd>{selectedFile.role}</dd>
+                  <dd>{showDebugHints ? selectedFile.role : selectedFile.kind}</dd>
                 </div>
                 <div>
                   <dt>Evidence</dt>
                   <dd>
-                    {selectedFile.gameplay.evidenceFor
+                    {showDebugHints && selectedFile.gameplay.evidenceFor
                       ? `${selectedFile.gameplay.evidenceFor}${
                           selectedFile.gameplay.requiresRecovery && !selectedIsRecovered
                             ? " / blocked until recovered"
                             : " / eligible"
                         }`
-                      : "not evidence"}
+                      : showDebugHints
+                        ? "not evidence"
+                        : "undisclosed"}
                   </dd>
                 </div>
                 <div>
