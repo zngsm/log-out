@@ -52,6 +52,7 @@ import {
   createAudioRuntime,
   type AudioCue,
 } from "./game/audioSystem";
+import { getEchoActClaim } from "./game/echoResponseMatrix";
 
 type EchoMessage = {
   speaker: "ECHO" | "PLAYER" | "SYSTEM";
@@ -855,6 +856,13 @@ function App() {
     window.setTimeout(() => {
       setStage(nextAct);
       setSceneRuntime(createActEntryScene(nextAct));
+      setEchoMessages((current) => [
+        ...current,
+        {
+          speaker: "ECHO",
+          text: getEchoActClaim(nextAct),
+        },
+      ]);
     }, ACT_SUCCESS_DURATION_MS);
   }
 
@@ -875,6 +883,13 @@ function App() {
   function enterGameplay() {
     setAppPhase("gameplay");
     setSceneRuntime(createActEntryScene(CATEGORY_A_ACT_IDS.act1));
+    setEchoMessages((current) => [
+      ...current,
+      {
+        speaker: "ECHO",
+        text: getEchoActClaim(CATEGORY_A_ACT_IDS.act1),
+      },
+    ]);
     playAudioCue("hud-ignition");
   }
 

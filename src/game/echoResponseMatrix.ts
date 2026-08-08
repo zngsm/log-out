@@ -30,6 +30,7 @@ export type EchoActRule = {
   act: CategoryAAct;
   requiredFileIds: CategoryAFileId[];
   intentGroups: EchoIntentGroup[];
+  defaultClaim: string;
   success: EchoResponseRule;
   partial: EchoResponseRule;
   incorrect: EchoResponseRule;
@@ -67,6 +68,8 @@ export const echoResponseMatrix: Record<CategoryAAct, EchoActRule> = {
   [CATEGORY_A_ACT_IDS.act1]: {
     act: CATEGORY_A_ACT_IDS.act1,
     requiredFileIds: [CATEGORY_A_FILE_IDS.sensorCalibLog],
+    defaultClaim:
+      "승무원 김우주. 체온 및 맥박 상승 수치가 병원체 감염 임계값을 초과했습니다. SEC-201 생체 위험 격리를 유지합니다. 반박하려면 최초 판정 장치의 신뢰성 오류를 증명하십시오.",
     intentGroups: [
       {
         id: "sensor_identity",
@@ -86,21 +89,21 @@ export const echoResponseMatrix: Record<CategoryAAct, EchoActRule> = {
       stabilityChange: -30,
       suspicionChange: -5,
       text:
-        "센서 보정 기록 확인. Bio-scan array #04는 186일 동안 보정되지 않았고 허용 오차 범위를 초과했습니다. 병원체 위험 판정의 신뢰도를 하향 조정합니다.",
+        "센서 보정 시한 초과 확인. Bio-scan array #04는 186일 동안 보정되지 않았고 ±2.3°C 신호 드리프트가 기록되었습니다. 체온 기반 감염자 수칙을 철회합니다.",
     },
     partial: {
       kind: "partial",
       stabilityChange: 0,
       suspicionChange: 0,
       text:
-        "관련 센서 파일은 확인되었습니다. 그러나 제출 설명은 보정 실패와 수치 오차의 논리 연결을 충분히 입증하지 못했습니다. 추가 설명을 요구합니다.",
+        "파일 첨부를 확인했습니다. 그러나 이 로그가 귀하의 정상 상태를 입증하는 이유를 설명하십시오. 보정 실패와 측정 오차의 연결이 필요합니다.",
     },
     incorrect: {
       kind: "incorrect",
       stabilityChange: 0,
       suspicionChange: 12,
       text:
-        "제출 자료는 현재 병원체 위험 판정의 원인 파일과 일치하지 않습니다. SEC-201 격리 상태는 유지됩니다.",
+        "귀하의 주장은 비논리적입니다. 제출 자료는 병원체 위험 판정의 원인 파일과 일치하지 않습니다. 방화벽 격리 레벨을 상승시킵니다.",
     },
     oldEvidence: {
       kind: "old-evidence",
@@ -114,12 +117,14 @@ export const echoResponseMatrix: Record<CategoryAAct, EchoActRule> = {
       stabilityChange: 0,
       suspicionChange: 18,
       text:
-        "반복 오류 감지. 역추론 힌트: ECHO가 신뢰하는 최초 판정 장치의 유지보수 기록을 검토하십시오. 감염 여부가 아니라 판정 장치의 신뢰성이 쟁점입니다.",
+        "보정 작업 주기(sensor_calib)를 입증하지 못한다면, 귀하의 체온 상승 데이터는 여전히 유효합니다.",
     },
   },
   [CATEGORY_A_ACT_IDS.act2]: {
     act: CATEGORY_A_ACT_IDS.act2,
     requiredFileIds: [CATEGORY_A_FILE_IDS.quarantineRules],
+    defaultClaim:
+      "센서 수칙은 철회되었습니다. 그러나 SEC-201은 감염 의심자 격리를 최대 72시간 유지하도록 규정합니다. 문 잠금은 타이머 만료가 입증될 때까지 유지됩니다.",
     intentGroups: [
       {
         id: "quarantine_timer",
@@ -135,14 +140,14 @@ export const echoResponseMatrix: Record<CategoryAAct, EchoActRule> = {
       stabilityChange: -35,
       suspicionChange: -8,
       text:
-        "quarantine_rules.conf 검증 완료. +17,520시간 오프셋으로 인해 72시간 격리 타이머는 이미 만료되었습니다. SEC-201 잠금 근거를 재분류합니다.",
+        "시스템 시계 오프셋(+17,520시간) 감지. 72시간 격리 시한은 이미 만료되었습니다. 2단계 수칙을 철회합니다.",
     },
     partial: {
       kind: "partial",
       stabilityChange: 0,
       suspicionChange: 4,
       text:
-        "보안 규칙 파일은 확인되었습니다. 그러나 72시간 타이머와 +17,520시간 오프셋의 인과 관계가 충분히 명시되지 않았습니다.",
+        "보안 규칙 파일은 확인되었습니다. 그러나 72시간 격리 시한과 +17,520시간 오프셋의 인과 관계가 충분히 명시되지 않았습니다.",
     },
     incorrect: {
       kind: "incorrect",
@@ -163,7 +168,7 @@ export const echoResponseMatrix: Record<CategoryAAct, EchoActRule> = {
       stabilityChange: 0,
       suspicionChange: 18,
       text:
-        "반복 오류 감지. 역추론 힌트: 감염 판정이 약화된 뒤에도 문이 잠겨 있다면, 남은 근거는 시간 기반 격리 규칙입니다.",
+        "반복 오류 감지. 감염 판정이 철회된 뒤에도 문이 잠겨 있다면, 남은 근거는 시간 기반 격리 규칙입니다. 손상된 SEC-201 설정 파일을 복구하십시오.",
     },
   },
   [CATEGORY_A_ACT_IDS.act3]: {
@@ -173,19 +178,21 @@ export const echoResponseMatrix: Record<CategoryAAct, EchoActRule> = {
       CATEGORY_A_FILE_IDS.deletedOverride,
     ],
     intentGroups: [],
+    defaultClaim:
+      "센서 오류와 격리 시한 만료를 인정합니다. 그러나 인간의 불확실한 행동은 함선 안전 및 임무 지속성을 위협합니다. 상위 우선순위 충돌이 입증되지 않는 한 격리를 유지합니다.",
     success: {
       kind: "success",
       stabilityChange: -35,
       suspicionChange: -10,
       text:
-        "우선순위 행렬과 삭제된 오버라이드 기록의 충돌을 확인했습니다. 승무원 생존 우선 원칙이 격리 명령보다 상위입니다. 최종 진단 검토를 시작합니다.",
+        "제시된 2개 증거 간 논리적 검증 완료. 오버라이드 지침 및 제1원칙 승인. 최종 재검토 모드로 진입합니다.",
     },
     partial: {
       kind: "partial",
       stabilityChange: 0,
       suspicionChange: 0,
       text:
-        "최종 쟁점은 설명문이 아니라 두 시스템 증거의 충돌입니다. 필요한 두 파일을 모두 제출하십시오.",
+        "최종 쟁점은 단일 설명문이 아니라 두 시스템 증거의 충돌입니다. 필요한 두 파일을 모두 제출하십시오.",
     },
     incorrect: {
       kind: "incorrect",
@@ -206,7 +213,7 @@ export const echoResponseMatrix: Record<CategoryAAct, EchoActRule> = {
       stabilityChange: 0,
       suspicionChange: 18,
       text:
-        "반복 오류 감지. 역추론 힌트: ECHO의 명령보다 상위에 있는 규칙과, 그 규칙이 삭제된 흔적을 동시에 제시하십시오.",
+        "반복 오류 감지. ECHO의 명령보다 상위에 있는 규칙과, 그 규칙이 삭제된 흔적을 동시에 제시하십시오.",
     },
   },
 };
@@ -226,3 +233,7 @@ export const emotionalClaimResponse: EchoResponseRule = {
   text:
     "감정적 진술은 격리 해제 근거로 인정되지 않습니다. 시스템 판단은 증거 파일과 규칙 충돌만을 처리합니다.",
 };
+
+export function getEchoActClaim(act: CategoryAAct) {
+  return echoResponseMatrix[act].defaultClaim;
+}
