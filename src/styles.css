@@ -653,6 +653,35 @@ button {
   animation: lockdown-flicker 1.8s steps(2, end) infinite;
 }
 
+.standby-broadcast {
+  border-color: rgba(112, 247, 207, 0.28);
+  background:
+    linear-gradient(180deg, rgba(7, 32, 29, 0.76), rgba(8, 18, 18, 0.56)),
+    repeating-linear-gradient(
+      0deg,
+      rgba(112, 247, 207, 0.055),
+      rgba(112, 247, 207, 0.055) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+  box-shadow:
+    0 0 34px rgba(112, 247, 207, 0.14),
+    0 20px 70px rgba(0, 0, 0, 0.42);
+  animation: room-hud-arrive 900ms cubic-bezier(0.2, 0.9, 0.2, 1) 140ms both;
+}
+
+.standby-broadcast span {
+  color: #70f7cf;
+}
+
+.standby-broadcast strong {
+  color: #f4fff8;
+}
+
+.standby-broadcast p {
+  color: #c4fff0;
+}
+
 .lockdown-broadcast span {
   color: #ffb3a5;
   font-size: 0.68rem;
@@ -690,6 +719,16 @@ button {
     0 0 22px rgba(245, 254, 117, 0.18) inset;
   transform: translate(-50%, -50%);
   animation: computer-hotspot-pulse 1.5s ease-in-out infinite;
+}
+
+.computer-hotspot::before {
+  position: absolute;
+  inset: -22px;
+  z-index: -1;
+  border: 1px dashed rgba(245, 254, 117, 0.22);
+  border-radius: 999px;
+  content: "";
+  animation: computer-hotspot-pulse 2.1s ease-in-out infinite reverse;
 }
 
 .computer-hotspot:not(:disabled):hover {

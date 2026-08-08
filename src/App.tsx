@@ -972,12 +972,22 @@ function App() {
             <h1>LOG_OUT</h1>
             <small>RESOURCE MINING VESSEL HERMES / SEC-201 CONTROL ROOM</small>
           </div>
-          <div className="lockdown-broadcast" aria-label="ECHO lockdown broadcast">
-            <span>AI LOCKDOWN BROADCAST</span>
-            <strong>통제실 출입문이 봉쇄되었습니다</strong>
+          <div
+            className={`lockdown-broadcast ${
+              appPhase === "menu" ? "standby-broadcast" : ""
+            }`}
+            aria-label="Hermes control room broadcast"
+          >
+            <span>{appPhase === "menu" ? "CONTROL ROOM STANDBY" : "TERMINAL APPROACH"}</span>
+            <strong>
+              {appPhase === "menu"
+                ? "평시 당직 모니터가 대기 중입니다"
+                : "컴퓨터 화면으로 접근 중입니다"}
+            </strong>
             <p>
-              ECHO가 승무원 보호 지침 101조를 발동했습니다. 외부 위험으로부터
-              승무원을 보호한다는 명목으로 당신은 지금 격리 상태입니다.
+              {appPhase === "menu"
+                ? "헤르메스호 통제실은 아직 정상 조명 상태입니다. 중앙 컴퓨터를 클릭하면 근무 화면으로 접근합니다."
+                : "대각선 통제실 시점에서 정면 모니터 시점으로 전환합니다. 봉쇄 선언은 오프닝 컷신 안에서 발생합니다."}
             </p>
           </div>
           <button
@@ -987,12 +997,12 @@ function App() {
             disabled={appPhase === "transition"}
             aria-label="Click the Hermes computer to zoom into the terminal"
           >
-            <span>{appPhase === "transition" ? "ZOOMING INTO TERMINAL" : "CLICK COMPUTER"}</span>
-            <small>{appPhase === "transition" ? "ECHO channel opening..." : "컴퓨터 화면으로 접근"}</small>
+            <span>{appPhase === "transition" ? "APPROACHING MONITOR" : "CLICK COMPUTER"}</span>
+            <small>{appPhase === "transition" ? "Opening cutscene loading..." : "근무 화면으로 접근"}</small>
           </button>
           <div className="room-start-footer" aria-label="Scene instruction">
-            <span>주변은 우주선 통제실입니다</span>
-            <span>컴퓨터를 클릭하면 화면 안으로 줌인되어 게임이 시작됩니다</span>
+            <span>1인칭 통제실 / 컴퓨터는 물리적 오브젝트입니다</span>
+            <span>클릭 후 봉쇄 컷신을 거쳐 모니터 내부 Hermes OS로 진입합니다</span>
           </div>
         </section>
       ) : null}
