@@ -415,7 +415,7 @@ function App() {
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [audioMuted, setAudioMuted] = useState(false);
   const [audioVolume, setAudioVolume] = useState(0.55);
-  const messageEndRef = useRef<HTMLDivElement | null>(null);
+  const messageListRef = useRef<HTMLDivElement | null>(null);
 
   const selectedFile = getCategoryAFileById(selectedFileId);
   const quarantineRules = getCategoryAFileById(CATEGORY_A_FILE_IDS.quarantineRules);
@@ -610,7 +610,15 @@ function App() {
       return;
     }
 
-    messageEndRef.current?.scrollIntoView({ block: "end" });
+    window.requestAnimationFrame(() => {
+      const messageList = messageListRef.current;
+
+      if (!messageList) {
+        return;
+      }
+
+      messageList.scrollTop = messageList.scrollHeight;
+    });
   }, [appPhase, echoMessages.length]);
 
   useEffect(() => {
@@ -2035,7 +2043,7 @@ function App() {
               id: {sceneRuntime.id} / exit: {sceneRuntime.exitCondition}
             </small>
           </section>
-          <div className="message-list" aria-label="ECHO chat log">
+          <div className="message-list" aria-label="ECHO chat log" ref={messageListRef}>
             <div className="thread-marker">
               <span>SECURE THREAD</span>
               <strong>증거 제출과 ECHO 판정 기록</strong>
@@ -2054,7 +2062,6 @@ function App() {
                 <p>{message.text}</p>
               </div>
             ))}
-            <div ref={messageEndRef} />
           </div>
           <form className="evidence-form" aria-label="Evidence input" onSubmit={handleEvidenceSubmit}>
             <div className="composer-header">

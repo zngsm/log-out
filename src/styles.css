@@ -2081,6 +2081,7 @@ pre {
 .echo-panel {
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }
 
 .objective-card,
@@ -2145,12 +2146,15 @@ pre {
 }
 
 .message-list {
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 9px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
   background:
     linear-gradient(180deg, rgba(1, 8, 7, 0.15), rgba(112, 247, 207, 0.025)),
     rgba(0, 0, 0, 0.12);
@@ -2182,6 +2186,7 @@ pre {
 .message {
   width: fit-content;
   max-width: 88%;
+  min-width: 0;
   padding: 9px;
   border: 1px solid rgba(112, 247, 207, 0.14);
   border-radius: 13px 13px 13px 4px;
@@ -2208,6 +2213,7 @@ pre {
   justify-content: space-between;
   gap: 10px;
   align-items: center;
+  min-width: 0;
 }
 
 .message-meta span {
@@ -2233,7 +2239,8 @@ pre {
   font-size: 0.8rem;
   line-height: 1.5;
   white-space: pre-wrap;
-  word-break: keep-all;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .evidence-form {
@@ -2245,6 +2252,10 @@ pre {
     linear-gradient(180deg, rgba(112, 247, 207, 0.045), rgba(1, 8, 7, 0.48)),
     rgba(1, 8, 7, 0.74);
   flex: 0 0 auto;
+  max-height: clamp(188px, 31vh, 270px);
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .composer-header {
@@ -2314,8 +2325,8 @@ pre {
 
 .evidence-form textarea {
   width: 100%;
-  height: 70px;
-  min-height: 70px;
+  height: 58px;
+  min-height: 58px;
   resize: none;
   border: 1px solid rgba(112, 247, 207, 0.2);
   border-radius: 13px;
