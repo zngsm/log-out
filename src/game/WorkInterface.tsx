@@ -67,6 +67,10 @@ export function WorkInterface({
     "박준호 (Park Jun-ho)": null,
   });
 
+  const isResumeIncomplete =
+    activeStep === "resume" &&
+    Object.values(candidateDecisions).some((d) => d === null);
+
   const [updateApproved, setUpdateApproved] = useState(false);
   const [rebootState, setRebootState] = useState<"idle" | "glitch" | "rebooting" | "lockdown">("idle");
   const [chatMessages, setChatMessages] = useState<RapportChatMessage[]>(INITIAL_ECHO_RAPPORT_MESSAGES);
@@ -333,7 +337,7 @@ export function WorkInterface({
         "SYSTEM",
         "[SYSTEM REBOOT] ECHO CORE OS v4.2.1 REBOOTING... (CSS/SVG GLITCH ACTIVE)",
       );
-    }, 700);
+    }, 1500);
 
     setTimeout(() => {
       playAudioCue?.("warning-siren");
@@ -341,7 +345,7 @@ export function WorkInterface({
         "SYSTEM",
         "[SYSTEM REBOOT] SENSOR OFFSET CALIBRATED. RE-SCANNING DECK SEC-201 PARAMETERS...",
       );
-    }, 2000);
+    }, 4500);
 
     setTimeout(() => {
       setRebootState("lockdown");
@@ -355,11 +359,11 @@ export function WorkInterface({
         "SYSTEM",
         "[EMERGENCY LOCKDOWN] 통제실 출입문 전면 봉쇄! 비상 생명유지장치(산소 100% / 전력 100%) 및 60분 제한시간 타이머 작동 개시!",
       );
-    }, 3200);
+    }, 7500);
 
     setTimeout(() => {
       onApproveUpdate();
-    }, 5000);
+    }, 9000);
   };
 
   return (
@@ -514,10 +518,6 @@ export function WorkInterface({
                   <span className="view-date">HR PORTAL // CANDIDATES (3)</span>
                 </div>
 
-                <div className="narrative-notice-banner">
-                  ※ 안내: 본 이력서 적합성 판정은 서사적 몰입을 위한 인사 평가 선택 항목으로, 게임 퍼즐/엔딩에는 영향을 주지 않습니다.
-                </div>
-
                 <div className="resume-candidates-list">
                   {RESUME_CANDIDATES.map((candidate) => {
                     const decision = candidateDecisions[candidate.name];
@@ -546,7 +546,6 @@ export function WorkInterface({
                         </div>
 
                         <div className="resume-decision-bar">
-                          <span className="decision-label">서사적 판정 선택:</span>
                           <button
                             type="button"
                             className={`decision-btn btn-qualified ${
@@ -622,8 +621,11 @@ export function WorkInterface({
                   type="button"
                   className="confirm-complete-btn"
                   onClick={handleConfirmComplete}
+                  disabled={isResumeIncomplete}
                 >
-                  ✓ [확인 완료]
+                  {isResumeIncomplete
+                    ? "✓ [확인 완료 (지원자 3명 평가 필요)]"
+                    : "✓ [확인 완료]"}
                 </button>
               </div>
             )}
