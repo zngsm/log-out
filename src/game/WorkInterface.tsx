@@ -337,7 +337,7 @@ export function WorkInterface({
         "SYSTEM",
         "[SYSTEM REBOOT] ECHO CORE OS v4.2.1 REBOOTING... (CSS/SVG GLITCH ACTIVE)",
       );
-    }, 1500);
+    }, 500);
 
     setTimeout(() => {
       playAudioCue?.("warning-siren");
@@ -345,7 +345,7 @@ export function WorkInterface({
         "SYSTEM",
         "[SYSTEM REBOOT] SENSOR OFFSET CALIBRATED. RE-SCANNING DECK SEC-201 PARAMETERS...",
       );
-    }, 4500);
+    }, 3500);
 
     setTimeout(() => {
       setRebootState("lockdown");
@@ -623,9 +623,7 @@ export function WorkInterface({
                   onClick={handleConfirmComplete}
                   disabled={isResumeIncomplete}
                 >
-                  {isResumeIncomplete
-                    ? "✓ [확인 완료 (지원자 3명 평가 필요)]"
-                    : "✓ [확인 완료]"}
+                  ✓ [확인 완료]
                 </button>
               </div>
             )}
@@ -665,7 +663,7 @@ export function WorkInterface({
           )}
 
           {/* Minimized Messenger Icon Bubble Badge (1) inside Left Panel bottom-right boundary */}
-          {messengerState.isMinimized && !messengerState.isOpen && (
+          {messengerState.isMinimized && !messengerState.isOpen && rebootState === "idle" && (
             <div
               className="minimized-messenger-bubble"
               onClick={handleOpenMessenger}

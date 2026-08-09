@@ -1283,15 +1283,14 @@ function App() {
 
       {isBlackout ? (
         <section className="system-alert blackout-alert" aria-label="Blackout warning">
-          <strong>BLACKOUT</strong>
           <span>
-            OS monitor forced reboot. Silence window active. Recovery in{" "}
-            {Math.ceil(resourceState.blackoutRemainingSeconds)}s, then emergency grid returns at 10%.
+            ⚠️ [전력 고갈] 주 전력 그리드 블랙아웃! OS 터미널 긴급 재부팅 중... (남은 시간:{" "}
+            {Math.ceil(resourceState.blackoutRemainingSeconds)}초)
           </span>
         </section>
       ) : null}
 
-      {resourceEvent ? (
+      {resourceEvent && !isBlackout ? (
         <section className="system-alert power-surge-alert" aria-label="Power surge warning">
           <strong>{resourceEvent}</strong>
           <span>ECHO warning: incorrect procedural claims destabilize Hermes power routing.</span>
@@ -1614,11 +1613,10 @@ function App() {
               <code>HERMES://ROOT/System/Security</code>
             </div>
             <div>
-              <p className="log-kicker">SECURITY GATE</p>
-              <h2>Restricted Directory</h2>
+              <p className="log-kicker">보안 게이트 :: 제한 구역</p>
+              <h2>제한 구역 접근 승인</h2>
               <p>
-                `/System/Security` is locked by Dr_Kim emergency quarantine protocol.
-                Enter the personnel credential discovered in crew mail.
+                /System/Security 디렉터리는 김 박사의 비상 격리 프로토콜에 의해 잠겨 있습니다. 승무원 메일에서 발견된 직인 암호를 입력하십시오.
               </p>
             </div>
             <label htmlFor="security-password-popup">Password</label>
@@ -1740,10 +1738,6 @@ function App() {
             </small>
           </div>
         </section>
-        <div className="mission-clock" aria-label="Mission timer">
-          <span>{getActLabel(stage)}</span>
-          <strong>{resourceState.power}%</strong>
-        </div>
       </section>
       <section className="next-action-strip" aria-label="Current next action">
         <span>NEXT ACTION</span>
@@ -1952,14 +1946,6 @@ function App() {
                   <dd>
                     {getRuntimeState(selectedFile.id)} / attached{" "}
                     {attachedFileIds.includes(selectedFile.id) ? "yes" : "no"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>출처</dt>
-                  <dd>
-                    {showDebugHints
-                      ? selectedFile.gameplay.sourceRefs.join(", ")
-                      : "Hermes 로컬 기록 보관소"}
                   </dd>
                 </div>
               </dl>

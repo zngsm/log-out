@@ -916,6 +916,25 @@ button {
   box-shadow: 0 0 54px rgba(255, 176, 67, 0.28);
 }
 
+.blackout-alert {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  width: min(540px, calc(100vw - 32px));
+  padding: 22px 26px;
+  border: 2px solid #ff5a42;
+  border-radius: 16px;
+  background: rgba(20, 3, 2, 0.96);
+  box-shadow: 0 0 50px rgba(255, 90, 66, 0.65), inset 0 0 20px rgba(255, 90, 66, 0.25);
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: bold;
+  text-align: center;
+  line-height: 1.5;
+}
+
 .system-alert strong {
   display: block;
   color: #ffb3a5;
@@ -1559,7 +1578,7 @@ h1 {
   margin: 0;
   color: #f4fff8;
   font-size: clamp(1.6rem, 3vw, 2.7rem);
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .log-document dl {
@@ -1582,6 +1601,8 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin: 0;
+  align-items: center;
 }
 
 .context-action-bar button {
@@ -4104,6 +4125,16 @@ pre {
   background: linear-gradient(135deg, rgba(33, 216, 170, 0.5), rgba(112, 247, 207, 0.65));
   box-shadow: 0 0 30px rgba(112, 247, 207, 0.45);
   transform: translateY(-2px);
+}
+
+.confirm-complete-btn:disabled {
+  background: rgba(60, 65, 65, 0.4);
+  border-color: rgba(120, 140, 135, 0.4);
+  color: rgba(160, 180, 175, 0.6);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  opacity: 0.6;
 }
 
 /* Colleague Popup Notification Toast (Top-Right on 2-split workstation screen) */
