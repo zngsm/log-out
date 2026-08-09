@@ -734,11 +734,7 @@ export function WorkInterface({
                   전송
                 </button>
               </div>
-              {messengerState.playerReplyCount > 0 && (
-                <div className="messenger-status-note">
-                  ※ 1회 답장 완료 후 메신저 채널은 읽지 않음(1) 상태로 유지됩니다.
-                </div>
-              )}
+
             </div>
           )}
         </section>
