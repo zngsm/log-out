@@ -3971,3 +3971,76 @@ pre {
   border-color: #70f7cf;
   cursor: default;
 }
+
+/* ECHO Glitch & Reboot Sequence Overlay */
+.reboot-glitch-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(2, 8, 7, 0.92);
+  backdrop-filter: blur(10px);
+  animation: overlay-arrive 300ms ease both;
+}
+
+.glitch-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 90, 66, 0.08),
+    rgba(255, 90, 66, 0.08) 2px,
+    transparent 2px,
+    transparent 6px
+  );
+  animation: warning-scanline 400ms linear infinite;
+}
+
+.glitch-noise-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 90, 66, 0.18), transparent 75%);
+}
+
+.reboot-svg-stage {
+  width: min(640px, 96%);
+  height: auto;
+  filter: drop-shadow(0 0 28px rgba(255, 90, 66, 0.4));
+}
+
+.reboot-state-glitch .reboot-svg-stage {
+  animation: glitch-flicker-anim 160ms steps(2, end) infinite;
+}
+
+.reboot-state-rebooting .reboot-svg-stage {
+  animation: reboot-pulse-anim 1.2s ease-in-out infinite alternate;
+}
+
+.reboot-state-lockdown .reboot-svg-stage {
+  animation: lockdown-shake-anim 200ms steps(2, end) infinite;
+}
+
+@keyframes glitch-flicker-anim {
+  0% { transform: translate(0, 0) skewX(0deg); opacity: 1; }
+  25% { transform: translate(-4px, 2px) skewX(3deg); opacity: 0.85; }
+  50% { transform: translate(4px, -2px) skewX(-3deg); opacity: 0.95; }
+  75% { transform: translate(-2px, -4px) skewX(1deg); opacity: 0.8; }
+  100% { transform: translate(0, 0) skewX(0deg); opacity: 1; }
+}
+
+@keyframes reboot-pulse-anim {
+  0% { transform: scale(0.98); filter: drop-shadow(0 0 16px rgba(112, 247, 207, 0.35)); }
+  100% { transform: scale(1.02); filter: drop-shadow(0 0 38px rgba(255, 90, 66, 0.55)); }
+}
+
+@keyframes lockdown-shake-anim {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(3px, -3px); }
+  100% { transform: translate(-3px, 3px); }
+}

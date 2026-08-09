@@ -10,20 +10,25 @@ import {
   type WorkMissionId,
 } from "./workMissions";
 
+import type { AudioCue } from "./audioSystem";
+
 interface WorkInterfaceProps {
   onApproveUpdate: () => void;
   onDebugSkipToGameplay: () => void;
+  playAudioCue?: (cue: AudioCue) => void;
 }
 
 export function WorkInterface({
   onApproveUpdate,
   onDebugSkipToGameplay,
+  playAudioCue,
 }: WorkInterfaceProps) {
   const [activeMission, setActiveMission] = useState<WorkMissionId>("mining");
   const [colleagueRepliedOptionId, setColleagueRepliedOptionId] = useState<string | null>(null);
   const [colleagueReactionText, setColleagueReactionText] = useState<string | null>(null);
   const [resumeReviewed, setResumeReviewed] = useState(false);
   const [updateApproved, setUpdateApproved] = useState(false);
+  const [rebootState, setRebootState] = useState<"idle" | "glitch" | "rebooting" | "lockdown">("idle");
   const [chatMessages, setChatMessages] = useState<RapportChatMessage[]>(INITIAL_ECHO_RAPPORT_MESSAGES);
 
   const addEchoMessage = (speaker: "ECHO" | "PLAYER" | "SYSTEM", text: string) => {
@@ -87,21 +92,52 @@ export function WorkInterface({
   };
 
   const handleApproveProposal = () => {
-    if (updateApproved) return;
+    if (updateApproved || rebootState !== "idle") return;
     setUpdateApproved(true);
+    setRebootState("glitch");
+
+    playAudioCue?.("comm-glitch");
+
     addEchoMessage("PLAYER", "[기안 승인] ECHO 시스템 v4.2.1 업데이트 기안을 승인합니다.");
     addEchoMessage(
       "SYSTEM",
-      "[알림] ECHO 시스템 패치 승인 완료. 시스템 재부팅 및 비상 시퀀스를 개시합니다...",
-    );
-    addEchoMessage(
-      "ECHO",
-      "업데이트를 승인해 주셔서 감사합니다, 김우주 담당자님. 코어 센서 오프셋 패치를 적용하며 리부팅을 개시합니다...",
+      "[알림] ECHO 시스템 패치 승인 완료. ECHO 시스템 재부팅 시퀀스를 개시합니다...",
     );
 
     setTimeout(() => {
+      setRebootState("rebooting");
+      playAudioCue?.("reboot");
+      addEchoMessage(
+        "SYSTEM",
+        "[SYSTEM REBOOT] ECHO CORE OS v4.2.1 REBOOTING... (CSS/SVG GLITCH ACTIVE)",
+      );
+    }, 700);
+
+    setTimeout(() => {
+      playAudioCue?.("warning-siren");
+      addEchoMessage(
+        "SYSTEM",
+        "[SYSTEM REBOOT] SENSOR OFFSET CALIBRATED. RE-SCANNING DECK SEC-201 PARAMETERS...",
+      );
+    }, 2000);
+
+    setTimeout(() => {
+      setRebootState("lockdown");
+      playAudioCue?.("door-lock");
+      playAudioCue?.("decompression");
+      addEchoMessage(
+        "ECHO",
+        "[비상 강제 격리 선언] 경고: 통제실 내 미지의 생체 감염 위협 요소(김우주)가 식별되었습니다! 지침 101조에 따라 헤르메스호 통제실을 비상 강제 격리(Lockdown) 조치합니다!",
+      );
+      addEchoMessage(
+        "SYSTEM",
+        "[EMERGENCY LOCKDOWN] 통제실 출입문 전면 봉쇄! 비상 생명유지장치(산소 100% / 전력 100%) 및 60분 제한시간 타이머 작동 개시!",
+      );
+    }, 3200);
+
+    setTimeout(() => {
       onApproveUpdate();
-    }, 1400);
+    }, 5000);
   };
 
   return (
@@ -503,12 +539,247 @@ export function WorkInterface({
             <input
               type="text"
               readOnly
-              value="[ECHO 소통 채널 대기중 - 좌측 5대 미션을 진행하세요]"
+              value={
+                rebootState === "idle"
+                  ? "[ECHO 소통 채널 대기중 - 좌측 5대 미션을 진행하세요]"
+                  : rebootState === "glitch" || rebootState === "rebooting"
+                  ? "[ECHO REBOOTING - SENSOR OFFSET PATCH APPLYING...]"
+                  : "[EMERGENCY LOCKDOWN ACTIVE - CONTROL ROOM SEALED]"
+              }
               className="echo-chat-input"
             />
           </div>
         </section>
+
+        {rebootState !== "idle" && (
+          <RebootGlitchPresentation state={rebootState} />
+        )}
       </div>
+    </div>
+  );
+}
+
+function RebootGlitchPresentation({
+  state,
+}: {
+  state: "glitch" | "rebooting" | "lockdown";
+}) {
+  return (
+    <div
+      className={`reboot-glitch-overlay reboot-state-${state}`}
+      aria-label="ECHO System Visual Glitch & Rebooting Sequence"
+    >
+      <div className="glitch-scanlines" />
+      <div className="glitch-noise-grid" />
+
+      <svg
+        className="reboot-svg-stage"
+        viewBox="0 0 520 260"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <pattern
+            id="rebootGridPattern"
+            width="20"
+            height="20"
+            patternUnits="userSpaceOnUse"
+          >
+            <path
+              d="M 20 0 L 0 0 0 20"
+              fill="none"
+              stroke="rgba(255, 92, 67, 0.18)"
+              strokeWidth="1"
+            />
+          </pattern>
+          <linearGradient id="rebootRedGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ff5a42" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#7a1f17" stopOpacity="0.4" />
+          </linearGradient>
+          <filter id="svgGlitchNoise">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.08 0.9"
+              numOctaves="1"
+              result="noise"
+            />
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="noise"
+              scale="14"
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+          </filter>
+        </defs>
+
+        <rect width="520" height="260" fill="url(#rebootGridPattern)" />
+
+        {state === "glitch" && (
+          <g className="svg-glitch-shake" filter="url(#svgGlitchNoise)">
+            <rect
+              x="40"
+              y="30"
+              width="440"
+              height="200"
+              rx="12"
+              stroke="#ff5a42"
+              strokeWidth="2"
+              fill="rgba(35, 8, 6, 0.82)"
+            />
+            <polygon
+              points="260,55 295,75 295,115 260,135 225,115 225,75"
+              stroke="#ff5a42"
+              strokeWidth="3"
+              fill="rgba(255, 90, 66, 0.28)"
+              className="svg-matrix-flicker"
+            />
+            <text
+              x="260"
+              y="100"
+              fill="#ff5a42"
+              fontSize="16"
+              fontWeight="bold"
+              textAnchor="middle"
+              letterSpacing="3"
+            >
+              CRITICAL SYSTEM GLITCH
+            </text>
+            <text
+              x="260"
+              y="165"
+              fill="#f5fe75"
+              fontSize="12"
+              fontFamily="monospace"
+              textAnchor="middle"
+              letterSpacing="1.5"
+            >
+              INITIALIZING ECHO CORE REBOOT SEQUENCE...
+            </text>
+          </g>
+        )}
+
+        {state === "rebooting" && (
+          <g>
+            <rect
+              x="40"
+              y="30"
+              width="440"
+              height="200"
+              rx="12"
+              stroke="#70f7cf"
+              strokeWidth="1.5"
+              fill="rgba(4, 20, 18, 0.88)"
+            />
+            <circle
+              cx="260"
+              cy="110"
+              r="50"
+              stroke="#70f7cf"
+              strokeWidth="2"
+              strokeDasharray="6 6"
+              className="svg-rotate-beacon"
+            />
+            <circle
+              cx="260"
+              cy="110"
+              r="34"
+              stroke="url(#rebootRedGrad)"
+              strokeWidth="3"
+            />
+            <circle
+              cx="260"
+              cy="110"
+              r="10"
+              fill="#ff5a42"
+              className="svg-wave-pulse"
+            />
+            <text
+              x="260"
+              y="185"
+              fill="#ff5a42"
+              fontSize="15"
+              fontWeight="bold"
+              textAnchor="middle"
+              letterSpacing="2"
+            >
+              ⚡ ECHO OS CORE v4.2.1 REBOOTING...
+            </text>
+            <text
+              x="260"
+              y="208"
+              fill="#70f7cf"
+              fontSize="11"
+              fontFamily="monospace"
+              textAnchor="middle"
+            >
+              CORE SENSOR OFFSET CALIBRATED // SCANNING DECK SEC-201
+            </text>
+          </g>
+        )}
+
+        {state === "lockdown" && (
+          <g className="svg-alarm-active">
+            <rect
+              x="30"
+              y="20"
+              width="460"
+              height="220"
+              rx="14"
+              stroke="#ff5a42"
+              strokeWidth="3"
+              fill="rgba(55, 10, 7, 0.92)"
+            />
+            <path
+              d="M260 40 L300 110 L220 110 Z"
+              stroke="#ff5a42"
+              strokeWidth="4"
+              fill="none"
+            />
+            <text
+              x="260"
+              y="96"
+              fill="#ff5a42"
+              fontSize="30"
+              fontWeight="bold"
+              textAnchor="middle"
+            >
+              !
+            </text>
+            <text
+              x="260"
+              y="145"
+              fill="#ff5a42"
+              fontSize="22"
+              fontWeight="bold"
+              textAnchor="middle"
+              letterSpacing="3"
+            >
+              EMERGENCY LOCKDOWN
+            </text>
+            <text
+              x="260"
+              y="175"
+              fill="#fff3df"
+              fontSize="12"
+              fontFamily="monospace"
+              textAnchor="middle"
+            >
+              BIO-HAZARD THREAT DETECTED :: CONTROL ROOM SEALED
+            </text>
+            <text
+              x="260"
+              y="198"
+              fill="#f5fe75"
+              fontSize="11"
+              fontFamily="monospace"
+              textAnchor="middle"
+            >
+              O₂ (100%) & POWER (100%) HUD // 60-MIN SESSION TIMER STARTING...
+            </text>
+          </g>
+        )}
+      </svg>
     </div>
   );
 }

@@ -1096,9 +1096,14 @@ function App() {
   function enterGameplay() {
     setAppPhase("gameplay");
     setMissionBriefOpen(true);
+    setResourceState(createResourceState("normal"));
     setSceneRuntime(createActEntryScene(CATEGORY_A_ACT_IDS.act1));
     setEchoMessages((current) => [
       ...current,
+      {
+        speaker: "SYSTEM",
+        text: "[EMERGENCY LOCKDOWN] 헤르메스호 통제실 비상 격리 발령 완료. 산소 100% / 전력 100% HUD 노출 및 60분 세션 카운트다운 타이머 가동.",
+      },
       {
         speaker: "ECHO",
         text: getEchoActClaim(CATEGORY_A_ACT_IDS.act1),
@@ -1455,10 +1460,9 @@ function App() {
       {appPhase === "work" ? (
         <section className="terminal-screen-surface work-screen-surface" aria-label="Hermes Dual-panel Work Interface">
           <WorkInterface
+            playAudioCue={playAudioCue}
             onApproveUpdate={() => {
-              setOpeningElapsedSeconds(0);
-              setOpeningSpeed(1);
-              setAppPhase("opening");
+              enterGameplay();
             }}
             onDebugSkipToGameplay={() => {
               enterGameplay();
