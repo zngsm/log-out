@@ -1305,7 +1305,7 @@ function App() {
                 : getPressureFeedback(powerState.name)}
           </small>
         </div>
-        <div className="hud-card">
+        <div className="hud-card recovery-hud-card">
           <span>RECOVERY STATUS</span>
           <strong>{isQuarantineRecovered ? "READY" : "CORRUPTED"}</strong>
           <small>

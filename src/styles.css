@@ -21,6 +21,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  overflow: hidden;
 }
 
 button,
@@ -187,11 +188,14 @@ button {
 }
 
 .terminal-screen-surface {
-  position: relative;
+  position: fixed;
+  inset: 0;
   z-index: 2;
-  min-height: 100vh;
-  padding: clamp(16px, 2vw, 28px);
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 10px;
+  overflow: hidden;
   background:
     linear-gradient(rgba(112, 247, 207, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(112, 247, 207, 0.026) 1px, transparent 1px),
@@ -929,8 +933,16 @@ button {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 18px;
-  align-items: end;
-  margin-bottom: 16px;
+  align-items: center;
+  flex: 0 0 auto;
+  min-height: 46px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(112, 247, 207, 0.16);
+  border-radius: 14px;
+  padding: 8px 12px;
+  background:
+    linear-gradient(180deg, rgba(216, 255, 244, 0.055), rgba(2, 10, 9, 0.86)),
+    rgba(1, 8, 7, 0.88);
 }
 
 .eyebrow {
@@ -944,9 +956,9 @@ button {
 h1 {
   margin: 0;
   color: #f4fff8;
-  font-size: clamp(2.4rem, 6vw, 5.6rem);
-  line-height: 0.88;
-  letter-spacing: -0.08em;
+  font-size: clamp(1.35rem, 3vw, 2.2rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
   text-shadow: 0 0 24px rgba(112, 247, 207, 0.3);
 }
 
@@ -965,9 +977,9 @@ h1 {
 
 .mission-clock {
   min-width: 156px;
-  padding: 14px 18px;
+  padding: 8px 12px;
   text-align: right;
-  border-radius: 18px;
+  border-radius: 12px;
 }
 
 .mission-clock span,
@@ -984,34 +996,46 @@ h1 {
 .mission-clock strong {
   margin: 0;
   display: block;
-  font-size: 1.8rem;
+  font-size: 1.2rem;
   line-height: 1;
 }
 
 .hud-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 5;
+  grid-template-columns: repeat(3, minmax(128px, 1fr));
+  gap: 8px;
+  width: min(720px, calc(100vw - 28px));
+  pointer-events: none;
 }
 
 .hud-card {
-  min-height: 116px;
-  padding: 16px;
-  border-radius: 18px;
+  min-height: 0;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(7, 23, 20, 0.82), rgba(3, 10, 9, 0.78)),
+    rgba(4, 18, 16, 0.72);
+  backdrop-filter: blur(14px);
+  pointer-events: auto;
 }
 
 .hud-card strong {
   display: block;
-  margin-top: 6px;
+  margin-top: 3px;
   color: #f7fffb;
-  font-size: clamp(1.45rem, 4vw, 2.3rem);
+  font-size: clamp(0.95rem, 2vw, 1.25rem);
 }
 
 .hud-card small {
   display: block;
-  margin-top: 10px;
+  margin-top: 4px;
   color: #9fbdb5;
+  font-size: 0.66rem;
+  line-height: 1.25;
 }
 
 .alert-card {
@@ -1070,6 +1094,13 @@ h1 {
   border-color: rgba(112, 247, 207, 0.28);
 }
 
+.alert-card,
+.scene-hud-card,
+.objective-hud-card,
+.recovery-hud-card {
+  display: none;
+}
+
 .audio-hud-card strong {
   color: #70f7cf;
   font-size: clamp(1.15rem, 3vw, 1.7rem);
@@ -1080,7 +1111,7 @@ h1 {
   grid-template-columns: auto auto minmax(70px, 1fr);
   gap: 6px;
   align-items: center;
-  margin-top: 10px;
+  margin-top: 5px;
 }
 
 .audio-controls button {
@@ -1129,8 +1160,8 @@ h1 {
 }
 
 .meter {
-  height: 8px;
-  margin-top: 14px;
+  height: 5px;
+  margin-top: 6px;
   overflow: hidden;
   border-radius: 99px;
   background: rgba(216, 255, 244, 0.12);
@@ -1149,15 +1180,17 @@ h1 {
 
 .terminal-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 0.72fr) minmax(340px, 1.2fr) minmax(300px, 0.88fr);
-  gap: 16px;
-  min-height: calc(100vh - 220px);
+  grid-template-columns: minmax(210px, 0.62fr) minmax(360px, 1.28fr) minmax(300px, 0.82fr);
+  gap: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-bottom: 108px;
 }
 
 .panel {
-  min-height: 520px;
+  min-height: 0;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
 }
@@ -1167,7 +1200,8 @@ h1 {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-  padding: 14px 16px;
+  flex: 0 0 auto;
+  padding: 9px 12px;
   border-bottom: 1px solid rgba(112, 247, 207, 0.18);
   background: rgba(112, 247, 207, 0.06);
 }
@@ -1181,7 +1215,7 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 10px 16px 0;
+  padding: 8px 10px 0;
 }
 
 .file-legend span {
@@ -1199,7 +1233,7 @@ h1 {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 8px;
-  padding: 12px 16px 0;
+  padding: 8px 10px 0;
 }
 
 .os-path-bar code {
@@ -1225,7 +1259,7 @@ h1 {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding: 10px 16px 0;
+  padding: 8px 10px 0;
 }
 
 .directory-rail button {
@@ -1248,10 +1282,12 @@ h1 {
 .file-tree,
 .message-list,
 .log-document {
-  padding: 16px;
+  padding: 10px;
 }
 
 .file-tree {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
 }
 
@@ -1432,6 +1468,9 @@ h1 {
 .log-document {
   display: grid;
   gap: 18px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 .viewer-window-chrome {
@@ -1886,9 +1925,11 @@ pre {
 
 .message-list {
   flex: 1;
+  min-height: 0;
   display: grid;
   gap: 12px;
   align-content: start;
+  overflow: auto;
 }
 
 .message {
@@ -1918,6 +1959,7 @@ pre {
   gap: 8px;
   padding: 14px;
   border-top: 1px solid rgba(112, 247, 207, 0.18);
+  flex: 0 0 auto;
 }
 
 .interaction-hint {
@@ -2035,10 +2077,14 @@ pre {
 @media (max-width: 1080px) {
   .hud-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(520px, calc(100vw - 20px));
+    right: 10px;
+    bottom: 10px;
   }
 
   .terminal-grid {
-    grid-template-columns: 0.8fr 1.2fr;
+    grid-template-columns: 0.78fr 1.22fr;
+    padding-bottom: 168px;
   }
 
   .echo-panel {
@@ -2110,14 +2156,38 @@ pre {
 }
 
 @media (max-width: 760px) {
+  body {
+    overflow: auto;
+  }
+
   .game-shell {
     padding: 16px;
   }
 
-  .system-topbar,
-  .hud-grid,
+  .terminal-screen-surface {
+    position: relative;
+    min-height: 100vh;
+    height: auto;
+    overflow: visible;
+  }
+
+  .system-topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .hud-grid {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    order: 3;
+    width: 100%;
+    margin-top: 8px;
+    grid-template-columns: 1fr;
+  }
+
   .terminal-grid {
     grid-template-columns: 1fr;
+    padding-bottom: 0;
   }
 
   .mission-clock {
