@@ -1708,14 +1708,6 @@ function App() {
               {sceneRuntime.exitCondition}
             </small>
           </div>
-          <div className="hud-card echo-state-card">
-            <span>ECHO STATE / {lastSubmissionReason ?? "monitoring"}</span>
-            <strong>{echoStability}% STABLE</strong>
-            <small>
-              suspicion {echoSuspicion}% / failed attempts{" "}
-              {isEndingReady ? 0 : failedAttemptsByAct[stage]}
-            </small>
-          </div>
           <div className="hud-card audio-hud-card">
             <span>AUDIO SYSTEM</span>
             <strong>{audioMuted ? "MUTED" : audioEnabled ? "ONLINE" : "LOCKED"}</strong>

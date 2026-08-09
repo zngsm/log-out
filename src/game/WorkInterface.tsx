@@ -70,7 +70,6 @@ export function WorkInterface({
   const [updateApproved, setUpdateApproved] = useState(false);
   const [rebootState, setRebootState] = useState<"idle" | "glitch" | "rebooting" | "lockdown">("idle");
   const [chatMessages, setChatMessages] = useState<RapportChatMessage[]>(INITIAL_ECHO_RAPPORT_MESSAGES);
-  const [echoQuestionInput, setEchoQuestionInput] = useState("");
 
   const chatMessagesRef = useRef<HTMLDivElement | null>(null);
 
@@ -207,13 +206,6 @@ export function WorkInterface({
     }
   }, [activeStep, messengerState.triggered]);
 
-  // Resume Review Step Initial ECHO prompt
-  useEffect(() => {
-    if (activeStep === "resume" && !echoReactionsSent["resume_prompt"]) {
-      addEchoMessage("ECHO", "지원자 적합성에 대해 제게 질문하셔도 좋습니다.");
-      setEchoReactionsSent((prev) => ({ ...prev, resume_prompt: 1 }));
-    }
-  }, [activeStep, echoReactionsSent]);
 
   // Handle [확인 완료] Confirmation Complete button transition
   const handleConfirmComplete = () => {
@@ -320,37 +312,6 @@ export function WorkInterface({
     playAudioCue?.("notification");
   };
 
-  // ECHO Q&A suitability response handler
-  const handleAskEchoAboutApplicant = async (query: string) => {
-    const q = query.trim();
-    if (!q) return;
-
-    addEchoMessage("PLAYER", q);
-    setEchoQuestionInput("");
-
-    try {
-      const res = await sendNpcMessage({
-        npcId: "echo",
-        currentStage: "resume",
-        userMessage: q,
-      });
-
-      const reply = "ai_response" in res ? res.ai_response : "ECHO 분석 완료.";
-      addEchoMessage("ECHO", reply);
-      playAudioCue?.("notification");
-    } catch {
-      let reply = "지원자 적합성 데이터 분석 중: 제안된 후보자 모두 우주 환경 자격 요건을 이수했습니다.";
-      if (q.includes("강현우")) {
-        reply = "지원자 강현우: 지구 궤도 정거장 2년 경력 및 AI 오버라이드 2급 자격을 소지하여 보조 엔지니어 직무에 높은 적합성을 보입니다.";
-      } else if (q.includes("이서연")) {
-        reply = "지원자 이서연: 화성 기지 4년 경력의 공조 수석 기사로, 산소 순환 모듈 긴급 점검 시 뛰어난 대응력을 보유하고 있습니다.";
-      } else if (q.includes("박준호")) {
-        reply = "지원자 박준호: 소행성대 도킹 1급 면허 소지자로, 타이타늄 및 헬륨-3 자원 수송 셔틀 조종에 적합합니다.";
-      }
-      addEchoMessage("ECHO", reply);
-      playAudioCue?.("notification");
-    }
-  };
 
   const handleApproveProposal = () => {
     if (updateApproved || rebootState !== "idle") return;
@@ -639,9 +600,6 @@ export function WorkInterface({
                   </div>
 
                   <div className="proposal-action-box">
-                    <div className="trigger-warning-text">
-                      ⚠️ [ECHO 시스템 업데이트 승인] 버튼 클릭 시 ECHO 패치가 적용되고 시스템 재부팅 후 본 비상 봉쇄 시퀀스로 진입합니다.
-                    </div>
                     <button
                       type="button"
                       className={`proposal-approve-btn ${updateApproved ? "approved" : ""}`}
@@ -819,39 +777,20 @@ export function WorkInterface({
             ))}
           </div>
 
-          {/* Interactive ECHO Chat input / Q&A during resume review stage */}
+          {/* ECHO Chat input (readOnly during rapport phase) */}
           <div className="echo-chat-input-area">
-            {activeStep === "resume" ? (
-              <form
-                className="echo-qa-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleAskEchoAboutApplicant(echoQuestionInput);
-                }}
-              >
-                <input
-                  type="text"
-                  placeholder="지원자 적합성에 대해 질문하세요... (e.g. 강현우 적합해?)"
-                  value={echoQuestionInput}
-                  onChange={(e) => setEchoQuestionInput(e.target.value)}
-                  className="echo-chat-input active-input"
-                />
-                <button type="submit" className="echo-ask-btn">질의</button>
-              </form>
-            ) : (
-              <input
-                type="text"
-                readOnly
-                value={
-                  rebootState === "idle"
-                    ? "[ECHO 대기중 - 좌측 보고서 읽기 및 [확인 완료] 진행]"
-                    : rebootState === "glitch" || rebootState === "rebooting"
-                    ? "[ECHO REBOOTING - SENSOR OFFSET PATCH APPLYING...]"
-                    : "[EMERGENCY LOCKDOWN ACTIVE - CONTROL ROOM SEALED]"
-                }
-                className="echo-chat-input"
-              />
-            )}
+            <input
+              type="text"
+              readOnly
+              value={
+                rebootState === "idle"
+                  ? "[ECHO 대기중 - 좌측 보고서 읽기 및 [확인 완료] 진행]"
+                  : rebootState === "glitch" || rebootState === "rebooting"
+                  ? "[ECHO REBOOTING - SENSOR OFFSET PATCH APPLYING...]"
+                  : "[EMERGENCY LOCKDOWN ACTIVE - CONTROL ROOM SEALED]"
+              }
+              className="echo-chat-input"
+            />
           </div>
         </section>
 
