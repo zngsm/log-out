@@ -712,7 +712,9 @@ export function WorkInterface({
               title="동료 메신저 열기"
             >
               <span className="bubble-icon">💬</span>
-              <span className="unread-badge">1</span>
+              {messengerState.playerReplyCount === 0 && (
+                <span className="unread-badge bubble-unread-badge">1</span>
+              )}
             </div>
           )}
 
