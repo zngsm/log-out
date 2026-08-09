@@ -340,17 +340,14 @@ export function WorkInterface({
     }, 500);
 
     setTimeout(() => {
+      setRebootState("lockdown");
       playAudioCue?.("warning-siren");
+      playAudioCue?.("door-lock");
+      playAudioCue?.("decompression");
       addEchoMessage(
         "SYSTEM",
         "[SYSTEM REBOOT] SENSOR OFFSET CALIBRATED. RE-SCANNING DECK SEC-201 PARAMETERS...",
       );
-    }, 3500);
-
-    setTimeout(() => {
-      setRebootState("lockdown");
-      playAudioCue?.("door-lock");
-      playAudioCue?.("decompression");
       addEchoMessage(
         "ECHO",
         "[비상 강제 격리 선언] 경고: 통제실 내 미지의 생체 감염 위협 요소(김우주)가 식별되었습니다! 지침 101조에 따라 헤르메스호 통제실을 비상 강제 격리(Lockdown) 조치합니다!",
@@ -359,7 +356,7 @@ export function WorkInterface({
         "SYSTEM",
         "[EMERGENCY LOCKDOWN] 통제실 출입문 전면 봉쇄! 비상 생명유지장치(산소 100% / 전력 100%) 및 60분 제한시간 타이머 작동 개시!",
       );
-    }, 7500);
+    }, 2500);
 
     setTimeout(() => {
       onApproveUpdate();

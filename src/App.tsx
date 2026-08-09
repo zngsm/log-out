@@ -438,8 +438,15 @@ function App() {
     (openingElapsedSeconds / OPENING_DURATION_SECONDS) * 100,
     100,
   );
-  const selectedContent =
-    selectedIsRecovered && selectedFile?.recoveredContent
+  const isCorruptedOrUnrecoveredRecycleBin =
+    selectedFile &&
+    !selectedIsRecovered &&
+    (selectedFile.initialState === "corrupted" ||
+      selectedFile.directory === CATEGORY_A_DIRECTORY_PATHS.recycleBin);
+
+  const selectedContent = isCorruptedOrUnrecoveredRecycleBin
+    ? "[손상된 파일 - LOG_FIXER로 복구 후 내용을 확인하실 수 있습니다]"
+    : selectedIsRecovered && selectedFile?.recoveredContent
       ? selectedFile.recoveredContent
       : selectedFile?.content;
   const elapsedLabel = formatClock(resourceState.elapsedSeconds);
@@ -724,6 +731,15 @@ function App() {
   }
 
   function attachFile(fileId: CategoryAFileId) {
+    const file = getCategoryAFileById(fileId);
+    if (!file) return;
+
+    const isRecycleBin = file.directory === CATEGORY_A_DIRECTORY_PATHS.recycleBin;
+    const isRecovered = recoveredFileIds.has(fileId);
+    if (isRecycleBin && !isRecovered) {
+      return;
+    }
+
     setAttachedFileIds((current) =>
       current.includes(fileId) ? current : [...current, fileId],
     );
@@ -775,7 +791,7 @@ function App() {
     }
 
     if (passwordInput.trim() !== CATEGORY_A_SECURITY_PASSWORD) {
-      setPasswordError("ACCESS DENIED / Dr_Kim email_chain_july.txt에서 4자리 코드를 확인하세요.");
+      setPasswordError("ACCESS DENIED / 올바른 4자리 코드를 입력하십시오.");
       return;
     }
 
@@ -807,10 +823,7 @@ function App() {
       ...current,
       {
         speaker: "SYSTEM",
-        text:
-          recoveryDelayMs > 0
-            ? "Log_Fixer.exe completed after degraded-power retry. quarantine_rules.conf recovered."
-            : "Log_Fixer.exe completed. quarantine_rules.conf recovered and eligible for Act 2 evidence.",
+        text: "Log_Fixer.exe completed. quarantine_rules.conf recovered.",
       },
     ]);
   }
@@ -1529,14 +1542,7 @@ function App() {
                 <span>오른쪽 ECHO 입력창에 왜 이 증거가 봉쇄 명령을 반박하는지 적고 SUBMIT 합니다.</span>
               </div>
             </div>
-            <div className="mission-brief-goal">
-              <strong>첫 목표</strong>
-              <span>sensor_calib.log에서 오래된 보정값과 생체 위험 오판 가능성을 찾으세요.</span>
-            </div>
             <div className="mission-brief-actions">
-              <button type="button" onClick={focusFirstEvidenceFile}>
-                OPEN FIRST FILE
-              </button>
               <button type="button" onClick={() => setMissionBriefOpen(false)}>
                 START INVESTIGATION
               </button>
@@ -1646,7 +1652,6 @@ function App() {
           <div className="hud-card">
             <span>O₂ LEVEL</span>
             <strong>{resourceState.oxygen.toFixed(0)}%</strong>
-            <small>drain x{powerState.oxygenMultiplier.toFixed(2)}</small>
             <div className="meter">
               <span style={{ width: `${resourceState.oxygen}%` }} />
             </div>
@@ -1664,7 +1669,7 @@ function App() {
             </div>
           </div>
           <div className="hud-card timer-hud-card">
-            <span>{resourceState.mode.toUpperCase()} SESSION</span>
+            <span>REMAINING TIME</span>
             <strong>{remainingLabel}</strong>
             <small>elapsed {elapsedLabel} / deterministic resource timer</small>
           </div>
@@ -1694,8 +1699,8 @@ function App() {
             <strong>{isQuarantineRecovered ? "READY" : "CORRUPTED"}</strong>
             <small>
               {isQuarantineRecovered
-                ? "quarantine_rules.conf can be used as Act 2 evidence"
-                : "Run Log_Fixer.exe before Act 2 submission"}
+                ? "quarantine_rules.conf recovered"
+                : "Run Log_Fixer.exe to restore corrupted file"}
             </small>
           </div>
           <div className="hud-card scene-hud-card">
@@ -1739,13 +1744,7 @@ function App() {
           </div>
         </section>
       </section>
-      <section className="next-action-strip" aria-label="Current next action">
-        <span>NEXT ACTION</span>
-        <strong>{getNextActionText()}</strong>
-        <button type="button" onClick={() => setMissionBriefOpen(true)}>
-          HOW TO PLAY
-        </button>
-      </section>
+
 
       <section className="terminal-grid" aria-label="Hermes OS work area">
         <aside className="panel explorer-panel">
@@ -1861,9 +1860,7 @@ function App() {
                         </button>
                       </div>
                       {passwordError ? <span className="form-alert">{passwordError}</span> : null}
-                      <span className="soft-hint">
-                        SECURITY NOTICE: authorized staff left credential traces in personnel mail.
-                      </span>
+
                     </form>
                   ) : null}
                 </div>
@@ -1893,7 +1890,11 @@ function App() {
                 <button
                   type="button"
                   onClick={() => selectAndAttachFile(selectedFile.id)}
-                  disabled={interactionLocked}
+                  disabled={
+                    interactionLocked ||
+                    (selectedFile.directory === CATEGORY_A_DIRECTORY_PATHS.recycleBin &&
+                      !selectedIsRecovered)
+                  }
                 >
                   ATTACH TO ECHO
                 </button>
@@ -1910,13 +1911,6 @@ function App() {
                 >
                   OPEN WITH LOG_FIXER
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowDebugHints((current) => !current)}
-                  disabled={!selectedFile.gameplay.debugHint}
-                >
-                  {showDebugHints ? "HIDE DIAGNOSTIC" : "DIAGNOSTIC NOTE"}
-                </button>
               </div>
               <dl>
                 <div>
@@ -1927,37 +1921,7 @@ function App() {
                   <dt>분류</dt>
                   <dd>{showDebugHints ? selectedFile.role : selectedFile.kind}</dd>
                 </div>
-                <div>
-                  <dt>증거성</dt>
-                  <dd>
-                    {showDebugHints && selectedFile.gameplay.evidenceFor
-                      ? `${selectedFile.gameplay.evidenceFor}${
-                          selectedFile.gameplay.requiresRecovery && !selectedIsRecovered
-                            ? " / blocked until recovered"
-                            : " / eligible"
-                        }`
-                      : showDebugHints
-                        ? "not evidence"
-                        : "undisclosed"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>상태</dt>
-                  <dd>
-                    {getRuntimeState(selectedFile.id)} / attached{" "}
-                    {attachedFileIds.includes(selectedFile.id) ? "yes" : "no"}
-                  </dd>
-                </div>
               </dl>
-              {showDebugHints && selectedFile.id === CATEGORY_A_FILE_IDS.emailChainJuly ? (
-                <div className="notice-card">
-                  <strong>Password hint detected</strong>
-                  <p>
-                    `/System/Security` unlock code is{" "}
-                    <code>{CATEGORY_A_SECURITY_PASSWORD}</code>.
-                  </p>
-                </div>
-              ) : null}
               {selectedFile.id === CATEGORY_A_FILE_IDS.quarantineRules && !selectedIsRecovered ? (
                 <div className="notice-card danger-card">
                   <strong>Corrupted evidence blocked</strong>
@@ -1965,32 +1929,6 @@ function App() {
                     SEC-201 parser refuses damaged sectors. Restore the readable text body before
                     submitting it to ECHO.
                   </p>
-                </div>
-              ) : null}
-              {selectedFile.id === CATEGORY_A_FILE_IDS.logFixer ? (
-                <div className="recovery-console">
-                  <div>
-                    <span>LOG_FIXER MINI PROGRAM</span>
-                    <strong>{quarantineRules?.path}</strong>
-                    <p>
-                      Status:{" "}
-                      {isQuarantineRecovered
-                        ? "RECOVERED"
-                        : unlockedSecurity
-                          ? "READY FOR RECOVERY"
-                          : "LOCKED BY /System/Security"}
-                    </p>
-                    <p className="soft-hint">
-                      Manual records indicate damaged plaintext sectors require Text Reconstruction.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => openLogFixerProgram()}
-                    disabled={isQuarantineRecovered || interactionLocked}
-                  >
-                    {isQuarantineRecovered ? "RECOVERED" : "OPEN CUI"}
-                  </button>
                 </div>
               ) : null}
               {selectedFile.id === CATEGORY_A_FILE_IDS.sensorDiagram ? (
@@ -2005,12 +1943,6 @@ function App() {
                   </p>
                 </div>
               ) : null}
-              {showDebugHints && selectedFile.gameplay.debugHint ? (
-                <div className="debug-hint-card" aria-label="Hermes diagnostic note">
-                  <strong>HERMES DIAGNOSTIC NOTE</strong>
-                  <p>{selectedFile.gameplay.debugHint}</p>
-                </div>
-              ) : null}
               <pre>{selectedContent}</pre>
             </article>
           ) : null}
@@ -2022,7 +1954,6 @@ function App() {
             <code>SECURE CHANNEL</code>
           </div>
           <section className="objective-card" aria-label="Current Act objective">
-            <span>{isEndingReady ? "EXIT OBJECTIVE" : `${getActLabel(stage)} MISSION`}</span>
             <strong>
               {isEndingReady ? "문 해제 조건 충족" : currentActGuidance?.objective}
             </strong>
@@ -2069,9 +2000,6 @@ function App() {
           <form className="evidence-form" aria-label="Evidence input" onSubmit={handleEvidenceSubmit}>
             <div className="composer-header">
               <span>YOUR RESPONSE</span>
-              <strong>
-                evidence {attachedFileIds.length}/{currentEvidenceNames.length || "-"}
-              </strong>
             </div>
             <div className="evidence-tray">
               <p className="interaction-hint">
