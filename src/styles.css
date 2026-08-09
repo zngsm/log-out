@@ -3252,6 +3252,7 @@ pre {
 }
 
 .work-split-body {
+  position: relative;
   display: grid;
   grid-template-columns: 1.6fr 1fr;
   flex: 1;
@@ -4076,12 +4077,12 @@ pre {
   transform: translateY(-2px);
 }
 
-/* Colleague Popup Notification Toast */
+/* Colleague Popup Notification Toast (Top-Right on 2-split workstation screen) */
 .colleague-popup-toast {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 10;
+  top: 20px;
+  right: 24px;
+  z-index: 100;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -4129,12 +4130,12 @@ pre {
   color: #ff5a42;
 }
 
-/* Minimized Messenger Icon Bubble Badge (1) */
+/* Minimized Messenger Icon Bubble Badge (1) (Bottom-Right on 2-split workstation screen) */
 .minimized-messenger-bubble {
   position: absolute;
   bottom: 24px;
   right: 24px;
-  z-index: 10;
+  z-index: 100;
   width: 52px;
   height: 52px;
   background: rgba(6, 30, 25, 0.92);
@@ -4179,7 +4180,7 @@ pre {
   top: 40px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 12;
+  z-index: 101;
   width: min(440px, 92%);
   background: rgba(3, 16, 13, 0.96);
   border: 1.5px solid #70f7cf;

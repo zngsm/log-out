@@ -310,107 +310,6 @@ export function WorkInterface({
 
           {/* Sequential Work Content */}
           <div className="desktop-workspace-content">
-            {/* Top Colleague Popup Overlay if triggered & visible */}
-            {messengerState.popupVisible && (
-              <div className="colleague-popup-toast" onClick={handleOpenMessenger}>
-                <div className="popup-icon">💬</div>
-                <div className="popup-body">
-                  <strong>[메신저 알림] 박엔지니어</strong>
-                  <p>오늘 점심 메뉴 뭐먹을래?</p>
-                </div>
-                <button
-                  type="button"
-                  className="popup-close-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMessengerState((prev) => ({ ...prev, popupVisible: false, isMinimized: true }));
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-
-            {/* Minimized Messenger Icon Bubble Badge (1) */}
-            {messengerState.isMinimized && !messengerState.isOpen && (
-              <div
-                className="minimized-messenger-bubble"
-                onClick={handleOpenMessenger}
-                title="동료 메신저 열기"
-              >
-                <span className="bubble-icon">💬</span>
-                <span className="unread-badge">1</span>
-              </div>
-            )}
-
-            {/* Colleague Messenger App Modal UI */}
-            {messengerState.isOpen && (
-              <div className="messenger-app-modal">
-                <div className="messenger-app-header">
-                  <span>💬 CREW MESSENGER // 박엔지니어 (Park, Engineer)</span>
-                  <div className="messenger-window-controls">
-                    <button
-                      type="button"
-                      onClick={handleMinimizeMessenger}
-                      title="축소 (말풍선으로 받기)"
-                    >
-                      ─
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleMinimizeMessenger}
-                      title="닫기"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-
-                <div className="messenger-messages-body">
-                  {messengerState.messages.map((msg, index) => (
-                    <div
-                      key={index}
-                      className={`messenger-msg-row ${
-                        msg.sender.includes("김우주") ? "sent" : "received"
-                      }`}
-                    >
-                      <div className="msg-sender-tag">{msg.sender}</div>
-                      <div className="msg-bubble-content">
-                        {msg.text}
-                        {msg.isUnread && (
-                          <span className="unread-indicator" title="상대방 미확인 상태">
-                            읽지 않음(1)
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="messenger-input-area">
-                  <input
-                    type="text"
-                    placeholder="답장을 입력하세요... (자유 텍스트)"
-                    value={messengerState.playerInput}
-                    onChange={(e) =>
-                      setMessengerState((prev) => ({ ...prev, playerInput: e.target.value }))
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSendMessengerReply();
-                    }}
-                  />
-                  <button type="button" onClick={handleSendMessengerReply}>
-                    전송
-                  </button>
-                </div>
-                {messengerState.playerReplyCount > 0 && (
-                  <div className="messenger-status-note">
-                    ※ 1회 답장 완료 후 메신저 채널은 읽지 않음(1) 상태로 유지됩니다.
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Document 1: Mining Report */}
             {activeStep === "mining" && (
               <div className="mission-content-view" aria-label="Resource Mining Status Report">
@@ -722,6 +621,107 @@ export function WorkInterface({
             )}
           </div>
         </section>
+
+        {/* Top Colleague Popup Overlay at Top-Right of 2-split workstation screen */}
+        {messengerState.popupVisible && (
+          <div className="colleague-popup-toast" onClick={handleOpenMessenger}>
+            <div className="popup-icon">💬</div>
+            <div className="popup-body">
+              <strong>[메신저 알림] 박엔지니어</strong>
+              <p>오늘 점심 메뉴 뭐먹을래?</p>
+            </div>
+            <button
+              type="button"
+              className="popup-close-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMessengerState((prev) => ({ ...prev, popupVisible: false, isMinimized: true }));
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Minimized Messenger Icon Bubble Badge (1) at Bottom-Right of 2-split workstation screen */}
+        {messengerState.isMinimized && !messengerState.isOpen && (
+          <div
+            className="minimized-messenger-bubble"
+            onClick={handleOpenMessenger}
+            title="동료 메신저 열기"
+          >
+            <span className="bubble-icon">💬</span>
+            <span className="unread-badge">1</span>
+          </div>
+        )}
+
+        {/* Dedicated Colleague Messenger App Window UI inside workstation screen */}
+        {messengerState.isOpen && (
+          <div className="messenger-app-modal">
+            <div className="messenger-app-header">
+              <span>💬 CREW MESSENGER // 박엔지니어 (Park, Engineer)</span>
+              <div className="messenger-window-controls">
+                <button
+                  type="button"
+                  onClick={handleMinimizeMessenger}
+                  title="축소 (말풍선으로 받기)"
+                >
+                  ─
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMinimizeMessenger}
+                  title="닫기"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="messenger-messages-body">
+              {messengerState.messages.map((msg, index) => (
+                <div
+                  key={index}
+                  className={`messenger-msg-row ${
+                    msg.sender.includes("김우주") ? "sent" : "received"
+                  }`}
+                >
+                  <div className="msg-sender-tag">{msg.sender}</div>
+                  <div className="msg-bubble-content">
+                    {msg.text}
+                    {msg.isUnread && (
+                      <span className="unread-indicator" title="상대방 미확인 상태">
+                        읽지 않음(1)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="messenger-input-area">
+              <input
+                type="text"
+                placeholder="답장을 입력하세요... (자유 텍스트)"
+                value={messengerState.playerInput}
+                onChange={(e) =>
+                  setMessengerState((prev) => ({ ...prev, playerInput: e.target.value }))
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSendMessengerReply();
+                }}
+              />
+              <button type="button" onClick={handleSendMessengerReply}>
+                전송
+              </button>
+            </div>
+            {messengerState.playerReplyCount > 0 && (
+              <div className="messenger-status-note">
+                ※ 1회 답장 완료 후 메신저 채널은 읽지 않음(1) 상태로 유지됩니다.
+              </div>
+            )}
+          </div>
+        )}
 
         {rebootState !== "idle" && (
           <RebootGlitchPresentation state={rebootState} />
