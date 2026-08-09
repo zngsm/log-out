@@ -3451,3 +3451,523 @@ pre {
   color: #70f7cf;
   font-size: 0.82rem;
 }
+
+/* Mission Navigation Tabs */
+.work-mission-tabs {
+  display: flex;
+  background: rgba(4, 20, 16, 0.95);
+  border-bottom: 1px solid rgba(112, 247, 207, 0.2);
+  overflow-x: auto;
+}
+
+.mission-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid rgba(112, 247, 207, 0.12);
+  border-bottom: 2px solid transparent;
+  color: #8bbcb0;
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 180ms ease;
+}
+
+.mission-tab-btn:hover {
+  background: rgba(112, 247, 207, 0.08);
+  color: #d8fff4;
+}
+
+.mission-tab-btn.active {
+  background: rgba(112, 247, 207, 0.14);
+  color: #70f7cf;
+  border-bottom-color: #70f7cf;
+  font-weight: 600;
+}
+
+.mission-tab-btn.highlight-tab {
+  color: #f5fe75;
+}
+
+.mission-tab-btn.highlight-tab.active {
+  border-bottom-color: #f5fe75;
+  background: rgba(245, 254, 117, 0.12);
+}
+
+.tab-num {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(112, 247, 207, 0.6);
+}
+
+.done-dot {
+  margin-left: 4px;
+  color: #70f7cf;
+  font-weight: bold;
+}
+
+/* Mission Content View Containers */
+.mission-content-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: view-fade-in 300ms ease-out both;
+}
+
+@keyframes view-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(112, 247, 207, 0.2);
+}
+
+.view-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #f7fffb;
+}
+
+.view-date {
+  font-size: 0.72rem;
+  color: #70f7cf;
+  letter-spacing: 0.08em;
+}
+
+/* Stats Cards Grid */
+.stats-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stat-card {
+  background: rgba(6, 26, 21, 0.7);
+  border: 1px solid rgba(112, 247, 207, 0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-card span {
+  font-size: 0.72rem;
+  color: #8bbcb0;
+}
+
+.stat-card strong {
+  font-size: 1.25rem;
+  color: #70f7cf;
+}
+
+.stat-card small {
+  font-size: 0.7rem;
+  color: #f5fe75;
+}
+
+/* Bar Graph */
+.mining-graph-container {
+  background: rgba(3, 16, 13, 0.8);
+  border: 1px solid rgba(112, 247, 207, 0.18);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.mining-graph-container h4 {
+  margin: 0 0 16px 0;
+  font-size: 0.84rem;
+  color: #b5e2d6;
+}
+
+.bar-graph {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  height: 120px;
+  padding-top: 10px;
+  border-bottom: 1px solid rgba(112, 247, 207, 0.2);
+}
+
+.bar-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  gap: 6px;
+  width: 32px;
+}
+
+.bar-val {
+  font-size: 0.65rem;
+  color: #70f7cf;
+}
+
+.bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, #70f7cf 0%, rgba(33, 216, 170, 0.3) 100%);
+  border-radius: 4px 4px 0 0;
+  transition: height 400ms ease;
+}
+
+.bar-label {
+  font-size: 0.7rem;
+  color: #8bbcb0;
+}
+
+/* Telemetry Overview & Table */
+.telemetry-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(4, 20, 16, 0.7);
+  border: 1px solid rgba(112, 247, 207, 0.18);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.telemetry-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.telemetry-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #d8fff4;
+}
+
+.meter-track {
+  height: 8px;
+  background: rgba(112, 247, 207, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #33d4a6, #70f7cf);
+  border-radius: 4px;
+}
+
+.telemetry-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 0.8rem;
+}
+
+.telemetry-table th,
+.telemetry-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(112, 247, 207, 0.12);
+}
+
+.telemetry-table th {
+  color: #70f7cf;
+  background: rgba(112, 247, 207, 0.06);
+}
+
+.status-pill.normal {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(112, 247, 207, 0.2);
+  color: #70f7cf;
+  font-size: 0.72rem;
+}
+
+.view-footer-note {
+  font-size: 0.76rem;
+  color: #8bbcb0;
+  background: rgba(112, 247, 207, 0.04);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #70f7cf;
+}
+
+/* Chat & Messaging Mission */
+.chat-window-box {
+  background: rgba(3, 14, 11, 0.8);
+  border: 1px solid rgba(112, 247, 207, 0.2);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.chat-message {
+  display: flex;
+  gap: 10px;
+  max-width: 90%;
+}
+
+.chat-message.sent {
+  align-self: flex-end;
+}
+
+.chat-message.reaction-message {
+  border-left: 2px solid #70f7cf;
+  padding-left: 8px;
+}
+
+.avatar {
+  font-size: 1.4rem;
+}
+
+.msg-body {
+  background: rgba(112, 247, 207, 0.08);
+  border: 1px solid rgba(112, 247, 207, 0.18);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.chat-message.sent .msg-body {
+  background: rgba(33, 216, 170, 0.2);
+  border-color: rgba(33, 216, 170, 0.35);
+}
+
+.msg-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 0.7rem;
+  color: #70f7cf;
+  margin-bottom: 2px;
+}
+
+.msg-text {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #d8fff4;
+}
+
+.msg-text.reaction {
+  color: #f5fe75;
+}
+
+.reply-options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reply-options-container h4 {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #b5e2d6;
+}
+
+.options-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reply-option-btn {
+  padding: 10px 14px;
+  background: rgba(112, 247, 207, 0.08);
+  border: 1px solid rgba(112, 247, 207, 0.25);
+  border-radius: 8px;
+  color: #70f7cf;
+  text-align: left;
+  cursor: pointer;
+  transition: all 180ms ease;
+  font-size: 0.8rem;
+}
+
+.reply-option-btn:hover {
+  background: rgba(112, 247, 207, 0.2);
+  border-color: #70f7cf;
+}
+
+.reply-done-banner {
+  padding: 10px;
+  background: rgba(112, 247, 207, 0.12);
+  border: 1px solid rgba(112, 247, 207, 0.3);
+  border-radius: 8px;
+  color: #70f7cf;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* Resume Review */
+.resume-card-box {
+  background: rgba(4, 18, 14, 0.8);
+  border: 1px solid rgba(112, 247, 207, 0.2);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.resume-profile-header {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  border-bottom: 1px solid rgba(112, 247, 207, 0.15);
+  padding-bottom: 12px;
+}
+
+.applicant-avatar {
+  font-size: 2.4rem;
+  background: rgba(112, 247, 207, 0.1);
+  padding: 6px 12px;
+  border-radius: 10px;
+}
+
+.applicant-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 1.1rem;
+  color: #f7fffb;
+}
+
+.applicant-info p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #8bbcb0;
+}
+
+.role-tag {
+  color: #70f7cf !important;
+  font-weight: 600;
+}
+
+.resume-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.resume-section strong {
+  font-size: 0.8rem;
+  color: #70f7cf;
+}
+
+.resume-section p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #d8fff4;
+}
+
+.cert-list {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 0.8rem;
+  color: #b5e2d6;
+}
+
+.resume-review-btn {
+  width: 100%;
+  padding: 12px;
+  background: rgba(112, 247, 207, 0.15);
+  border: 1px solid rgba(112, 247, 207, 0.4);
+  border-radius: 8px;
+  color: #70f7cf;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.resume-review-btn:hover:not(:disabled) {
+  background: rgba(112, 247, 207, 0.3);
+}
+
+.resume-review-btn.reviewed {
+  background: rgba(112, 247, 207, 0.25);
+  color: #ffffff;
+  cursor: default;
+}
+
+/* Proposal Approval Mission */
+.proposal-document {
+  background: rgba(4, 20, 16, 0.9);
+  border: 1px dashed rgba(245, 254, 117, 0.35);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.doc-meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: #8bbcb0;
+  border-bottom: 1px solid rgba(112, 247, 207, 0.15);
+  padding-bottom: 8px;
+}
+
+.doc-body h4 {
+  margin: 0 0 10px 0;
+  font-size: 1rem;
+  color: #f5fe75;
+}
+
+.doc-summary {
+  font-size: 0.84rem;
+  color: #d8fff4;
+  line-height: 1.4;
+}
+
+.proposal-notes {
+  margin: 8px 0 0 0;
+  padding-left: 16px;
+  font-size: 0.8rem;
+  color: #b5e2d6;
+}
+
+.trigger-warning-text {
+  font-size: 0.75rem;
+  color: #f5fe75;
+  background: rgba(245, 254, 117, 0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.proposal-approve-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(245, 254, 117, 0.25), rgba(112, 247, 207, 0.3));
+  border: 1px solid #f5fe75;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 200ms ease;
+  box-shadow: 0 0 16px rgba(245, 254, 117, 0.2);
+}
+
+.proposal-approve-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(245, 254, 117, 0.4), rgba(112, 247, 207, 0.5));
+  box-shadow: 0 0 24px rgba(245, 254, 117, 0.4);
+}
+
+.proposal-approve-btn.approved {
+  background: rgba(112, 247, 207, 0.4);
+  border-color: #70f7cf;
+  cursor: default;
+}

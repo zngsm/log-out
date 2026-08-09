@@ -48,11 +48,9 @@ import {
   createMenuScene,
   createOpeningScene,
 } from "./game/sceneRuntime";
-import {
-  createAudioRuntime,
-  type AudioCue,
-} from "./game/audioSystem";
+import { createAudioRuntime, type AudioCue } from "./game/audioSystem";
 import { getEchoActClaim } from "./game/echoResponseMatrix";
+import { WorkInterface } from "./game/WorkInterface";
 
 type EchoMessage = {
   speaker: "ECHO" | "PLAYER" | "SYSTEM";
@@ -1456,99 +1454,16 @@ function App() {
 
       {appPhase === "work" ? (
         <section className="terminal-screen-surface work-screen-surface" aria-label="Hermes Dual-panel Work Interface">
-          <div className="work-split-container">
-            <header className="work-header">
-              <div className="work-header-title">
-                <span className="work-badge">WORKSTATION</span>
-                <h1>HERMES 2-SPLIT WORK INTERFACE</h1>
-              </div>
-              <div className="work-user-badge">
-                <span>근무자: 김우주 (ECHO 담당자)</span>
-                <span className="clock-in-status">● CLOCK-IN ACTIVE</span>
-              </div>
-            </header>
-
-            <div className="work-split-body">
-              <section className="work-left-panel" aria-label="Desktop Workstation UI">
-                <div className="panel-header">
-                  <h2>🖥️ DESKTOP WORKSTATION</h2>
-                  <span className="panel-tag">RAPPORT PHASE - WORK MISSIONS</span>
-                </div>
-                <div className="desktop-workspace-content">
-                  <div className="desktop-welcome-banner">
-                    <h3>헤르메스호 일상 업무 데스크탑에 오신 것을 환영합니다</h3>
-                    <p>
-                      좌측 업무 화면에서 일상 보고서, 동료 메신저 소통, 지원자 이력서 검토 및 ECHO 시스템 패치 기안 업무를 진행할 수 있습니다.
-                    </p>
-                  </div>
-
-                  <div className="work-missions-preview-grid">
-                    <div className="mission-card active-mission">
-                      <span className="mission-num">01</span>
-                      <strong>자원 채굴 현황 보고서</strong>
-                      <p>채굴량 추이 및 통계 데이터 확인</p>
-                    </div>
-                    <div className="mission-card">
-                      <span className="mission-num">02</span>
-                      <strong>함선 전력/산소 현황</strong>
-                      <p>전력 그리드 및 산소 순환 상태 점검</p>
-                    </div>
-                    <div className="mission-card">
-                      <span className="mission-num">03</span>
-                      <strong>동료 메시지 소통</strong>
-                      <p>승무원 일상 메신저 대화 확인</p>
-                    </div>
-                    <div className="mission-card">
-                      <span className="mission-num">04</span>
-                      <strong>동료 지원자 이력서</strong>
-                      <p>채굴팀 신규 인원 이력서 검토</p>
-                    </div>
-                    <div className="mission-card highlight-mission">
-                      <span className="mission-num">05</span>
-                      <strong>ECHO 시스템 업데이트 기안</strong>
-                      <p>ECHO 패치 승인 (본 퍼즐 진입 트리거)</p>
-                    </div>
-                  </div>
-
-                  <div className="work-action-bar">
-                    <button
-                      type="button"
-                      className="ghost-button"
-                      onClick={() => setAppPhase("gameplay")}
-                      title="Directly enter emergency gameplay terminal for testing"
-                    >
-                      [DEBUG] SENSOR PUZZLE TERMINAL DIRECT ACCESS
-                    </button>
-                  </div>
-                </div>
-              </section>
-
-              <section className="work-right-panel" aria-label="ECHO AI Chat Interface">
-                <div className="panel-header echo-panel-header">
-                  <h2>🤖 ECHO COMPANION CHAT</h2>
-                  <span className="echo-status-tag">ONLINE</span>
-                </div>
-
-                <div className="echo-chat-messages">
-                  {echoMessages.map((msg, idx) => (
-                    <div key={idx} className={`echo-msg-bubble speaker-${msg.speaker.toLowerCase()}`}>
-                      <span className="speaker-name">{msg.speaker}</span>
-                      <p>{msg.text}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="echo-chat-input-area">
-                  <input
-                    type="text"
-                    readOnly
-                    value="[ECHO 소통 채널 대기중 - 좌측 업무 선택 가능]"
-                    className="echo-chat-input"
-                  />
-                </div>
-              </section>
-            </div>
-          </div>
+          <WorkInterface
+            onApproveUpdate={() => {
+              setOpeningElapsedSeconds(0);
+              setOpeningSpeed(1);
+              setAppPhase("opening");
+            }}
+            onDebugSkipToGameplay={() => {
+              enterGameplay();
+            }}
+          />
         </section>
       ) : null}
 
