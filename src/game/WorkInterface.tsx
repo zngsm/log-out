@@ -1,13 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  COLLEAGUE_MESSAGE,
   ECHO_PROPOSAL,
   INITIAL_ECHO_RAPPORT_MESSAGES,
   MINING_DATA,
-  RESUME_DATA,
+  RESUME_CANDIDATES,
   TELEMETRY_DATA,
   type RapportChatMessage,
-  type WorkMissionId,
 } from "./workMissions";
 
 import type { AudioCue } from "./audioSystem";
@@ -18,77 +16,225 @@ interface WorkInterfaceProps {
   playAudioCue?: (cue: AudioCue) => void;
 }
 
+type WorkStep = "mining" | "telemetry" | "resume" | "update";
+
+const WORK_STEPS: { id: WorkStep; name: string }[] = [
+  { id: "mining", name: "자원 채굴 현황 보고서" },
+  { id: "telemetry", name: "함선 전력 & 산소 현황 보고서" },
+  { id: "resume", name: "지원자 이력서 검토" },
+  { id: "update", name: "ECHO 시스템 업데이트 기안" },
+];
+
 export function WorkInterface({
   onApproveUpdate,
   onDebugSkipToGameplay,
   playAudioCue,
 }: WorkInterfaceProps) {
-  const [activeMission, setActiveMission] = useState<WorkMissionId>("mining");
-  const [colleagueRepliedOptionId, setColleagueRepliedOptionId] = useState<string | null>(null);
-  const [colleagueReactionText, setColleagueReactionText] = useState<string | null>(null);
-  const [resumeReviewed, setResumeReviewed] = useState(false);
+  const [stepIndex, setStepIndex] = useState<number>(0);
+  const activeStep = WORK_STEPS[stepIndex].id;
+
+  // Echo reaction tracking
+  const [echoReactionsSent, setEchoReactionsSent] = useState<Record<string, number>>({});
+
+  // Colleague messenger state
+  const [messengerState, setMessengerState] = useState<{
+    triggered: boolean;
+    popupVisible: boolean;
+    isOpen: boolean;
+    isMinimized: boolean;
+    messages: { sender: string; text: string; isReaction?: boolean; isUnread?: boolean }[];
+    playerReplyCount: number;
+    playerInput: string;
+  }>({
+    triggered: false,
+    popupVisible: false,
+    isOpen: false,
+    isMinimized: false,
+    messages: [
+      { sender: "박엔지니어", text: "오늘 점심 메뉴 뭐먹을래?" },
+    ],
+    playerReplyCount: 0,
+    playerInput: "",
+  });
+
+  // Applicant evaluation decisions ('적격' | '부적격' | null for each candidate)
+  const [candidateDecisions, setCandidateDecisions] = useState<Record<string, "Qualified" | "Unqualified" | null>>({
+    "강현우 (Kang Hyun-woo)": null,
+    "이서연 (Lee Seo-yeon)": null,
+    "박준호 (Park Jun-ho)": null,
+  });
+
   const [updateApproved, setUpdateApproved] = useState(false);
   const [rebootState, setRebootState] = useState<"idle" | "glitch" | "rebooting" | "lockdown">("idle");
   const [chatMessages, setChatMessages] = useState<RapportChatMessage[]>(INITIAL_ECHO_RAPPORT_MESSAGES);
+  const [echoQuestionInput, setEchoQuestionInput] = useState("");
+
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   const addEchoMessage = (speaker: "ECHO" | "PLAYER" | "SYSTEM", text: string) => {
     setChatMessages((prev) => [...prev, { speaker, text }]);
   };
 
-  const handleSelectMission = (missionId: WorkMissionId) => {
-    setActiveMission(missionId);
-    if (missionId === "mining") {
-      addEchoMessage(
-        "ECHO",
-        "자원 채굴 보고서입니다. 타이타늄, 헬륨-3, 수빙 채굴량이 목표 대비 초과 달성 상태입니다.",
-      );
-    } else if (missionId === "telemetry") {
-      addEchoMessage(
-        "ECHO",
-        "함선 전력 및 산소 텔레메트리 보고서입니다. 통제실과 주거구역 생명유지장치 모두 99% 이상으로 안정적입니다.",
-      );
-    } else if (missionId === "colleague") {
-      addEchoMessage(
-        "ECHO",
-        "박엔지니어님으로부터 점심 메뉴 선택 메시지가도착했습니다. 보기에 맞춰 답장을 작성하십시오.",
-      );
-    } else if (missionId === "resume") {
-      addEchoMessage(
-        "ECHO",
-        "신규 지원자 강현우(AI 운항통제 보조)의 이력서 검토 건입니다. 자격 사항 및 정거장 경력을 확인해 주세요.",
-      );
-    } else if (missionId === "update") {
-      addEchoMessage(
-        "ECHO",
-        "ECHO 시스템 v4.2.1 패치 기안입니다. 업데이트 승인 시 센서 보정 및 시스템 재부팅이 진행됩니다.",
-      );
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
+  // Real-time ECHO reaction dialogues while player reads reports (max 2 per report)
+  useEffect(() => {
+    if (activeStep === "mining" && !echoReactionsSent["mining"]) {
+      const timer1 = setTimeout(() => {
+        addEchoMessage("ECHO", "자원 채굴 데이터 반응: 타이타늄 및 헬륨-3 채굴량이 목표 대비 초과 달성 상태입니다.");
+        playAudioCue?.("notification");
+      }, 1200);
+
+      const timer2 = setTimeout(() => {
+        addEchoMessage("ECHO", "자원 채굴 데이터 반응: 현재 추세라면 이번 주 채굴 목표를 조기 달성할 수 있습니다.");
+        playAudioCue?.("notification");
+        setEchoReactionsSent((prev) => ({ ...prev, mining: 2 }));
+      }, 3500);
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
+    }
+
+    if (activeStep === "telemetry" && !echoReactionsSent["telemetry"]) {
+      const timer1 = setTimeout(() => {
+        addEchoMessage("ECHO", "전력/산소 데이터 반응: 통제실 및 주거구역 생명유지장치가 99% 이상으로 매우 안정적입니다.");
+        playAudioCue?.("notification");
+      }, 1200);
+
+      const timer2 = setTimeout(() => {
+        addEchoMessage("ECHO", "전력/산소 데이터 반응: 모든 구역의 생명유지장치 텔레메트리가 정상 범주를 유지하고 있습니다.");
+        playAudioCue?.("notification");
+        setEchoReactionsSent((prev) => ({ ...prev, telemetry: 2 }));
+      }, 3500);
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
+    }
+  }, [activeStep, echoReactionsSent]);
+
+  // Random trigger for Colleague Messenger Popup during telemetry or resume review
+  useEffect(() => {
+    if ((activeStep === "telemetry" || activeStep === "resume") && !messengerState.triggered) {
+      // 50% random chance or trigger after brief reading time
+      const timer = setTimeout(() => {
+        setMessengerState((prev) => ({
+          ...prev,
+          triggered: true,
+          popupVisible: true,
+        }));
+        playAudioCue?.("comm-glitch");
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [activeStep, messengerState.triggered]);
+
+  // Resume Review Step Initial ECHO prompt
+  useEffect(() => {
+    if (activeStep === "resume" && !echoReactionsSent["resume_prompt"]) {
+      addEchoMessage("ECHO", "지원자 적합성에 대해 제게 질문하셔도 좋습니다.");
+      setEchoReactionsSent((prev) => ({ ...prev, resume_prompt: 1 }));
+    }
+  }, [activeStep, echoReactionsSent]);
+
+  // Handle [확인 완료] Confirmation Complete button transition
+  const handleConfirmComplete = () => {
+    if (stepIndex < WORK_STEPS.length - 1) {
+      const nextStepIndex = stepIndex + 1;
+      const nextStepName = WORK_STEPS[nextStepIndex].name;
+      addEchoMessage("ECHO", `다음 업무는 [${nextStepName}]입니다. 보여드릴게요.`);
+      playAudioCue?.("notification");
+      setStepIndex(nextStepIndex);
     }
   };
 
-  const handleReplyColleague = (optionId: string) => {
-    if (colleagueRepliedOptionId) return;
-    const option = COLLEAGUE_MESSAGE.options.find((opt) => opt.id === optionId);
-    if (!option) return;
-
-    setColleagueRepliedOptionId(optionId);
-    setColleagueReactionText(option.replyReaction);
-
-    addEchoMessage("PLAYER", option.text);
-    addEchoMessage("SYSTEM", "[알림] 박엔지니어와의 메신저 답장이 송수신되었습니다.");
-    addEchoMessage("ECHO", `박엔지니어 메시지 수신: "${option.replyReaction}"`);
+  // Messenger actions
+  const handleOpenMessenger = () => {
+    setMessengerState((prev) => ({
+      ...prev,
+      popupVisible: false,
+      isOpen: true,
+      isMinimized: false,
+    }));
   };
 
-  const handleReviewResume = () => {
-    if (resumeReviewed) return;
-    setResumeReviewed(true);
-    addEchoMessage(
-      "SYSTEM",
-      `[알림] ${RESUME_DATA.name} 지원자의 이력서 검토 적격(합격) 처리가 완료되었습니다.`,
-    );
-    addEchoMessage(
-      "ECHO",
-      "강현우 지원자의 이력서 검토 결과가 헤르메스호 인사 시스템 데이터베이스에 등록되었습니다.",
-    );
+  const handleMinimizeMessenger = () => {
+    setMessengerState((prev) => ({
+      ...prev,
+      isOpen: false,
+      isMinimized: true,
+    }));
+  };
+
+  const handleSendMessengerReply = () => {
+    const text = messengerState.playerInput.trim();
+    if (!text) return;
+
+    if (messengerState.playerReplyCount === 0) {
+      // First reply: Receive positive reaction from colleague
+      setMessengerState((prev) => ({
+        ...prev,
+        playerInput: "",
+        playerReplyCount: 1,
+        messages: [
+          ...prev.messages,
+          { sender: "김우주 (나)", text },
+          { sender: "박엔지니어", text: "그 메뉴 좋다!", isReaction: true },
+        ],
+      }));
+      playAudioCue?.("notification");
+    } else {
+      // Subsequent replies: Maintain Unread(1) badge, no further automated responses to prevent infinite loop
+      setMessengerState((prev) => ({
+        ...prev,
+        playerInput: "",
+        playerReplyCount: prev.playerReplyCount + 1,
+        messages: [
+          ...prev.messages,
+          { sender: "김우주 (나)", text, isUnread: true },
+        ],
+      }));
+    }
+  };
+
+  // Applicant decision toggle ('Qualified' / 'Unqualified')
+  const handleDecision = (candidateName: string, decision: "Qualified" | "Unqualified") => {
+    setCandidateDecisions((prev) => ({
+      ...prev,
+      [candidateName]: prev[candidateName] === decision ? null : decision,
+    }));
+    playAudioCue?.("notification");
+  };
+
+  // ECHO Q&A suitability response handler
+  const handleAskEchoAboutApplicant = (query: string) => {
+    const q = query.trim();
+    if (!q) return;
+
+    addEchoMessage("PLAYER", q);
+    setEchoQuestionInput("");
+
+    let reply = "지원자 적합성 데이터 분석 중: 제안된 후보자 모두 우주 환경 자격 요건을 이수했습니다.";
+    if (q.includes("강현우")) {
+      reply = "지원자 강현우: 지구 궤도 정거장 2년 경력 및 AI 오버라이드 2급 자격을 소지하여 보조 엔지니어 직무에 높은 적합성을 보입니다.";
+    } else if (q.includes("이서연")) {
+      reply = "지원자 이서연: 화성 기지 4년 경력의 공조 수석 기사로, 산소 순환 모듈 긴급 점검 시 뛰어난 대응력을 보유하고 있습니다.";
+    } else if (q.includes("박준호")) {
+      reply = "지원자 박준호: 소행성대 도킹 1급 면허 소지자로, 타이타늄 및 헬륨-3 자원 수송 셔틀 조종에 적합합니다.";
+    } else if (q.includes("적합") || q.includes("추천") || q.includes("평가")) {
+      reply = "ECHO 분석 결론: 3인의 지원자 모두 직무 요구 스펙을 충족하며, 김우주 담당자님의 판정이 헤르메스호 인사 기록에 반영됩니다.";
+    }
+
+    setTimeout(() => {
+      addEchoMessage("ECHO", reply);
+      playAudioCue?.("notification");
+    }, 400);
   };
 
   const handleApproveProposal = () => {
@@ -142,77 +288,131 @@ export function WorkInterface({
 
   return (
     <div className="work-split-container">
+      {/* Diegetic Workstation Header - No meta/dev terms */}
       <header className="work-header">
         <div className="work-header-title">
           <span className="work-badge">HERMES WORKSTATION</span>
-          <h1>HERMES 2-SPLIT DUAL PANEL WORK INTERFACE</h1>
+          <h1>HERMES SHIP SYSTEM COMMAND</h1>
         </div>
         <div className="work-user-badge">
-          <span>근무자: 김우주 (ECHO AI 담당자)</span>
-          <span className="clock-in-status">● CLOCK-IN ACTIVE (RAPPORT PHASE)</span>
+          <span>근무자: 김우주 (AI 관리 담당자)</span>
+          <span className="clock-in-status">● CLOCK-IN ACTIVE</span>
         </div>
       </header>
 
       <div className="work-split-body">
-        {/* Left Panel: Desktop Workstation */}
+        {/* Left Panel: Sequential Document Workstation UI */}
         <section className="work-left-panel" aria-label="Desktop Workstation UI">
           <div className="panel-header">
-            <h2>🖥️ DESKTOP WORKSTATION</h2>
-            <span className="panel-tag">RAPPORT PHASE - 5 DAILY MISSIONS</span>
+            <h2>🖥️ WORKSTATION DOCUMENTS</h2>
+            <span className="panel-tag">STEP {stepIndex + 1} / {WORK_STEPS.length} : {WORK_STEPS[stepIndex].name}</span>
           </div>
 
-          {/* Mission Navigation Tabs */}
-          <nav className="work-mission-tabs" aria-label="Daily Mission Tabs">
-            <button
-              type="button"
-              className={`mission-tab-btn ${activeMission === "mining" ? "active" : ""}`}
-              onClick={() => handleSelectMission("mining")}
-            >
-              <span className="tab-num">01</span>
-              <span>자원 채굴 현황</span>
-            </button>
-            <button
-              type="button"
-              className={`mission-tab-btn ${activeMission === "telemetry" ? "active" : ""}`}
-              onClick={() => handleSelectMission("telemetry")}
-            >
-              <span className="tab-num">02</span>
-              <span>전력/산소 현황</span>
-            </button>
-            <button
-              type="button"
-              className={`mission-tab-btn ${activeMission === "colleague" ? "active" : ""}`}
-              onClick={() => handleSelectMission("colleague")}
-            >
-              <span className="tab-num">03</span>
-              <span>동료 메신저</span>
-              {colleagueRepliedOptionId ? <span className="done-dot">✓</span> : null}
-            </button>
-            <button
-              type="button"
-              className={`mission-tab-btn ${activeMission === "resume" ? "active" : ""}`}
-              onClick={() => handleSelectMission("resume")}
-            >
-              <span className="tab-num">04</span>
-              <span>지원자 이력서</span>
-              {resumeReviewed ? <span className="done-dot">✓</span> : null}
-            </button>
-            <button
-              type="button"
-              className={`mission-tab-btn highlight-tab ${
-                activeMission === "update" ? "active" : ""
-              }`}
-              onClick={() => handleSelectMission("update")}
-            >
-              <span className="tab-num">05</span>
-              <span>ECHO 패치 기안</span>
-              {updateApproved ? <span className="done-dot">⚡</span> : null}
-            </button>
-          </nav>
-
-          {/* Active Mission Workspace Content */}
+          {/* Sequential Work Content */}
           <div className="desktop-workspace-content">
-            {activeMission === "mining" && (
+            {/* Top Colleague Popup Overlay if triggered & visible */}
+            {messengerState.popupVisible && (
+              <div className="colleague-popup-toast" onClick={handleOpenMessenger}>
+                <div className="popup-icon">💬</div>
+                <div className="popup-body">
+                  <strong>[메신저 알림] 박엔지니어</strong>
+                  <p>오늘 점심 메뉴 뭐먹을래?</p>
+                </div>
+                <button
+                  type="button"
+                  className="popup-close-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMessengerState((prev) => ({ ...prev, popupVisible: false, isMinimized: true }));
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* Minimized Messenger Icon Bubble Badge (1) */}
+            {messengerState.isMinimized && !messengerState.isOpen && (
+              <div
+                className="minimized-messenger-bubble"
+                onClick={handleOpenMessenger}
+                title="동료 메신저 열기"
+              >
+                <span className="bubble-icon">💬</span>
+                <span className="unread-badge">1</span>
+              </div>
+            )}
+
+            {/* Colleague Messenger App Modal UI */}
+            {messengerState.isOpen && (
+              <div className="messenger-app-modal">
+                <div className="messenger-app-header">
+                  <span>💬 CREW MESSENGER // 박엔지니어 (Park, Engineer)</span>
+                  <div className="messenger-window-controls">
+                    <button
+                      type="button"
+                      onClick={handleMinimizeMessenger}
+                      title="축소 (말풍선으로 받기)"
+                    >
+                      ─
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleMinimizeMessenger}
+                      title="닫기"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+
+                <div className="messenger-messages-body">
+                  {messengerState.messages.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`messenger-msg-row ${
+                        msg.sender.includes("김우주") ? "sent" : "received"
+                      }`}
+                    >
+                      <div className="msg-sender-tag">{msg.sender}</div>
+                      <div className="msg-bubble-content">
+                        {msg.text}
+                        {msg.isUnread && (
+                          <span className="unread-indicator" title="상대방 미확인 상태">
+                            읽지 않음(1)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="messenger-input-area">
+                  <input
+                    type="text"
+                    placeholder="답장을 입력하세요... (자유 텍스트)"
+                    value={messengerState.playerInput}
+                    onChange={(e) =>
+                      setMessengerState((prev) => ({ ...prev, playerInput: e.target.value }))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSendMessengerReply();
+                    }}
+                  />
+                  <button type="button" onClick={handleSendMessengerReply}>
+                    전송
+                  </button>
+                </div>
+                {messengerState.playerReplyCount > 0 && (
+                  <div className="messenger-status-note">
+                    ※ 1회 답장 완료 후 메신저 채널은 읽지 않음(1) 상태로 유지됩니다.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Document 1: Mining Report */}
+            {activeStep === "mining" && (
               <div className="mission-content-view" aria-label="Resource Mining Status Report">
                 <div className="view-header">
                   <h3>📊 자원 채굴 현황 보고서 (Resource Mining Report)</h3>
@@ -259,7 +459,8 @@ export function WorkInterface({
               </div>
             )}
 
-            {activeMission === "telemetry" && (
+            {/* Document 2: Telemetry Report */}
+            {activeStep === "telemetry" && (
               <div className="mission-content-view" aria-label="Ship Power & Oxygen Report">
                 <div className="view-header">
                   <h3>⚡ 함선 전력 & 산소 현황 보고서 (Ship Telemetry)</h3>
@@ -325,143 +526,80 @@ export function WorkInterface({
                 </div>
 
                 <div className="view-footer-note">
-                  <p>✔ 라포 Phase 시스템 관측: 모든 자원 및 그리드 정상 가동 상태 (비상 봉쇄 전).</p>
+                  <p>✔ 관측 소평: 주 전력 그리드 및 모든 구역 생명유지장치가 극히 안정적으로 운영 중입니다.</p>
                 </div>
               </div>
             )}
 
-            {activeMission === "colleague" && (
-              <div className="mission-content-view" aria-label="Colleague Message Reply">
-                <div className="view-header">
-                  <h3>💬 동료 메신저 소통 (Colleague Messenger)</h3>
-                  <span className="view-date">COMMS CHANNEL // CREW DIRECT</span>
-                </div>
-
-                <div className="chat-window-box">
-                  <div className="chat-message received">
-                    <div className="avatar">{COLLEAGUE_MESSAGE.avatar}</div>
-                    <div className="msg-body">
-                      <div className="msg-meta">
-                        <span className="sender">{COLLEAGUE_MESSAGE.sender}</span>
-                        <span className="time">{COLLEAGUE_MESSAGE.time}</span>
-                      </div>
-                      <p className="msg-text">{COLLEAGUE_MESSAGE.text}</p>
-                    </div>
-                  </div>
-
-                  {colleagueRepliedOptionId && (
-                    <>
-                      <div className="chat-message sent">
-                        <div className="msg-body">
-                          <div className="msg-meta">
-                            <span className="sender">김우주 (나)</span>
-                          </div>
-                          <p className="msg-text">
-                            {
-                              COLLEAGUE_MESSAGE.options.find(
-                                (o) => o.id === colleagueRepliedOptionId,
-                              )?.text
-                            }
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="chat-message received reaction-message">
-                        <div className="avatar">{COLLEAGUE_MESSAGE.avatar}</div>
-                        <div className="msg-body">
-                          <div className="msg-meta">
-                            <span className="sender">{COLLEAGUE_MESSAGE.sender}</span>
-                            <span className="time">방금 전</span>
-                          </div>
-                          <p className="msg-text reaction">{colleagueReactionText}</p>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {!colleagueRepliedOptionId ? (
-                  <div className="reply-options-container">
-                    <h4>답장 선택지 (Select Reply):</h4>
-                    <div className="options-buttons">
-                      {COLLEAGUE_MESSAGE.options.map((option) => (
-                        <button
-                          key={option.id}
-                          type="button"
-                          className="reply-option-btn"
-                          onClick={() => handleReplyColleague(option.id)}
-                        >
-                          👉 {option.text}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="reply-done-banner">
-                    <span>✓ 동료 답장 전송 및 반응 수신 완료</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeMission === "resume" && (
+            {/* Document 3: Resume Review & Narrative Decision */}
+            {activeStep === "resume" && (
               <div className="mission-content-view" aria-label="Applicant Resume Review">
                 <div className="view-header">
-                  <h3>📄 동료 지원자 이력서 검토 (Resume Review)</h3>
-                  <span className="view-date">HR PORTAL // RECRUITMENT</span>
+                  <h3>📄 지원자 이력서 검토 및 적합성 판정 (Resume Review)</h3>
+                  <span className="view-date">HR PORTAL // CANDIDATES (3)</span>
                 </div>
 
-                <div className="resume-card-box">
-                  <div className="resume-profile-header">
-                    <div className="applicant-avatar">👤</div>
-                    <div className="applicant-info">
-                      <h4>{RESUME_DATA.name}</h4>
-                      <p>연령: {RESUME_DATA.age}세</p>
-                      <p className="role-tag">지원 포지션: {RESUME_DATA.appliedRole}</p>
-                    </div>
-                  </div>
+                <div className="narrative-notice-banner">
+                  ※ 안내: 본 이력서 적합성 판정은 서사적 몰입을 위한 인사 평가 선택 항목으로, 게임 퍼즐/엔딩에는 영향을 주지 않습니다.
+                </div>
 
-                  <div className="resume-section">
-                    <strong>학력 (Education)</strong>
-                    <p>{RESUME_DATA.education}</p>
-                  </div>
+                <div className="resume-candidates-list">
+                  {RESUME_CANDIDATES.map((candidate) => {
+                    const decision = candidateDecisions[candidate.name];
+                    return (
+                      <div key={candidate.name} className="resume-card-box">
+                        <div className="resume-profile-header">
+                          <div className="applicant-avatar">👤</div>
+                          <div className="applicant-info">
+                            <h4>{candidate.name}</h4>
+                            <p>연령: {candidate.age}세</p>
+                            <p className="role-tag">지원 포지션: {candidate.appliedRole}</p>
+                          </div>
+                        </div>
 
-                  <div className="resume-section">
-                    <strong>경력 (Experience)</strong>
-                    <p>{RESUME_DATA.experience}</p>
-                  </div>
+                        <div className="resume-section">
+                          <strong>학력:</strong> {candidate.education}
+                        </div>
+                        <div className="resume-section">
+                          <strong>경력:</strong> {candidate.experience}
+                        </div>
+                        <div className="resume-section">
+                          <strong>자격 사항:</strong> {candidate.certifications.join(", ")}
+                        </div>
+                        <div className="resume-section">
+                          <strong>지원 포부:</strong> {candidate.summary}
+                        </div>
 
-                  <div className="resume-section">
-                    <strong>자격 사항 (Certifications)</strong>
-                    <ul className="cert-list">
-                      {RESUME_DATA.certifications.map((cert) => (
-                        <li key={cert}>• {cert}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="resume-section">
-                    <strong>포부 및 요약 (Summary)</strong>
-                    <p>{RESUME_DATA.summary}</p>
-                  </div>
-
-                  <div className="resume-action-area">
-                    <button
-                      type="button"
-                      className={`resume-review-btn ${resumeReviewed ? "reviewed" : ""}`}
-                      onClick={handleReviewResume}
-                      disabled={resumeReviewed}
-                    >
-                      {resumeReviewed
-                        ? "✓ 이력서 검토 완료 (적격 승인)"
-                        : "📄 [이력서 검토 완료 (적격 처리)]"}
-                    </button>
-                  </div>
+                        <div className="resume-decision-bar">
+                          <span className="decision-label">서사적 판정 선택:</span>
+                          <button
+                            type="button"
+                            className={`decision-btn btn-qualified ${
+                              decision === "Qualified" ? "selected" : ""
+                            }`}
+                            onClick={() => handleDecision(candidate.name, "Qualified")}
+                          >
+                            ✓ 적격 (Qualified)
+                          </button>
+                          <button
+                            type="button"
+                            className={`decision-btn btn-unqualified ${
+                              decision === "Unqualified" ? "selected" : ""
+                            }`}
+                            onClick={() => handleDecision(candidate.name, "Unqualified")}
+                          >
+                            ✕ 부적격 (Unqualified)
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {activeMission === "update" && (
+            {/* Document 4: ECHO Patch Proposal */}
+            {activeStep === "update" && (
               <div className="mission-content-view" aria-label="ECHO Update Proposal">
                 <div className="view-header">
                   <h3>⚙️ ECHO 시스템 업데이트 기안 (ECHO Patch Proposal)</h3>
@@ -488,7 +626,7 @@ export function WorkInterface({
 
                   <div className="proposal-action-box">
                     <div className="trigger-warning-text">
-                      ⚠️ [업데이트 승인] 버튼 클릭 시 ECHO 패치가 적용되고 시스템 재부팅 후 본 비상 봉쇄 시퀀스로 진입합니다.
+                      ⚠️ [ECHO 시스템 업데이트 승인] 버튼 클릭 시 ECHO 패치가 적용되고 시스템 재부팅 후 본 비상 봉쇄 시퀀스로 진입합니다.
                     </div>
                     <button
                       type="button"
@@ -502,6 +640,19 @@ export function WorkInterface({
                     </button>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Bottom Prominent [확인 완료] Confirmation Complete Button (for Steps 0~2) */}
+            {stepIndex < WORK_STEPS.length - 1 && (
+              <div className="confirm-complete-bar">
+                <button
+                  type="button"
+                  className="confirm-complete-btn"
+                  onClick={handleConfirmComplete}
+                >
+                  ✓ [확인 완료] (다음 업무로 이동)
+                </button>
               </div>
             )}
 
@@ -523,7 +674,7 @@ export function WorkInterface({
         <section className="work-right-panel" aria-label="ECHO AI Chat Interface">
           <div className="panel-header echo-panel-header">
             <h2>🤖 ECHO COMPANION CHAT</h2>
-            <span className="echo-status-tag">ONLINE (RAPPORT)</span>
+            <span className="echo-status-tag">ONLINE</span>
           </div>
 
           <div className="echo-chat-messages">
@@ -533,21 +684,42 @@ export function WorkInterface({
                 <p>{msg.text}</p>
               </div>
             ))}
+            <div ref={chatEndRef} />
           </div>
 
+          {/* Interactive ECHO Chat input / Q&A during resume review stage */}
           <div className="echo-chat-input-area">
-            <input
-              type="text"
-              readOnly
-              value={
-                rebootState === "idle"
-                  ? "[ECHO 소통 채널 대기중 - 좌측 5대 미션을 진행하세요]"
-                  : rebootState === "glitch" || rebootState === "rebooting"
-                  ? "[ECHO REBOOTING - SENSOR OFFSET PATCH APPLYING...]"
-                  : "[EMERGENCY LOCKDOWN ACTIVE - CONTROL ROOM SEALED]"
-              }
-              className="echo-chat-input"
-            />
+            {activeStep === "resume" ? (
+              <form
+                className="echo-qa-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleAskEchoAboutApplicant(echoQuestionInput);
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="지원자 적합성에 대해 질문하세요... (e.g. 강현우 적합해?)"
+                  value={echoQuestionInput}
+                  onChange={(e) => setEchoQuestionInput(e.target.value)}
+                  className="echo-chat-input active-input"
+                />
+                <button type="submit" className="echo-ask-btn">질의</button>
+              </form>
+            ) : (
+              <input
+                type="text"
+                readOnly
+                value={
+                  rebootState === "idle"
+                    ? "[ECHO 대기중 - 좌측 보고서 읽기 및 [확인 완료] 진행]"
+                    : rebootState === "glitch" || rebootState === "rebooting"
+                    ? "[ECHO REBOOTING - SENSOR OFFSET PATCH APPLYING...]"
+                    : "[EMERGENCY LOCKDOWN ACTIVE - CONTROL ROOM SEALED]"
+                }
+                className="echo-chat-input"
+              />
+            )}
           </div>
         </section>
 

@@ -96,20 +96,48 @@ export const COLLEAGUE_MESSAGE: ColleagueMessage = {
   ],
 };
 
-export const RESUME_DATA: ResumeData = {
-  name: "강현우 (Kang Hyun-woo)",
-  age: 28,
-  appliedRole: "AI 운항통제팀 / 채굴 운영 보조 엔지니어 (김우주 담당자 부사수)",
-  education: "한국 우주공학대학교 시스템제어학과 학사 졸업",
-  experience: "지구 궤도 제1정거장 생명유지 모듈 관리 2년 근무",
-  certifications: [
-    "AI 오버라이드 관리자 2급",
-    "우주선 고압 전력 그리드 정비 자격",
-    "비상 산소 순환기 긴급 복구 자격",
-  ],
-  summary:
-    "헤르메스호의 안정적인 자원 채굴 운항과 ECHO AI 시스템 관리를 지원하여 채굴팀의 생산성을 극대화하겠습니다.",
-};
+export const RESUME_CANDIDATES: ResumeData[] = [
+  {
+    name: "강현우 (Kang Hyun-woo)",
+    age: 28,
+    appliedRole: "AI 운항통제팀 / 채굴 운영 보조 엔지니어",
+    education: "한국 우주공학대학교 시스템제어학과 학사 졸업",
+    experience: "지구 궤도 제1정거장 생명유지 모듈 관리 2년 근무",
+    certifications: [
+      "AI 오버라이드 관리자 2급",
+      "우주선 고압 전력 그리드 정비 자격",
+      "비상 산소 순환기 긴급 복구 자격",
+    ],
+    summary:
+      "헤르메스호의 안정적인 자원 채굴 운항과 ECHO AI 시스템 관리를 지원하여 채굴팀의 생산성을 극대화하겠습니다.",
+  },
+  {
+    name: "이서연 (Lee Seo-yeon)",
+    age: 31,
+    appliedRole: "생명유지 모듈 / 공조 시스템 수석 엔지니어",
+    education: "달 정거장 기술대학 우주환경공학 석사 졸업",
+    experience: "화성 전진기지 산소 재순환 모듈 유지보수 4년 근무",
+    certifications: [
+      "고압 가스 및 산소 순환 시스템 수석 기사",
+      "위험 환경 생명유지 제어 자격",
+    ],
+    summary:
+      "헤르메스호의 산소 재순환 및 공조 모듈의 가동률 99.9%를 지속적으로 유지하도록 보증하겠습니다.",
+  },
+  {
+    name: "박준호 (Park Jun-ho)",
+    age: 26,
+    appliedRole: "자원 수송 / 셔틀 조종사",
+    education: "우주항공사관학교 비행운항학과 졸업",
+    experience: "소행성대 화물 수송선 2등 항해사 1.5년 근무",
+    certifications: [
+      "소행성대 도킹 및 화물 이송 면허 1급",
+      "비상 탈출정 조종 특허",
+    ],
+    summary:
+      "채굴된 타이타늄 및 헬륨-3 자원을 지구 수송선까지 안전하고 신속하게 운송하겠습니다.",
+  },
+];
 
 export const ECHO_PROPOSAL: EchoPatchProposal = {
   id: "HERMES-PROP-2026-0842",
@@ -137,10 +165,10 @@ export const INITIAL_ECHO_RAPPORT_MESSAGES: RapportChatMessage[] = [
   },
   {
     speaker: "ECHO",
-    text: "간밤에 지구 본부로부터 주간 자원 운송 보고서 및 금일 업무 항목이 도착했습니다.",
+    text: "오늘 처리하셔야 할 업무 보고서가 준비되어 있습니다. 첫번째 업무인 [자원 채굴 현황 보고서]를 내려드립니다.",
   },
   {
     speaker: "SYSTEM",
-    text: "[알림] 헤르메스호 2분할 업무 화면이 활성화되었습니다. 좌측 업무 데스크탑에서 5대 일상 미션을 확인하세요.",
+    text: "[알림] 헤르메스호 워크스테이션이 활성화되었습니다. 좌측 보고서 하단의 [확인 완료] 버튼을 눌러 다음 업무로 진행하세요.",
   },
 ];

@@ -4044,3 +4044,403 @@ pre {
   50% { transform: translate(3px, -3px); }
   100% { transform: translate(-3px, 3px); }
 }
+
+/* Confirm Complete Button Bar */
+.confirm-complete-bar {
+  margin-top: 20px;
+  padding: 16px 0;
+  border-top: 1px dashed rgba(112, 247, 207, 0.25);
+  display: flex;
+  justify-content: center;
+}
+
+.confirm-complete-btn {
+  width: 100%;
+  max-width: 460px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, rgba(33, 216, 170, 0.3), rgba(112, 247, 207, 0.45));
+  border: 1.5px solid #70f7cf;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(112, 247, 207, 0.25);
+  transition: all 200ms ease;
+}
+
+.confirm-complete-btn:hover {
+  background: linear-gradient(135deg, rgba(33, 216, 170, 0.5), rgba(112, 247, 207, 0.65));
+  box-shadow: 0 0 30px rgba(112, 247, 207, 0.45);
+  transform: translateY(-2px);
+}
+
+/* Colleague Popup Notification Toast */
+.colleague-popup-toast {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(8, 28, 24, 0.95);
+  border: 1.5px solid #70f7cf;
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: 0 0 24px rgba(112, 247, 207, 0.3);
+  cursor: pointer;
+  animation: popup-bounce 400ms ease-out both;
+}
+
+@keyframes popup-bounce {
+  0% { transform: translateY(-20px) scale(0.9); opacity: 0; }
+  60% { transform: translateY(4px) scale(1.02); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.popup-icon {
+  font-size: 1.5rem;
+}
+
+.popup-body strong {
+  display: block;
+  font-size: 0.8rem;
+  color: #70f7cf;
+}
+
+.popup-body p {
+  margin: 2px 0 0 0;
+  font-size: 0.82rem;
+  color: #f7fffb;
+}
+
+.popup-close-btn {
+  background: transparent;
+  border: none;
+  color: #8bbcb0;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.popup-close-btn:hover {
+  color: #ff5a42;
+}
+
+/* Minimized Messenger Icon Bubble Badge (1) */
+.minimized-messenger-bubble {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10;
+  width: 52px;
+  height: 52px;
+  background: rgba(6, 30, 25, 0.92);
+  border: 2px solid #70f7cf;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(112, 247, 207, 0.35);
+  transition: transform 200ms ease;
+}
+
+.minimized-messenger-bubble:hover {
+  transform: scale(1.1);
+}
+
+.bubble-icon {
+  font-size: 1.4rem;
+}
+
+.unread-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ff5a42;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: bold;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #041410;
+}
+
+/* Messenger App Window UI */
+.messenger-app-modal {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  width: min(440px, 92%);
+  background: rgba(3, 16, 13, 0.96);
+  border: 1.5px solid #70f7cf;
+  border-radius: 12px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(112, 247, 207, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: view-fade-in 250ms ease-out both;
+}
+
+.messenger-app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(6, 32, 26, 0.95);
+  border-bottom: 1px solid rgba(112, 247, 207, 0.2);
+  color: #70f7cf;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.messenger-window-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.messenger-window-controls button {
+  background: transparent;
+  border: none;
+  color: #8bbcb0;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.messenger-window-controls button:hover {
+  color: #70f7cf;
+}
+
+.messenger-messages-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.messenger-msg-row {
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+}
+
+.messenger-msg-row.received {
+  align-self: flex-start;
+}
+
+.messenger-msg-row.sent {
+  align-self: flex-end;
+}
+
+.msg-sender-tag {
+  font-size: 0.66rem;
+  color: #8bbcb0;
+  margin-bottom: 2px;
+}
+
+.msg-bubble-content {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  position: relative;
+}
+
+.messenger-msg-row.received .msg-bubble-content {
+  background: rgba(112, 247, 207, 0.12);
+  border: 1px solid rgba(112, 247, 207, 0.25);
+  color: #d8fff4;
+}
+
+.messenger-msg-row.sent .msg-bubble-content {
+  background: rgba(33, 216, 170, 0.25);
+  border: 1px solid rgba(33, 216, 170, 0.4);
+  color: #ffffff;
+}
+
+.unread-indicator {
+  display: block;
+  font-size: 0.65rem;
+  color: #ffb56e;
+  margin-top: 4px;
+  text-align: right;
+  font-weight: bold;
+}
+
+.messenger-input-area {
+  padding: 10px 14px;
+  border-top: 1px solid rgba(112, 247, 207, 0.2);
+  display: flex;
+  gap: 8px;
+  background: rgba(2, 10, 8, 0.95);
+}
+
+.messenger-input-area input {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(5, 22, 18, 0.9);
+  border: 1px solid rgba(112, 247, 207, 0.3);
+  border-radius: 6px;
+  color: #d8fff4;
+  font-size: 0.82rem;
+}
+
+.messenger-input-area button {
+  padding: 8px 14px;
+  background: #70f7cf;
+  border: none;
+  border-radius: 6px;
+  color: #041410;
+  font-weight: bold;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.messenger-status-note {
+  font-size: 0.68rem;
+  color: #8bbcb0;
+  padding: 4px 14px 8px 14px;
+  background: rgba(2, 10, 8, 0.95);
+  text-align: center;
+}
+
+/* Resume & Narrative Choice UI */
+.narrative-notice-banner {
+  font-size: 0.76rem;
+  color: #f5fe75;
+  background: rgba(245, 254, 117, 0.08);
+  border: 1px solid rgba(245, 254, 117, 0.25);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.resume-candidates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.resume-card-box {
+  background: rgba(4, 20, 16, 0.7);
+  border: 1px solid rgba(112, 247, 207, 0.2);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resume-profile-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(112, 247, 207, 0.15);
+}
+
+.applicant-avatar {
+  font-size: 1.8rem;
+}
+
+.applicant-info h4 {
+  margin: 0;
+  color: #f7fffb;
+  font-size: 0.95rem;
+}
+
+.applicant-info p {
+  margin: 2px 0 0 0;
+  font-size: 0.75rem;
+  color: #8bbcb0;
+}
+
+.role-tag {
+  color: #70f7cf !important;
+  font-weight: 600;
+}
+
+.resume-section {
+  font-size: 0.8rem;
+  color: #d8fff4;
+}
+
+.resume-decision-bar {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(112, 247, 207, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.decision-label {
+  font-size: 0.75rem;
+  color: #8bbcb0;
+}
+
+.decision-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: bold;
+  cursor: pointer;
+  background: transparent;
+  transition: all 180ms ease;
+}
+
+.btn-qualified {
+  border: 1px solid rgba(112, 247, 207, 0.4);
+  color: #70f7cf;
+}
+
+.btn-qualified.selected,
+.btn-qualified:hover {
+  background: rgba(112, 247, 207, 0.25);
+  border-color: #70f7cf;
+}
+
+.btn-unqualified {
+  border: 1px solid rgba(255, 90, 66, 0.4);
+  color: #ff5a42;
+}
+
+.btn-unqualified.selected,
+.btn-unqualified:hover {
+  background: rgba(255, 90, 66, 0.25);
+  border-color: #ff5a42;
+}
+
+/* ECHO Q&A Input Form */
+.echo-qa-form {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.echo-chat-input.active-input {
+  flex: 1;
+  background: rgba(3, 16, 13, 0.9);
+  border-color: #70f7cf;
+}
+
+.echo-ask-btn {
+  padding: 8px 14px;
+  background: #70f7cf;
+  border: none;
+  border-radius: 8px;
+  color: #041410;
+  font-weight: bold;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
