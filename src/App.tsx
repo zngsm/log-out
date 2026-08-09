@@ -1440,7 +1440,7 @@ function App() {
                         </span>
                         <span>
                           {file.name}
-                          <em>{file.kind} / {file.role}</em>
+                          <em>{file.kind} / {getRuntimeState(file.id)}</em>
                         </span>
                         <small>
                           {pendingFileId === file.id
@@ -1474,7 +1474,7 @@ function App() {
                       </div>
                       {passwordError ? <span className="form-alert">{passwordError}</span> : null}
                       <span className="soft-hint">
-                        Hint: Dr_Kim 이메일에서 4자리 코드를 찾으면 보안 파일을 열 수 있습니다.
+                        SECURITY NOTICE: authorized staff left credential traces in personnel mail.
                       </span>
                     </form>
                   ) : null}
@@ -1527,7 +1527,7 @@ function App() {
                   onClick={() => setShowDebugHints((current) => !current)}
                   disabled={!selectedFile.gameplay.debugHint}
                 >
-                  {showDebugHints ? "HIDE QA HINT" : "SHOW QA HINT"}
+                  {showDebugHints ? "HIDE DIAGNOSTIC" : "DIAGNOSTIC NOTE"}
                 </button>
               </div>
               <dl>
@@ -1562,10 +1562,14 @@ function App() {
                 </div>
                 <div>
                   <dt>Source</dt>
-                  <dd>{selectedFile.gameplay.sourceRefs.join(", ")}</dd>
+                  <dd>
+                    {showDebugHints
+                      ? selectedFile.gameplay.sourceRefs.join(", ")
+                      : "Hermes local archive"}
+                  </dd>
                 </div>
               </dl>
-              {selectedFile.id === CATEGORY_A_FILE_IDS.emailChainJuly ? (
+              {showDebugHints && selectedFile.id === CATEGORY_A_FILE_IDS.emailChainJuly ? (
                 <div className="notice-card">
                   <strong>Password hint detected</strong>
                   <p>
@@ -1578,9 +1582,8 @@ function App() {
                 <div className="notice-card danger-card">
                   <strong>Corrupted evidence blocked</strong>
                   <p>
-                    This file cannot be submitted as valid Act 2 evidence until
-                    Log_Fixer.exe restores its contents. 먼저 보안 폴더를 열고 복구 버튼을
-                    실행하세요.
+                    SEC-201 parser refuses damaged sectors. Restore the readable text body before
+                    submitting it to ECHO.
                   </p>
                 </div>
               ) : null}
@@ -1598,7 +1601,7 @@ function App() {
                           : "LOCKED BY /System/Security"}
                     </p>
                     <p className="soft-hint">
-                      Manual mode required: Text Reconstruction. Wrong targets and modes are recoverable.
+                      Manual records indicate damaged plaintext sectors require Text Reconstruction.
                     </p>
                   </div>
                   <button
@@ -1618,15 +1621,13 @@ function App() {
                     <strong>CONTROL ROOM MODULE #04</strong>
                   </div>
                   <p>
-                    Missing final asset fallback for
-                    `public/assets/images/sensor_diagram.png`. This placeholder preserves
-                    the viewer route until the production schematic is supplied.
+                    SENSOR-BIO-04 is the only control-room thermal head connected directly to the SEC-201 subscriber.
                   </p>
                 </div>
               ) : null}
               {showDebugHints && selectedFile.gameplay.debugHint ? (
-                <div className="debug-hint-card" aria-label="QA debug hint">
-                  <strong>QA / ACCESSIBILITY HINT</strong>
+                <div className="debug-hint-card" aria-label="Hermes diagnostic note">
+                  <strong>HERMES DIAGNOSTIC NOTE</strong>
                   <p>{selectedFile.gameplay.debugHint}</p>
                 </div>
               ) : null}
