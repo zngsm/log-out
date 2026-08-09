@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   CATEGORY_A_ACT_IDS,
   CATEGORY_A_DIRECTORY_PATHS,
@@ -326,6 +326,7 @@ function App() {
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [audioMuted, setAudioMuted] = useState(false);
   const [audioVolume, setAudioVolume] = useState(0.55);
+  const messageEndRef = useRef<HTMLDivElement | null>(null);
 
   const selectedFile = getCategoryAFileById(selectedFileId);
   const quarantineRules = getCategoryAFileById(CATEGORY_A_FILE_IDS.quarantineRules);
@@ -514,6 +515,14 @@ function App() {
   useEffect(() => {
     audioRuntime.volume = audioVolume;
   }, [audioVolume]);
+
+  useEffect(() => {
+    if (appPhase !== "gameplay") {
+      return;
+    }
+
+    messageEndRef.current?.scrollIntoView({ block: "end" });
+  }, [appPhase, echoMessages.length]);
 
   useEffect(() => {
     if (resourceState.outcome === "lost") {
@@ -1820,6 +1829,10 @@ function App() {
             </small>
           </section>
           <div className="message-list" aria-label="ECHO chat log">
+            <div className="thread-marker">
+              <span>SECURE THREAD</span>
+              <strong>증거 제출과 ECHO 판정 기록</strong>
+            </div>
             {echoMessages.map((message, index) => (
               <div
                 className={`message ${
@@ -1827,38 +1840,51 @@ function App() {
                 } ${message.speaker === "SYSTEM" ? "system-message" : ""}`}
                 key={`${message.speaker}-${index}`}
               >
-                <span>{message.speaker}</span>
+                <div className="message-meta">
+                  <span>{message.speaker === "PLAYER" ? "YOU" : message.speaker}</span>
+                  <time>{index === echoMessages.length - 1 ? "LATEST" : `#${index + 1}`}</time>
+                </div>
                 <p>{message.text}</p>
               </div>
             ))}
+            <div ref={messageEndRef} />
           </div>
           <form className="evidence-form" aria-label="Evidence input" onSubmit={handleEvidenceSubmit}>
-            <p className="interaction-hint">
-              파일을 클릭하면 증거 태그로 첨부됩니다. 첨부된 태그를 클릭하면 제거됩니다.
-            </p>
-            <div className="attached-files" aria-label="Attached evidence files">
-              {attachedFileIds.length > 0 ? (
-                attachedFileIds.map((fileId) => {
-                  const file = getCategoryAFileById(fileId);
+            <div className="composer-header">
+              <span>YOUR RESPONSE</span>
+              <strong>
+                evidence {attachedFileIds.length}/{currentEvidenceNames.length || "-"}
+              </strong>
+            </div>
+            <div className="evidence-tray">
+              <p className="interaction-hint">
+                첨부된 파일은 메시지와 함께 ECHO에게 전송됩니다.
+              </p>
+              <div className="attached-files" aria-label="Attached evidence files">
+                {attachedFileIds.length > 0 ? (
+                  attachedFileIds.map((fileId) => {
+                    const file = getCategoryAFileById(fileId);
 
-                  return (
-                    <button
-                      className="context-chip"
-                      type="button"
-                      key={fileId}
-                      disabled={interactionLocked}
-                      onClick={() => removeAttachedFile(fileId)}
-                    >
-                      @{file?.name ?? fileId} x
-                    </button>
-                  );
-                })
-              ) : (
-                <span className="empty-chip">No evidence attached</span>
-              )}
+                    return (
+                      <button
+                        className="context-chip"
+                        type="button"
+                        key={fileId}
+                        disabled={interactionLocked}
+                        onClick={() => removeAttachedFile(fileId)}
+                      >
+                        @{file?.name ?? fileId} x
+                      </button>
+                    );
+                  })
+                ) : (
+                  <span className="empty-chip">No evidence attached</span>
+                )}
+              </div>
             </div>
             <textarea
               aria-label="ECHO message"
+              placeholder="증거가 무엇을 반박하는지 한 문장으로 설명하세요."
               value={messageInput}
               onChange={(event) => setMessageInput(event.target.value)}
               rows={3}
@@ -1893,7 +1919,7 @@ function App() {
               </div>
             ) : null}
             <button type="submit" disabled={stage === "ending-ready" || interactionLocked}>
-              {stage === "ending-ready" ? "UNLOCK READY" : "SUBMIT"}
+              {stage === "ending-ready" ? "UNLOCK READY" : "SEND TO ECHO"}
             </button>
           </form>
         </aside>
