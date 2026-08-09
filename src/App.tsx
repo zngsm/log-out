@@ -1198,7 +1198,7 @@ function App() {
             }`}
             aria-label="Hermes control room broadcast"
           >
-            <span>{appPhase === "menu" ? "CONTROL ROOM STANDBY" : "TERMINAL APPROACH"}</span>
+            {appPhase === "menu" ? null : <span>TERMINAL APPROACH</span>}
             <strong>
               {appPhase === "menu"
                 ? "평시 당직 모니터가 대기 중입니다"
@@ -1220,10 +1220,6 @@ function App() {
             <span>{appPhase === "transition" ? "APPROACHING MONITOR" : "CLICK COMPUTER"}</span>
             <small>{appPhase === "transition" ? "Opening cutscene loading..." : "근무 화면으로 접근"}</small>
           </button>
-          <div className="room-start-footer" aria-label="Scene instruction">
-            <span>1인칭 통제실 / 컴퓨터는 물리적 오브젝트입니다</span>
-            <span>클릭 후 봉쇄 컷신을 거쳐 모니터 내부 Hermes OS로 진입합니다</span>
-          </div>
         </section>
       ) : null}
 
@@ -1982,20 +1978,24 @@ function App() {
               <span>SECURE THREAD</span>
               <strong>증거 제출과 ECHO 판정 기록</strong>
             </div>
-            {echoMessages.map((message, index) => (
-              <div
-                className={`message ${
-                  message.speaker === "PLAYER" ? "player-message" : ""
-                } ${message.speaker === "SYSTEM" ? "system-message" : ""}`}
-                key={`${message.speaker}-${index}`}
-              >
-                <div className="message-meta">
-                  <span>{message.speaker === "PLAYER" ? "YOU" : message.speaker}</span>
-                  <time>{index === echoMessages.length - 1 ? "LATEST" : `#${index + 1}`}</time>
+            {echoMessages
+              .filter((message) => message.speaker !== "SYSTEM")
+              .map((message, index, filteredMessages) => (
+                <div
+                  className={`message ${
+                    message.speaker === "PLAYER" ? "player-message" : ""
+                  } ${message.speaker === "SYSTEM" ? "system-message" : ""}`}
+                  key={`${message.speaker}-${index}`}
+                >
+                  <div className="message-meta">
+                    <span>{message.speaker === "PLAYER" ? "YOU" : message.speaker}</span>
+                    <time>
+                      {index === filteredMessages.length - 1 ? "LATEST" : `#${index + 1}`}
+                    </time>
+                  </div>
+                  <p>{message.text}</p>
                 </div>
-                <p>{message.text}</p>
-              </div>
-            ))}
+              ))}
           </div>
           <form className="evidence-form" aria-label="Evidence input" onSubmit={handleEvidenceSubmit}>
             <div className="composer-header">

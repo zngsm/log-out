@@ -240,9 +240,14 @@ export function WorkInterface({
     }));
   };
 
-  const handleSendMessengerReply = async () => {
+  const handleSendMessengerReply = async (e?: React.SyntheticEvent) => {
+    if (e && "nativeEvent" in e && (e.nativeEvent as KeyboardEvent).isComposing) {
+      return;
+    }
     const text = messengerState.playerInput.trim();
     if (!text || messengerState.isTyping) return;
+
+    setMessengerState((prev) => ({ ...prev, playerInput: "" }));
 
     if (messengerState.playerReplyCount === 0) {
       // First reply: Send to Cloudflare Worker NPC API and show typing state
@@ -740,16 +745,20 @@ export function WorkInterface({
               <div className="messenger-input-area">
                 <input
                   type="text"
-                  placeholder="답장을 입력하세요... (자유 텍스트)"
+                  placeholder="답장을 입력하세요..."
                   value={messengerState.playerInput}
                   onChange={(e) =>
                     setMessengerState((prev) => ({ ...prev, playerInput: e.target.value }))
                   }
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSendMessengerReply();
+                    if (e.nativeEvent.isComposing) return;
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSendMessengerReply(e);
+                    }
                   }}
                 />
-                <button type="button" onClick={handleSendMessengerReply}>
+                <button type="button" onClick={(e) => handleSendMessengerReply(e)}>
                   전송
                 </button>
               </div>

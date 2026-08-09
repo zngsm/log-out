@@ -677,7 +677,7 @@ export const categoryAFiles: CategoryAFile[] = [
       "[타이머 설정]",
       "기본 의무 격리 시간: 72시간",
       "RTC 서버 동기화: 비활성화",
-      `시간 오프셋 값: +${CATEGORY_A_TIME_OFFSET_HOURS}시간 <-- 치명적 오차: 약 2년 앞으로 밀림`,
+      `시간 오프셋 값: +${CATEGORY_A_TIME_OFFSET_HOURS}시간`,
       "",
       "[규칙]",
       "시간 오프셋 값 + 현재 시간이 기본 의무 격리 시간을 넘으면, 격리 타이머는 만료된 것으로 간주합니다.",
