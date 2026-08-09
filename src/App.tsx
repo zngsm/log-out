@@ -59,7 +59,7 @@ type EchoMessage = {
   text: string;
 };
 
-type AppPhase = "menu" | "transition" | "opening" | "gameplay";
+type AppPhase = "menu" | "transition" | "intranet" | "work" | "opening" | "gameplay";
 type LogFixerMode = "Header Repair" | "Offset Correction" | "Text Reconstruction";
 type LogFixerStatus = "idle" | "running" | "success" | "error";
 
@@ -1077,15 +1077,22 @@ function App() {
   function startOpeningSequence() {
     void unlockAudio();
     playAudioCue("play-start");
-    window.setTimeout(() => playAudioCue("warning-siren"), 160);
-    window.setTimeout(() => playAudioCue("door-lock"), 340);
     setAppPhase("transition");
-    setOpeningElapsedSeconds(0);
-    setOpeningSpeed(4);
     window.setTimeout(() => {
-      setSceneRuntime(createOpeningScene());
-      setAppPhase("opening");
+      setAppPhase("intranet");
     }, 900);
+  }
+
+  function handleClockIn() {
+    playAudioCue("hud-ignition");
+    setAppPhase("work");
+    setEchoMessages((current) => [
+      ...current,
+      {
+        speaker: "ECHO",
+        text: "김우주 담당자님, 출근이 확인되었습니다. 헤르메스호 업무 데스크탑과 관리 AI ECHO 보조 채널이 활성화되었습니다.",
+      },
+    ]);
   }
 
   function enterGameplay() {
@@ -1341,6 +1348,206 @@ function App() {
             >
               CONFIRM ENDING
             </button>
+          </div>
+        </section>
+      ) : null}
+
+      {appPhase === "intranet" ? (
+        <section className="terminal-screen-surface intranet-screen-surface" aria-label="Hermes Intranet Landing Screen">
+          <div className="intranet-container">
+            <header className="intranet-header">
+              <div className="intranet-brand">
+                <span className="brand-logo-badge">HERMES CORP</span>
+                <div className="brand-titles">
+                  <h1>HERMES COMPANY INTRANET</h1>
+                  <p>RESOURCE MINING VESSEL HERMES // INTERNAL MANAGEMENT SYSTEM</p>
+                </div>
+              </div>
+              <div className="intranet-header-status">
+                <span className="status-dot active" />
+                <span>SYSTEM ONLINE</span>
+                <small>SEC-201</small>
+              </div>
+            </header>
+
+            <main className="intranet-main-content">
+              <section className="user-profile-card" aria-label="Character Profile">
+                <div className="profile-avatar">
+                  <span className="avatar-icon">👤</span>
+                  <span className="badge-online">ONLINE</span>
+                </div>
+                <div className="profile-details">
+                  <span className="profile-label">CURRENT CREW PROFILE</span>
+                  <h2 className="profile-name">김우주</h2>
+                  <p className="profile-role">
+                    우주 자원 채굴선 헤르메스호 승무원 및 관리 AI ECHO 담당자
+                  </p>
+                  <div className="profile-meta">
+                    <span>사번: EMP-88042-WJ</span>
+                    <span>소속: 운항통제부 / AI 관리팀</span>
+                  </div>
+                </div>
+              </section>
+
+              <section className="login-form-card" aria-label="Intranet Login Form">
+                <div className="login-card-header">
+                  <h3>SINGLE SIGN-ON AUTHENTICATION</h3>
+                  <span className="lock-tag">🔒 READ-ONLY</span>
+                </div>
+                <p className="login-desc">
+                  시스템 자동 인증이 완료되었습니다. 계정 정보는 보안 정책에 의해 수정 불가능한 읽기 전용 상태입니다.
+                </p>
+                <div className="login-form-fields">
+                  <div className="form-group">
+                    <label htmlFor="intranet-username">아이디 (Username)</label>
+                    <div className="readonly-input-wrapper">
+                      <input
+                        id="intranet-username"
+                        type="text"
+                        value="woojoo.kim"
+                        readOnly
+                        disabled
+                        tabIndex={-1}
+                        className="read-only-input"
+                      />
+                      <span className="field-badge">LOCKED</span>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="intranet-password">비밀번호 (Password)</label>
+                    <div className="readonly-input-wrapper">
+                      <input
+                        id="intranet-password"
+                        type="text"
+                        value="**********"
+                        readOnly
+                        disabled
+                        tabIndex={-1}
+                        className="read-only-input password-masked"
+                      />
+                      <span className="field-badge">MASKED</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="clock-in-action-area">
+                  <button
+                    type="button"
+                    className="clock-in-btn"
+                    onClick={handleClockIn}
+                    aria-label="Clock-in to launch dual-panel work interface"
+                  >
+                    <span className="btn-icon">⚡</span>
+                    <span className="btn-text">[출근]</span>
+                    <small className="btn-subtext">Clock-in :: 2분할 업무 화면 진입</small>
+                  </button>
+                </div>
+              </section>
+            </main>
+
+            <footer className="intranet-footer">
+              <span>HERMES OS v4.2.0-PROD</span>
+              <span>SECURITY LEVEL: CREW AUTHORIZED</span>
+              <span>CONFIDENTIAL - INTERNAL MANAGEMENT PORTAL</span>
+            </footer>
+          </div>
+        </section>
+      ) : null}
+
+      {appPhase === "work" ? (
+        <section className="terminal-screen-surface work-screen-surface" aria-label="Hermes Dual-panel Work Interface">
+          <div className="work-split-container">
+            <header className="work-header">
+              <div className="work-header-title">
+                <span className="work-badge">WORKSTATION</span>
+                <h1>HERMES 2-SPLIT WORK INTERFACE</h1>
+              </div>
+              <div className="work-user-badge">
+                <span>근무자: 김우주 (ECHO 담당자)</span>
+                <span className="clock-in-status">● CLOCK-IN ACTIVE</span>
+              </div>
+            </header>
+
+            <div className="work-split-body">
+              <section className="work-left-panel" aria-label="Desktop Workstation UI">
+                <div className="panel-header">
+                  <h2>🖥️ DESKTOP WORKSTATION</h2>
+                  <span className="panel-tag">RAPPORT PHASE - WORK MISSIONS</span>
+                </div>
+                <div className="desktop-workspace-content">
+                  <div className="desktop-welcome-banner">
+                    <h3>헤르메스호 일상 업무 데스크탑에 오신 것을 환영합니다</h3>
+                    <p>
+                      좌측 업무 화면에서 일상 보고서, 동료 메신저 소통, 지원자 이력서 검토 및 ECHO 시스템 패치 기안 업무를 진행할 수 있습니다.
+                    </p>
+                  </div>
+
+                  <div className="work-missions-preview-grid">
+                    <div className="mission-card active-mission">
+                      <span className="mission-num">01</span>
+                      <strong>자원 채굴 현황 보고서</strong>
+                      <p>채굴량 추이 및 통계 데이터 확인</p>
+                    </div>
+                    <div className="mission-card">
+                      <span className="mission-num">02</span>
+                      <strong>함선 전력/산소 현황</strong>
+                      <p>전력 그리드 및 산소 순환 상태 점검</p>
+                    </div>
+                    <div className="mission-card">
+                      <span className="mission-num">03</span>
+                      <strong>동료 메시지 소통</strong>
+                      <p>승무원 일상 메신저 대화 확인</p>
+                    </div>
+                    <div className="mission-card">
+                      <span className="mission-num">04</span>
+                      <strong>동료 지원자 이력서</strong>
+                      <p>채굴팀 신규 인원 이력서 검토</p>
+                    </div>
+                    <div className="mission-card highlight-mission">
+                      <span className="mission-num">05</span>
+                      <strong>ECHO 시스템 업데이트 기안</strong>
+                      <p>ECHO 패치 승인 (본 퍼즐 진입 트리거)</p>
+                    </div>
+                  </div>
+
+                  <div className="work-action-bar">
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() => setAppPhase("gameplay")}
+                      title="Directly enter emergency gameplay terminal for testing"
+                    >
+                      [DEBUG] SENSOR PUZZLE TERMINAL DIRECT ACCESS
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <section className="work-right-panel" aria-label="ECHO AI Chat Interface">
+                <div className="panel-header echo-panel-header">
+                  <h2>🤖 ECHO COMPANION CHAT</h2>
+                  <span className="echo-status-tag">ONLINE</span>
+                </div>
+
+                <div className="echo-chat-messages">
+                  {echoMessages.map((msg, idx) => (
+                    <div key={idx} className={`echo-msg-bubble speaker-${msg.speaker.toLowerCase()}`}>
+                      <span className="speaker-name">{msg.speaker}</span>
+                      <p>{msg.text}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="echo-chat-input-area">
+                  <input
+                    type="text"
+                    readOnly
+                    value="[ECHO 소통 채널 대기중 - 좌측 업무 선택 가능]"
+                    className="echo-chat-input"
+                  />
+                </div>
+              </section>
+            </div>
           </div>
         </section>
       ) : null}

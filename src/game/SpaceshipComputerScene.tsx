@@ -3,6 +3,8 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 export type SpaceshipSceneMode =
   | "menu"
   | "transition"
+  | "intranet"
+  | "work"
   | "opening"
   | "gameplay"
   | "ending"
@@ -24,6 +26,8 @@ const cameraTargets: Record<
 > = {
   menu: { position: [2.8, 0.85, 5.8], lookAt: [0, -0.18, -0.2], fov: 46 },
   transition: { position: [1.1, 0.55, 4.4], lookAt: [0, -0.18, -0.1], fov: 42 },
+  intranet: { position: [0, 0.1, 3.25], lookAt: [0, -0.08, 0], fov: 35 },
+  work: { position: [0, 0.1, 3.25], lookAt: [0, -0.08, 0], fov: 35 },
   opening: { position: [0.35, 0.35, 4.15], lookAt: [0, -0.18, -0.2], fov: 39 },
   gameplay: { position: [0, 0.1, 3.25], lookAt: [0, -0.08, 0], fov: 35 },
   ending: { position: [-1.9, 0.6, 4.6], lookAt: [0, 0, -2.8], fov: 44 },
