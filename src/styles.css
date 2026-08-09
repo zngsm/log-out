@@ -3260,6 +3260,7 @@ pre {
 }
 
 .work-left-panel {
+  position: relative;
   border-right: 1px solid rgba(112, 247, 207, 0.2);
   display: flex;
   flex-direction: column;
@@ -4080,8 +4081,8 @@ pre {
 /* Colleague Popup Notification Toast (Top-Right on 2-split workstation screen) */
 .colleague-popup-toast {
   position: absolute;
-  top: 20px;
-  right: 24px;
+  top: 16px;
+  right: 16px;
   z-index: 100;
   display: flex;
   align-items: center;
@@ -4133,8 +4134,8 @@ pre {
 /* Minimized Messenger Icon Bubble Badge (1) (Bottom-Right on 2-split workstation screen) */
 .minimized-messenger-bubble {
   position: absolute;
-  bottom: 24px;
-  right: 24px;
+  bottom: 16px;
+  right: 16px;
   z-index: 100;
   width: 52px;
   height: 52px;

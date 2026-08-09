@@ -71,6 +71,67 @@ export function WorkInterface({
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
+  // Draggable Messenger App Modal state and refs bounded to Left Panel
+  const [modalPos, setModalPos] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const leftPanelRef = useRef<HTMLElement | null>(null);
+  const messengerModalRef = useRef<HTMLDivElement | null>(null);
+
+  const handleHeaderMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest(".messenger-window-controls")) return;
+    if (!messengerModalRef.current || !leftPanelRef.current) return;
+
+    const modalRect = messengerModalRef.current.getBoundingClientRect();
+    const panelRect = leftPanelRef.current.getBoundingClientRect();
+
+    dragStartOffset.current = {
+      x: e.clientX - modalRect.left,
+      y: e.clientY - modalRect.top,
+    };
+
+    if (!modalPos) {
+      setModalPos({
+        x: modalRect.left - panelRect.left,
+        y: modalRect.top - panelRect.top,
+      });
+    }
+
+    setIsDragging(true);
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!leftPanelRef.current || !messengerModalRef.current) return;
+      const panelRect = leftPanelRef.current.getBoundingClientRect();
+      const modalRect = messengerModalRef.current.getBoundingClientRect();
+
+      let newX = e.clientX - panelRect.left - dragStartOffset.current.x;
+      let newY = e.clientY - panelRect.top - dragStartOffset.current.y;
+
+      const maxX = panelRect.width - modalRect.width;
+      const maxY = panelRect.height - modalRect.height;
+
+      newX = Math.max(0, Math.min(newX, maxX > 0 ? maxX : 0));
+      newY = Math.max(0, Math.min(newY, maxY > 0 ? maxY : 0));
+
+      setModalPos({ x: newX, y: newY });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging]);
+
   const addEchoMessage = (speaker: "ECHO" | "PLAYER" | "SYSTEM", text: string) => {
     setChatMessages((prev) => [...prev, { speaker, text }]);
   };
@@ -302,7 +363,7 @@ export function WorkInterface({
 
       <div className="work-split-body">
         {/* Left Panel: Sequential Document Workstation UI */}
-        <section className="work-left-panel" aria-label="Desktop Workstation UI">
+        <section className="work-left-panel" aria-label="Desktop Workstation UI" ref={leftPanelRef}>
           <div className="panel-header">
             <h2>🖥️ WORKSTATION DOCUMENTS</h2>
             <span className="panel-tag">STEP {stepIndex + 1} / {WORK_STEPS.length} : {WORK_STEPS[stepIndex].name}</span>
@@ -567,6 +628,119 @@ export function WorkInterface({
               </button>
             </div>
           </div>
+
+          {/* Top Colleague Popup Overlay inside Left Panel top-right boundary */}
+          {messengerState.popupVisible && (
+            <div className="colleague-popup-toast" onClick={handleOpenMessenger}>
+              <div className="popup-icon">💬</div>
+              <div className="popup-body">
+                <strong>[메신저 알림] 박엔지니어</strong>
+                <p>오늘 점심 메뉴 뭐먹을래?</p>
+              </div>
+              <button
+                type="button"
+                className="popup-close-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMessengerState((prev) => ({ ...prev, popupVisible: false, isMinimized: true }));
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* Minimized Messenger Icon Bubble Badge (1) inside Left Panel bottom-right boundary */}
+          {messengerState.isMinimized && !messengerState.isOpen && (
+            <div
+              className="minimized-messenger-bubble"
+              onClick={handleOpenMessenger}
+              title="동료 메신저 열기"
+            >
+              <span className="bubble-icon">💬</span>
+              <span className="unread-badge">1</span>
+            </div>
+          )}
+
+          {/* Dedicated Draggable Colleague Messenger App Window UI inside Left Panel boundary */}
+          {messengerState.isOpen && (
+            <div
+              ref={messengerModalRef}
+              className="messenger-app-modal"
+              style={
+                modalPos
+                  ? { left: `${modalPos.x}px`, top: `${modalPos.y}px`, transform: "none" }
+                  : undefined
+              }
+            >
+              <div
+                className="messenger-app-header"
+                onMouseDown={handleHeaderMouseDown}
+                style={{ cursor: isDragging ? "grabbing" : "grab", userSelect: "none" }}
+              >
+                <span>💬 CREW MESSENGER // 박엔지니어 (Park, Engineer)</span>
+                <div className="messenger-window-controls">
+                  <button
+                    type="button"
+                    onClick={handleMinimizeMessenger}
+                    title="축소 (말풍선으로 받기)"
+                  >
+                    ─
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleMinimizeMessenger}
+                    title="닫기"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              <div className="messenger-messages-body">
+                {messengerState.messages.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={`messenger-msg-row ${
+                      msg.sender.includes("김우주") ? "sent" : "received"
+                    }`}
+                  >
+                    <div className="msg-sender-tag">{msg.sender}</div>
+                    <div className="msg-bubble-content">
+                      {msg.text}
+                      {msg.isUnread && (
+                        <span className="unread-indicator" title="상대방 미확인 상태">
+                          읽지 않음(1)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="messenger-input-area">
+                <input
+                  type="text"
+                  placeholder="답장을 입력하세요... (자유 텍스트)"
+                  value={messengerState.playerInput}
+                  onChange={(e) =>
+                    setMessengerState((prev) => ({ ...prev, playerInput: e.target.value }))
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSendMessengerReply();
+                  }}
+                />
+                <button type="button" onClick={handleSendMessengerReply}>
+                  전송
+                </button>
+              </div>
+              {messengerState.playerReplyCount > 0 && (
+                <div className="messenger-status-note">
+                  ※ 1회 답장 완료 후 메신저 채널은 읽지 않음(1) 상태로 유지됩니다.
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Right Panel: ECHO Companion Chat */}
@@ -621,107 +795,6 @@ export function WorkInterface({
             )}
           </div>
         </section>
-
-        {/* Top Colleague Popup Overlay at Top-Right of 2-split workstation screen */}
-        {messengerState.popupVisible && (
-          <div className="colleague-popup-toast" onClick={handleOpenMessenger}>
-            <div className="popup-icon">💬</div>
-            <div className="popup-body">
-              <strong>[메신저 알림] 박엔지니어</strong>
-              <p>오늘 점심 메뉴 뭐먹을래?</p>
-            </div>
-            <button
-              type="button"
-              className="popup-close-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                setMessengerState((prev) => ({ ...prev, popupVisible: false, isMinimized: true }));
-              }}
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Minimized Messenger Icon Bubble Badge (1) at Bottom-Right of 2-split workstation screen */}
-        {messengerState.isMinimized && !messengerState.isOpen && (
-          <div
-            className="minimized-messenger-bubble"
-            onClick={handleOpenMessenger}
-            title="동료 메신저 열기"
-          >
-            <span className="bubble-icon">💬</span>
-            <span className="unread-badge">1</span>
-          </div>
-        )}
-
-        {/* Dedicated Colleague Messenger App Window UI inside workstation screen */}
-        {messengerState.isOpen && (
-          <div className="messenger-app-modal">
-            <div className="messenger-app-header">
-              <span>💬 CREW MESSENGER // 박엔지니어 (Park, Engineer)</span>
-              <div className="messenger-window-controls">
-                <button
-                  type="button"
-                  onClick={handleMinimizeMessenger}
-                  title="축소 (말풍선으로 받기)"
-                >
-                  ─
-                </button>
-                <button
-                  type="button"
-                  onClick={handleMinimizeMessenger}
-                  title="닫기"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            <div className="messenger-messages-body">
-              {messengerState.messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`messenger-msg-row ${
-                    msg.sender.includes("김우주") ? "sent" : "received"
-                  }`}
-                >
-                  <div className="msg-sender-tag">{msg.sender}</div>
-                  <div className="msg-bubble-content">
-                    {msg.text}
-                    {msg.isUnread && (
-                      <span className="unread-indicator" title="상대방 미확인 상태">
-                        읽지 않음(1)
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="messenger-input-area">
-              <input
-                type="text"
-                placeholder="답장을 입력하세요... (자유 텍스트)"
-                value={messengerState.playerInput}
-                onChange={(e) =>
-                  setMessengerState((prev) => ({ ...prev, playerInput: e.target.value }))
-                }
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSendMessengerReply();
-                }}
-              />
-              <button type="button" onClick={handleSendMessengerReply}>
-                전송
-              </button>
-            </div>
-            {messengerState.playerReplyCount > 0 && (
-              <div className="messenger-status-note">
-                ※ 1회 답장 완료 후 메신저 채널은 읽지 않음(1) 상태로 유지됩니다.
-              </div>
-            )}
-          </div>
-        )}
 
         {rebootState !== "idle" && (
           <RebootGlitchPresentation state={rebootState} />
