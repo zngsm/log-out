@@ -1639,436 +1639,362 @@ function App() {
           </form>
         </section>
       ) : null}
-      <section className="system-topbar" aria-label="Hermes OS status">
-        <div className="terminal-title-block">
-          <p className="eyebrow">HERMES OS / CONTROL ROOM TERMINAL</p>
-          <h1>LOG_OUT</h1>
-        </div>
-        <section className="hud-grid" aria-label="Resource HUD">
-          <div className="hud-card">
-            <span>O₂ LEVEL</span>
-            <strong>{resourceState.oxygen.toFixed(0)}%</strong>
-            <div className="meter">
-              <span style={{ width: `${resourceState.oxygen}%` }} />
-            </div>
+      <div className="work-split-container terminal-frame">
+        <header className="work-header">
+          <div className="work-header-title">
+            <span className="work-badge">HERMES WORKSTATION</span>
+            <h1>HERMES SHIP SYSTEM COMMAND</h1>
           </div>
-          <div className="hud-card">
-            <span>POWER GRID / {powerState.name}</span>
-            <strong>{resourceState.power}%</strong>
-            <small>
-              {isBlackout
-                ? `silent reboot ${Math.ceil(resourceState.blackoutRemainingSeconds)}s`
-                : `file delay ${fileAccessDelayMs}ms / fixer extra ${recoveryDelayMs}ms`}
-            </small>
-            <div className="meter meter-blue">
-              <span style={{ width: `${resourceState.power}%` }} />
-            </div>
-          </div>
-          <div className="hud-card timer-hud-card">
-            <span>REMAINING TIME</span>
-            <strong>{remainingLabel}</strong>
-            <small>elapsed {elapsedLabel} / deterministic resource timer</small>
-          </div>
-          <div className="hud-card alert-card">
-            <span>RED ALERT FEEDBACK</span>
-            <strong>
-              {resourceEvent
-                ? "POWER SURGE"
-                : isEndingReady
-                  ? "DOOR OPEN"
-                  : isBlackout
-                    ? "BLACKOUT"
-                    : powerState.name}
-            </strong>
-            <small>
-              {resourceEvent
-                ? "monitor glow and surge alert active"
-                : isEndingReady
-                ? "Normal Ending A sequence available"
-                : isBlackout
-                  ? "Screen shake and emergency wash active"
-                  : getPressureFeedback(powerState.name)}
-            </small>
-          </div>
-          <div className="hud-card recovery-hud-card">
-            <span>RECOVERY STATUS</span>
-            <strong>{isQuarantineRecovered ? "READY" : "CORRUPTED"}</strong>
-            <small>
-              {isQuarantineRecovered
-                ? "quarantine_rules.conf recovered"
-                : "Run Log_Fixer.exe to restore corrupted file"}
-            </small>
-          </div>
-          <div className="hud-card scene-hud-card">
-            <span>SCENE RUNTIME</span>
-            <strong>{sceneRuntime.id}</strong>
-            <small>
-              {sceneRuntime.inputLocked ? "INPUT LOCKED" : "INPUT READY"} /{" "}
-              {sceneRuntime.exitCondition}
-            </small>
-          </div>
-          <div className="hud-card audio-hud-card">
-            <span>AUDIO SYSTEM</span>
-            <strong>{audioMuted ? "MUTED" : audioEnabled ? "ONLINE" : "LOCKED"}</strong>
-            <small>synthetic fallback cues / volume {Math.round(audioVolume * 100)}%</small>
-            <div className="audio-controls">
-              <button type="button" onClick={() => void unlockAudio()}>
-                ENABLE
-              </button>
-              <button type="button" onClick={() => setAudioMuted((current) => !current)}>
-                {audioMuted ? "UNMUTE" : "MUTE"}
-              </button>
-              <input
-                aria-label="Audio volume"
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={audioVolume}
-                onChange={(event) => setAudioVolume(Number(event.target.value))}
-              />
-            </div>
-          </div>
-          <div className="hud-card objective-hud-card">
-            <span>{isEndingReady ? "CURRENT OBJECTIVE" : `${getActLabel(stage)} OBJECTIVE`}</span>
-            <strong>{isEndingReady ? "EXIT READY" : "EVIDENCE REVIEW"}</strong>
-            <small>
-              {isEndingReady
-                ? "모든 핵심 모순이 검증되었습니다. 엔딩 확인을 진행하세요."
-                : currentActGuidance?.objective}
-            </small>
-          </div>
-        </section>
-      </section>
-
-
-      <section className="terminal-grid" aria-label="Hermes OS work area">
-        <aside className="panel explorer-panel">
-          <div className="panel-header">
-            <span>FILE EXPLORER</span>
-            <code>HERMES://ROOT</code>
-          </div>
-          <div className="os-path-bar" aria-label="Hermes path and search controls">
-            <code>{activeDirectoryPath}</code>
-            <input
-              aria-label="Search Hermes files"
-              placeholder="search files, paths, roles"
-              value={fileSearch}
-              onChange={(event) => setFileSearch(event.target.value)}
-            />
-          </div>
-          <div className="file-legend" aria-label="File state legend">
-            <span>selected</span>
-            <span>attached</span>
-            <span>locked</span>
-            <span>corrupted</span>
-            <span>recovered</span>
-          </div>
-          <div className="directory-rail" aria-label="Directory navigation">
-            {visibleDirectories.map((directoryPath) => (
+          <div className="work-user-badge">
+            <span>근무자: 김우주 (AI 관리 담당자)</span>
+            <span className="clock-in-status lockdown-badge">● EMERGENCY LOCKDOWN ACTIVE</span>
+            <div className="compact-emergency-hud">
+              <span className="hud-compact-item" title={`Oxygen level: ${resourceState.oxygen.toFixed(0)}%`}>
+                O₂ LEVEL: <strong>{resourceState.oxygen.toFixed(0)}%</strong>
+              </span>
+              <span className="hud-compact-item" title={`Power Grid: ${resourceState.power}% (${powerState.name})`}>
+                POWER GRID: <strong>{resourceState.power}%</strong>
+              </span>
+              <span className="hud-compact-item timer-compact-item" title={`Remaining time`}>
+                REMAINING TIME: <strong>{remainingLabel}</strong>
+              </span>
               <button
-                className={activeDirectoryPath === directoryPath ? "active-directory" : ""}
                 type="button"
-                key={directoryPath}
-                onClick={() => setActiveDirectoryPath(directoryPath)}
+                className="hud-audio-btn"
+                onClick={() => setAudioMuted((current) => !current)}
+                title={audioMuted ? "Unmute audio" : "Mute audio"}
               >
-                {directoryPath}
+                {audioMuted ? "🔇" : "🔊"}
               </button>
-            ))}
+            </div>
           </div>
-          <nav className="file-tree" aria-label="Category A file explorer">
-            {visibleDirectories.map((directoryPath) => {
-              const directory = categoryADirectories.find(
-                (candidate) => candidate.path === directoryPath,
-              );
-              const locked = isDirectoryLocked(directoryPath);
-              const files = getVisibleFilesForDirectory(directoryPath);
+        </header>
 
-              return (
-                <div
-                  className={`file-group ${
-                    activeDirectoryPath === directoryPath ? "active-file-group" : ""
-                  }`}
-                  key={directoryPath}
-                >
-                  <p>
-                    {directoryPath}
-                    <span className="status-pill">{files.length} ITEMS</span>
-                    {locked ? <span className="status-pill locked-pill">LOCKED</span> : null}
-                  </p>
-                  {files.map((file) => {
-                    const runtimeState = getRuntimeState(file.id);
-                    const disabled = interactionLocked;
-                    const attached = attachedFileIds.includes(file.id);
+        <div className="work-split-body">
+          <section className="work-left-panel" aria-label="Hermes OS File Explorer & Viewer">
+            <div className="panel-header">
+              <h2>🖥️ HERMES OS FILE EXPLORER & VIEWER</h2>
+              {isEndingReady ? (
+                <span className="panel-tag ending-tag">DOOR UNLOCKED</span>
+              ) : (
+                <span className="panel-tag">{getActLabel(stage)} ACTIVE</span>
+              )}
+            </div>
+
+            <div className="explorer-viewer-split">
+              <aside className="panel explorer-panel">
+                <div className="panel-header subpanel-header">
+                  <span>FILE EXPLORER</span>
+                  <code>HERMES://ROOT</code>
+                </div>
+                <div className="os-path-bar" aria-label="Hermes path and search controls">
+                  <code>{activeDirectoryPath}</code>
+                  <input
+                    aria-label="Search Hermes files"
+                    placeholder="search files, paths, roles"
+                    value={fileSearch}
+                    onChange={(event) => setFileSearch(event.target.value)}
+                  />
+                </div>
+                <div className="file-legend" aria-label="File state legend">
+                  <span>selected</span>
+                  <span>attached</span>
+                  <span>locked</span>
+                  <span>corrupted</span>
+                  <span>recovered</span>
+                </div>
+                <div className="directory-rail" aria-label="Directory navigation">
+                  {visibleDirectories.map((directoryPath) => (
+                    <button
+                      className={activeDirectoryPath === directoryPath ? "active-directory" : ""}
+                      type="button"
+                      key={directoryPath}
+                      onClick={() => setActiveDirectoryPath(directoryPath)}
+                    >
+                      {directoryPath}
+                    </button>
+                  ))}
+                </div>
+                <nav className="file-tree" aria-label="Category A file explorer">
+                  {visibleDirectories.map((directoryPath) => {
+                    const directory = categoryADirectories.find(
+                      (candidate) => candidate.path === directoryPath,
+                    );
+                    const locked = isDirectoryLocked(directoryPath);
+                    const files = getVisibleFilesForDirectory(directoryPath);
 
                     return (
-                      <button
-                        className={`file-row ${
-                          selectedFileId === file.id ? "selected-file" : ""
-                        } ${attached ? "attached-file" : ""} ${
-                          runtimeState === "corrupted" ? "corrupted-file" : ""
-                        } ${runtimeState === "recovered" ? "recovered-file" : ""}`}
-                        disabled={disabled}
-                        type="button"
-                        key={file.id}
-                        onClick={() => (locked ? openSecurityPrompt() : selectFile(file.id))}
-                        onDoubleClick={() =>
-                          locked ? openSecurityPrompt() : selectAndAttachFile(file.id)
-                        }
+                      <div
+                        className={`file-group ${
+                          activeDirectoryPath === directoryPath ? "active-file-group" : ""
+                        }`}
+                        key={directoryPath}
                       >
-                        <span className="file-icon">
-                          {getFileIconLabel(file.name, runtimeState)}
-                        </span>
-                        <span>
-                          {file.name}
-                          <em>{file.kind} / {getRuntimeState(file.id)}</em>
-                        </span>
-                        <small>
-                          {pendingFileId === file.id
-                            ? "accessing"
-                            : interactionLocked
-                            ? resourceInteractionLocked
-                              ? "blackout"
-                              : "scene-lock"
-                            : locked
-                            ? "password"
-                            : getRuntimeStatusLabel({ attached, disabled, runtimeState })}
-                        </small>
-                      </button>
+                        <p>
+                          {directoryPath}
+                          <span className="status-pill">{files.length} ITEMS</span>
+                          {locked ? <span className="status-pill locked-pill">LOCKED</span> : null}
+                        </p>
+                        {files.map((file) => {
+                          const runtimeState = getRuntimeState(file.id);
+                          const disabled = interactionLocked;
+                          const attached = attachedFileIds.includes(file.id);
+
+                          return (
+                            <button
+                              className={`file-row ${
+                                selectedFileId === file.id ? "selected-file" : ""
+                              } ${attached ? "attached-file" : ""} ${
+                                runtimeState === "corrupted" ? "corrupted-file" : ""
+                              } ${runtimeState === "recovered" ? "recovered-file" : ""}`}
+                              disabled={disabled}
+                              type="button"
+                              key={file.id}
+                              onClick={() => (locked ? openSecurityPrompt() : selectFile(file.id))}
+                              onDoubleClick={() =>
+                                locked ? openSecurityPrompt() : selectAndAttachFile(file.id)
+                              }
+                            >
+                              <span className="file-icon">
+                                {getFileIconLabel(file.name, runtimeState)}
+                              </span>
+                              <span>
+                                {file.name}
+                                <em>{file.kind} / {getRuntimeState(file.id)}</em>
+                              </span>
+                              <small>
+                                {pendingFileId === file.id
+                                  ? "accessing"
+                                  : interactionLocked
+                                  ? resourceInteractionLocked
+                                    ? "blackout"
+                                    : "scene-lock"
+                                  : locked
+                                  ? "password"
+                                  : getRuntimeStatusLabel({ attached, disabled, runtimeState })}
+                              </small>
+                            </button>
+                          );
+                        })}
+                        {files.length === 0 ? (
+                          <span className="empty-directory">No matching files</span>
+                        ) : null}
+                        {directory?.lockedBy ? (
+                          <form className="unlock-form" onSubmit={handlePasswordSubmit}>
+                            <label htmlFor="security-password">Security password</label>
+                            <div>
+                              <input
+                                id="security-password"
+                                value={passwordInput}
+                                onChange={(event) => setPasswordInput(event.target.value)}
+                                placeholder="4-digit code"
+                                readOnly={unlockedSecurity}
+                              />
+                              <button type="submit" disabled={unlockedSecurity || interactionLocked}>
+                                {unlockedSecurity ? "OPEN" : "UNLOCK"}
+                              </button>
+                            </div>
+                            {passwordError ? <span className="form-alert">{passwordError}</span> : null}
+                          </form>
+                        ) : null}
+                      </div>
                     );
                   })}
-                  {files.length === 0 ? (
-                    <span className="empty-directory">No matching files</span>
-                  ) : null}
-                  {directory?.lockedBy ? (
-                    <form className="unlock-form" onSubmit={handlePasswordSubmit}>
-                      <label htmlFor="security-password">Security password</label>
-                      <div>
-                        <input
-                          id="security-password"
-                          value={passwordInput}
-                          onChange={(event) => setPasswordInput(event.target.value)}
-                          placeholder="4-digit code"
-                          readOnly={unlockedSecurity}
-                        />
-                        <button type="submit" disabled={unlockedSecurity || interactionLocked}>
-                          {unlockedSecurity ? "OPEN" : "UNLOCK"}
-                        </button>
-                      </div>
-                      {passwordError ? <span className="form-alert">{passwordError}</span> : null}
+                </nav>
+              </aside>
 
-                    </form>
-                  ) : null}
+              <section className="panel file-viewer">
+                <div className="panel-header subpanel-header">
+                  <span>FILE VIEWER</span>
+                  <code>{selectedFile?.name ?? "NO FILE"}</code>
                 </div>
-              );
-            })}
-          </nav>
-        </aside>
-
-        <section className="panel file-viewer">
-          <div className="panel-header">
-            <span>FILE VIEWER</span>
-            <code>{selectedFile?.name ?? "NO FILE"}</code>
-          </div>
-          {selectedFile ? (
-            <article className="log-document">
-              <div className="viewer-window-chrome" aria-label="Hermes viewer window chrome">
-                <span />
-                <span />
-                <span />
-                <code>{selectedFile.path}</code>
-              </div>
-              <p className="log-kicker">
-                {selectedFile.kind.toUpperCase()} / {getRuntimeState(selectedFile.id).toUpperCase()}
-              </p>
-              <h2>{selectedFile.title}</h2>
-              <div className="context-action-bar" aria-label="File context actions">
-                <button
-                  type="button"
-                  onClick={() => selectAndAttachFile(selectedFile.id)}
-                  disabled={
-                    interactionLocked ||
-                    (selectedFile.directory === CATEGORY_A_DIRECTORY_PATHS.recycleBin &&
-                      !selectedIsRecovered)
-                  }
-                >
-                  ATTACH TO ECHO
-                </button>
-                <button type="button" onClick={copySelectedPath}>
-                  {copiedPath === selectedFile.path ? "PATH COPIED" : "COPY PATH"}
-                </button>
-                <button
-                  type="button"
-                  onClick={openSelectedWithRecoveryTool}
-                  disabled={
-                    selectedFile.id === CATEGORY_A_FILE_IDS.logFixer ||
-                    getRuntimeState(selectedFile.id) !== "corrupted"
-                  }
-                >
-                  OPEN WITH LOG_FIXER
-                </button>
-              </div>
-              <dl>
-                <div>
-                  <dt>경로</dt>
-                  <dd>{selectedFile.path}</dd>
-                </div>
-                <div>
-                  <dt>분류</dt>
-                  <dd>{showDebugHints ? selectedFile.role : selectedFile.kind}</dd>
-                </div>
-              </dl>
-              {selectedFile.id === CATEGORY_A_FILE_IDS.quarantineRules && !selectedIsRecovered ? (
-                <div className="notice-card danger-card">
-                  <strong>Corrupted evidence blocked</strong>
-                  <p>
-                    SEC-201 parser refuses damaged sectors. Restore the readable text body before
-                    submitting it to ECHO.
-                  </p>
-                </div>
-              ) : null}
-              {selectedFile.id === CATEGORY_A_FILE_IDS.sensorDiagram ? (
-                <div className="sensor-diagram-placeholder" aria-label="Sensor diagram placeholder">
-                  <div>
-                    <span>SENSOR-BIO-04</span>
-                    <i />
-                    <strong>CONTROL ROOM MODULE #04</strong>
-                  </div>
-                  <p>
-                    SENSOR-BIO-04 is the only control-room thermal head connected directly to the SEC-201 subscriber.
-                  </p>
-                </div>
-              ) : null}
-              <pre>{selectedContent}</pre>
-            </article>
-          ) : null}
-        </section>
-
-        <aside className="panel echo-panel">
-          <div className="panel-header">
-            <span>ECHO CHAT</span>
-            <code>SECURE CHANNEL</code>
-          </div>
-          <section className="objective-card" aria-label="Current Act objective">
-            <strong>
-              {isEndingReady ? "문 해제 조건 충족" : currentActGuidance?.objective}
-            </strong>
-            <p>
-              {isEndingReady
-                ? "ECHO가 격리 명령을 철회할 준비가 되었습니다."
-                : currentActGuidance?.hint}
-            </p>
-            {!isEndingReady ? (
-              <small>
-                Required evidence slots: {currentEvidenceNames.length} / currently attached:{" "}
-                {attachedFileIds.length}. {currentActGuidance?.avoid}
-              </small>
-            ) : null}
-          </section>
-          <section className="scene-runtime-card" aria-label="Inspectable scene runtime">
-            <span>{sceneRuntime.phase}</span>
-            <strong>{sceneRuntime.label}</strong>
-            <p>{sceneRuntime.line}</p>
-            <small>
-              id: {sceneRuntime.id} / exit: {sceneRuntime.exitCondition}
-            </small>
-          </section>
-          <div className="message-list" aria-label="ECHO chat log" ref={messageListRef}>
-            <div className="thread-marker">
-              <span>SECURE THREAD</span>
-              <strong>증거 제출과 ECHO 판정 기록</strong>
-            </div>
-            {echoMessages
-              .filter((message) => message.speaker !== "SYSTEM")
-              .map((message, index, filteredMessages) => (
-                <div
-                  className={`message ${
-                    message.speaker === "PLAYER" ? "player-message" : ""
-                  } ${message.speaker === "SYSTEM" ? "system-message" : ""}`}
-                  key={`${message.speaker}-${index}`}
-                >
-                  <div className="message-meta">
-                    <span>{message.speaker === "PLAYER" ? "YOU" : message.speaker}</span>
-                    <time>
-                      {index === filteredMessages.length - 1 ? "LATEST" : `#${index + 1}`}
-                    </time>
-                  </div>
-                  <p>{message.text}</p>
-                </div>
-              ))}
-          </div>
-          <form className="evidence-form" aria-label="Evidence input" onSubmit={handleEvidenceSubmit}>
-            <div className="composer-header">
-              <span>YOUR RESPONSE</span>
-            </div>
-            <div className="evidence-tray">
-              <p className="interaction-hint">
-                첨부된 파일은 메시지와 함께 ECHO에게 전송됩니다.
-              </p>
-              <div className="attached-files" aria-label="Attached evidence files">
-                {attachedFileIds.length > 0 ? (
-                  attachedFileIds.map((fileId) => {
-                    const file = getCategoryAFileById(fileId);
-
-                    return (
+                {selectedFile ? (
+                  <article className="log-document">
+                    <div className="viewer-window-chrome" aria-label="Hermes viewer window chrome">
+                      <span />
+                      <span />
+                      <span />
+                      <code>{selectedFile.path}</code>
+                    </div>
+                    <p className="log-kicker">
+                      {selectedFile.kind.toUpperCase()} / {getRuntimeState(selectedFile.id).toUpperCase()}
+                    </p>
+                    <h2>{selectedFile.title}</h2>
+                    <div className="context-action-bar" aria-label="File context actions">
                       <button
-                        className="context-chip"
                         type="button"
-                        key={fileId}
-                        disabled={interactionLocked}
-                        onClick={() => removeAttachedFile(fileId)}
+                        onClick={() => selectAndAttachFile(selectedFile.id)}
+                        disabled={
+                          interactionLocked ||
+                          (selectedFile.directory === CATEGORY_A_DIRECTORY_PATHS.recycleBin &&
+                            !selectedIsRecovered)
+                        }
                       >
-                        @{file?.name ?? fileId} x
+                        ATTACH TO ECHO
                       </button>
-                    );
-                  })
-                ) : (
-                  <span className="empty-chip">No evidence attached</span>
-                )}
-              </div>
+                      <button type="button" onClick={copySelectedPath}>
+                        {copiedPath === selectedFile.path ? "PATH COPIED" : "COPY PATH"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={openSelectedWithRecoveryTool}
+                        disabled={
+                          selectedFile.id === CATEGORY_A_FILE_IDS.logFixer ||
+                          getRuntimeState(selectedFile.id) !== "corrupted"
+                        }
+                      >
+                        OPEN WITH LOG_FIXER
+                      </button>
+                    </div>
+                    <dl>
+                      <div>
+                        <dt>경로</dt>
+                        <dd>{selectedFile.path}</dd>
+                      </div>
+                      <div>
+                        <dt>분류</dt>
+                        <dd>{showDebugHints ? selectedFile.role : selectedFile.kind}</dd>
+                      </div>
+                    </dl>
+                    {selectedFile.id === CATEGORY_A_FILE_IDS.quarantineRules && !selectedIsRecovered ? (
+                      <div className="notice-card danger-card">
+                        <strong>Corrupted evidence blocked</strong>
+                        <p>
+                          SEC-201 parser refuses damaged sectors. Restore the readable text body before
+                          submitting it to ECHO.
+                        </p>
+                      </div>
+                    ) : null}
+                    {selectedFile.id === CATEGORY_A_FILE_IDS.sensorDiagram ? (
+                      <div className="sensor-diagram-placeholder" aria-label="Sensor diagram placeholder">
+                        <div>
+                          <span>SENSOR-BIO-04</span>
+                          <i />
+                          <strong>CONTROL ROOM MODULE #04</strong>
+                        </div>
+                        <p>
+                          SENSOR-BIO-04 is the only control-room thermal head connected directly to the SEC-201 subscriber.
+                        </p>
+                      </div>
+                    ) : null}
+                    <pre>{selectedContent}</pre>
+                  </article>
+                ) : null}
+              </section>
             </div>
-            <textarea
-              aria-label="ECHO message"
-              placeholder="증거가 무엇을 반박하는지 한 문장으로 설명하세요."
-              value={messageInput}
-              onChange={(event) => setMessageInput(event.target.value)}
-              rows={3}
-              disabled={interactionLocked}
-            />
-            {interactionLocked ? (
-              <div
-                className={`feedback-card ${
-                  resourceInteractionLocked ? "blackout-feedback" : "scene-lock-feedback"
-                }`}
-                aria-live="polite"
-              >
-                <strong>{resourceInteractionLocked ? "BLACKOUT LOCK" : "SCENE LOCK"}</strong>
-                <p>
-                  {resourceInteractionLocked
-                    ? "전력 복구 중입니다. 파일 선택, 증거 제출, 보안 입력, 복구 실행이 잠시 중단됩니다."
-                    : "ECHO가 현재 제출 내용을 검토 중입니다. 씬 전환이 끝날 때까지 입력이 잠깁니다."}
-                </p>
-              </div>
-            ) : null}
-            {lastSubmissionReason ? (
-              <div
-                className={`feedback-card ${
-                  lastSubmissionReason === "correct" ? "success-feedback" : ""
-                }`}
-                aria-live="polite"
-              >
+          </section>
+
+          <section className="work-right-panel echo-chat-panel" aria-label="ECHO Core Command Interface">
+            <div className="panel-header echo-panel-header">
+              <h2>💬 ECHO CORE COMMAND INTERFACE</h2>
+              <span className="echo-status-tag">{isEndingReady ? "RELEASING" : "LOCKDOWN"}</span>
+            </div>
+
+            <div className="echo-chat-messages" ref={messageListRef}>
+              <section className="objective-card" aria-label="Current Act objective">
                 <strong>
-                  {lastSubmissionReason === "correct" ? "SUBMISSION ACCEPTED" : "CHECKPOINT HINT"}
+                  {isEndingReady ? "문 해제 조건 충족" : currentActGuidance?.objective}
                 </strong>
-                <p>{submissionHelp[lastSubmissionReason]}</p>
+                <p>
+                  {isEndingReady
+                    ? "ECHO가 격리 명령을 철회할 준비가 되었습니다."
+                    : currentActGuidance?.hint}
+                </p>
+                {!isEndingReady ? (
+                  <small>
+                    Required evidence slots: {currentEvidenceNames.length} / currently attached:{" "}
+                    {attachedFileIds.length}. {currentActGuidance?.avoid}
+                  </small>
+                ) : null}
+              </section>
+              {echoMessages
+                .filter((message) => message.speaker !== "SYSTEM")
+                .map((message, index) => (
+                  <div
+                    className={`echo-msg-bubble speaker-${message.speaker.toLowerCase()} ${
+                      message.speaker === "PLAYER" ? "speaker-player" : ""
+                    }`}
+                    key={`${message.speaker}-${index}`}
+                  >
+                    <span className="speaker-name">{message.speaker === "PLAYER" ? "김우주 (나)" : message.speaker}</span>
+                    <p>{message.text}</p>
+                  </div>
+                ))}
+            </div>
+
+            <form className="evidence-form echo-chat-input-area" aria-label="Evidence input" onSubmit={handleEvidenceSubmit}>
+              <div className="composer-header">
+                <span>ECHO COMMAND INPUT // EVIDENCE SUBMISSION</span>
               </div>
-            ) : null}
-            <button type="submit" disabled={stage === "ending-ready" || interactionLocked}>
-              {stage === "ending-ready" ? "UNLOCK READY" : "SEND TO ECHO"}
-            </button>
-          </form>
-        </aside>
-      </section>
+              <div className="evidence-tray">
+                <p className="interaction-hint">
+                  첨부된 파일은 메시지와 함께 ECHO에게 전송됩니다.
+                </p>
+                <div className="attached-files" aria-label="Attached evidence files">
+                  {attachedFileIds.length > 0 ? (
+                    attachedFileIds.map((fileId) => {
+                      const file = getCategoryAFileById(fileId);
+
+                      return (
+                        <button
+                          className="context-chip"
+                          type="button"
+                          key={fileId}
+                          disabled={interactionLocked}
+                          onClick={() => removeAttachedFile(fileId)}
+                        >
+                          @{file?.name ?? fileId} x
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <span className="empty-chip">No evidence attached</span>
+                  )}
+                </div>
+              </div>
+              <textarea
+                aria-label="ECHO message"
+                placeholder="증거가 무엇을 반박하는지 한 문장으로 설명하세요."
+                value={messageInput}
+                onChange={(event) => setMessageInput(event.target.value)}
+                rows={3}
+                disabled={interactionLocked}
+              />
+              {interactionLocked ? (
+                <div
+                  className={`feedback-card ${
+                    resourceInteractionLocked ? "blackout-feedback" : "scene-lock-feedback"
+                  }`}
+                  aria-live="polite"
+                >
+                  <strong>{resourceInteractionLocked ? "BLACKOUT LOCK" : "SCENE LOCK"}</strong>
+                  <p>
+                    {resourceInteractionLocked
+                      ? "전력 복구 중입니다. 파일 선택, 증거 제출, 보안 입력, 복구 실행이 잠시 중단됩니다."
+                      : "ECHO가 현재 제출 내용을 검토 중입니다. 씬 전환이 끝날 때까지 입력이 잠깁니다."}
+                  </p>
+                </div>
+              ) : null}
+              {lastSubmissionReason ? (
+                <div
+                  className={`feedback-card ${
+                    lastSubmissionReason === "correct" ? "success-feedback" : ""
+                  }`}
+                  aria-live="polite"
+                >
+                  <strong>
+                    {lastSubmissionReason === "correct" ? "SUBMISSION ACCEPTED" : "CHECKPOINT HINT"}
+                  </strong>
+                  <p>{submissionHelp[lastSubmissionReason]}</p>
+                </div>
+              ) : null}
+              <button type="submit" className="evidence-submit-btn" disabled={stage === "ending-ready" || interactionLocked}>
+                {stage === "ending-ready" ? "UNLOCK READY" : "SEND TO ECHO"}
+              </button>
+            </form>
+          </section>
+        </div>
+      </div>
         </section>
       ) : null}
     </main>

@@ -3286,6 +3286,67 @@ pre {
   letter-spacing: 0.05em;
 }
 
+.lockdown-badge {
+  color: #ff5a42 !important;
+  animation: danger-pulse 1.2s ease-in-out infinite;
+}
+
+.compact-emergency-hud {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px;
+  background: rgba(255, 90, 66, 0.08);
+  border: 1px solid rgba(255, 90, 66, 0.22);
+  border-radius: 6px;
+  font-size: 0.74rem;
+  color: #b5e2d6;
+}
+
+.hud-compact-item strong {
+  color: #70f7cf;
+}
+
+.timer-compact-item strong {
+  color: #f5fe75;
+}
+
+.hud-audio-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0 2px;
+  margin-left: 2px;
+}
+
+.explorer-viewer-split {
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) minmax(280px, 1.4fr);
+  gap: 12px;
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.explorer-viewer-split .panel {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(112, 247, 207, 0.18);
+  border-radius: 8px;
+  background: rgba(2, 12, 9, 0.6);
+  display: flex;
+  flex-direction: column;
+}
+
+.explorer-viewer-split .subpanel-header {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  background: rgba(6, 26, 21, 0.7);
+}
+
 .work-split-body {
   position: relative;
   display: grid;
@@ -3501,6 +3562,51 @@ pre {
   border-radius: 8px;
   color: #70f7cf;
   font-size: 0.82rem;
+}
+
+.evidence-form.echo-chat-input-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.composer-header {
+  font-size: 0.72rem;
+  color: #70f7cf;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.evidence-form.echo-chat-input-area textarea {
+  width: 100%;
+  background: rgba(1, 8, 6, 0.8);
+  border: 1px solid rgba(112, 247, 207, 0.2);
+  border-radius: 6px;
+  padding: 10px;
+  color: #d8fff4;
+  resize: none;
+}
+
+.evidence-submit-btn {
+  width: 100%;
+  background: #70f7cf;
+  color: #020806;
+  font-weight: 700;
+  border: none;
+  border-radius: 6px;
+  padding: 10px;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  transition: background 180ms ease;
+}
+
+.evidence-submit-btn:hover:not(:disabled) {
+  background: #8effdc;
+}
+
+.evidence-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Mission Navigation Tabs */
