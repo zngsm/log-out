@@ -5,6 +5,7 @@ import {
   categoryAEvidenceByAct,
   getCategoryAFileById,
 } from "./categoryAFileSystem";
+import type { EchoNpcResponse } from "../types/npc";
 import {
   echoResponseMatrix,
   emotionalClaimPatterns,
@@ -283,4 +284,39 @@ export function evaluateEvidenceSubmission(
     countsAsFailedAttempt: false,
     requiredFileIds,
   });
+}
+
+export function applyNpcResponseToResult(
+  result: EvidenceSubmissionResult,
+  npcResponse: EchoNpcResponse,
+): EvidenceSubmissionResult {
+  const updatedMessage = npcResponse.ai_response || result.message;
+  let updatedNextAct = result.nextAct;
+  let updatedSuccess = result.success;
+
+  if (npcResponse.next_stage) {
+    if (
+      npcResponse.next_stage === "act1" ||
+      npcResponse.next_stage === "act2" ||
+      npcResponse.next_stage === "act3" ||
+      npcResponse.next_stage === "ending-ready"
+    ) {
+      updatedNextAct = npcResponse.next_stage as ActProgressState;
+      if (updatedNextAct !== result.nextAct && updatedNextAct !== "ending-ready") {
+        updatedSuccess = true;
+      }
+    }
+  }
+
+  if (npcResponse.door_unlocked) {
+    updatedNextAct = "ending-ready";
+    updatedSuccess = true;
+  }
+
+  return {
+    ...result,
+    message: updatedMessage,
+    nextAct: updatedNextAct,
+    success: updatedSuccess,
+  };
 }

@@ -16,7 +16,10 @@ import {
   type EvidenceSubmissionResult,
   type EvidenceSubmissionReason,
   evaluateEvidenceSubmission,
+  applyNpcResponseToResult,
 } from "./game/evidenceSubmission";
+import { sendNpcMessage } from "./api/npcApiClient";
+import type { ChatHistoryItem } from "./types/npc";
 import {
   applyWrongSubmissionPenalty,
   advanceResourceTime,
@@ -916,7 +919,7 @@ function App() {
     ]);
   }
 
-  function handleEvidenceSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleEvidenceSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (interactionLocked) {
@@ -941,7 +944,11 @@ function App() {
       return;
     }
 
-    const result = evaluateEvidenceSubmission({
+    const submittedAct = stage;
+    const submittedFiles = attachedFileIds;
+    const submittedText = messageInput;
+
+    let result = evaluateEvidenceSubmission({
       act: stage,
       attachedFileIds,
       text: messageInput,
@@ -949,9 +956,6 @@ function App() {
       recoveredFileIds: Array.from(recoveredFileIds),
       failedAttemptCount: failedAttemptsByAct[stage],
     });
-    const submittedAct = stage;
-    const submittedFiles = attachedFileIds;
-    const submittedText = messageInput;
 
     setSceneRuntime(createEchoReviewScene(submittedAct));
     setLastSubmissionReason(null);
@@ -968,6 +972,27 @@ function App() {
         text: "ECHO_REVIEW / 입력 채널 잠금. 제출된 증거의 규칙 충돌 여부를 대조합니다.",
       },
     ]);
+
+    const history: ChatHistoryItem[] = echoMessages.slice(-10).map((msg) => ({
+      role: msg.speaker === "PLAYER" ? "user" : msg.speaker === "ECHO" ? "assistant" : "system",
+      content: msg.text,
+    }));
+
+    try {
+      const npcResponse = await sendNpcMessage({
+        npcId: "echo",
+        currentStage: submittedAct,
+        userMessage: submittedText,
+        history,
+        attachedFileIds: submittedFiles,
+      });
+
+      if ("ai_response" in npcResponse) {
+        result = applyNpcResponseToResult(result, npcResponse);
+      }
+    } catch (error) {
+      console.warn("NPC API call fallback applied inside evaluateEvidenceSubmission:", error);
+    }
 
     window.setTimeout(
       () => revealEvidenceSubmissionResult(result, submittedAct),

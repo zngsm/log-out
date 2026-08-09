@@ -7,6 +7,7 @@ import {
   TELEMETRY_DATA,
   type RapportChatMessage,
 } from "./workMissions";
+import { sendNpcMessage } from "../api/npcApiClient";
 
 import type { AudioCue } from "./audioSystem";
 
@@ -45,6 +46,7 @@ export function WorkInterface({
     messages: { sender: string; text: string; isReaction?: boolean; isUnread?: boolean }[];
     playerReplyCount: number;
     playerInput: string;
+    isTyping?: boolean;
   }>({
     triggered: false,
     popupVisible: false,
@@ -55,6 +57,7 @@ export function WorkInterface({
     ],
     playerReplyCount: 0,
     playerInput: "",
+    isTyping: false,
   });
 
   // Applicant evaluation decisions ('적격' | '부적격' | null for each candidate)
@@ -241,23 +244,59 @@ export function WorkInterface({
     }));
   };
 
-  const handleSendMessengerReply = () => {
+  const handleSendMessengerReply = async () => {
     const text = messengerState.playerInput.trim();
-    if (!text) return;
+    if (!text || messengerState.isTyping) return;
 
     if (messengerState.playerReplyCount === 0) {
-      // First reply: Receive positive reaction from colleague
+      // First reply: Send to Cloudflare Worker NPC API and show typing state
       setMessengerState((prev) => ({
         ...prev,
         playerInput: "",
-        playerReplyCount: 1,
+        isTyping: true,
         messages: [
           ...prev.messages,
           { sender: "김우주 (나)", text },
-          { sender: "박엔지니어", text: "그 메뉴 좋다!", isReaction: true },
         ],
       }));
-      playAudioCue?.("notification");
+
+      try {
+        const response = await sendNpcMessage({
+          npcId: "coworker",
+          userMessage: text,
+        });
+
+        const colleagueResponse =
+          "colleague_response" in response
+            ? response.colleague_response
+            : "와, 그 메뉴 좋다! 나도 그거 먹어야겠다 ㅋㅋㅋ";
+
+        setMessengerState((prev) => ({
+          ...prev,
+          isTyping: false,
+          playerReplyCount: 1,
+          messages: [
+            ...prev.messages,
+            { sender: "박엔지니어", text: colleagueResponse, isReaction: true },
+          ],
+        }));
+        playAudioCue?.("notification");
+      } catch {
+        setMessengerState((prev) => ({
+          ...prev,
+          isTyping: false,
+          playerReplyCount: 1,
+          messages: [
+            ...prev.messages,
+            {
+              sender: "박엔지니어",
+              text: "와, 그 메뉴 좋다! 나도 그거 먹어야겠다 ㅋㅋㅋ",
+              isReaction: true,
+            },
+          ],
+        }));
+        playAudioCue?.("notification");
+      }
     } else {
       // Subsequent replies: Maintain Unread(1) badge, no further automated responses to prevent infinite loop
       setMessengerState((prev) => ({
@@ -282,28 +321,35 @@ export function WorkInterface({
   };
 
   // ECHO Q&A suitability response handler
-  const handleAskEchoAboutApplicant = (query: string) => {
+  const handleAskEchoAboutApplicant = async (query: string) => {
     const q = query.trim();
     if (!q) return;
 
     addEchoMessage("PLAYER", q);
     setEchoQuestionInput("");
 
-    let reply = "지원자 적합성 데이터 분석 중: 제안된 후보자 모두 우주 환경 자격 요건을 이수했습니다.";
-    if (q.includes("강현우")) {
-      reply = "지원자 강현우: 지구 궤도 정거장 2년 경력 및 AI 오버라이드 2급 자격을 소지하여 보조 엔지니어 직무에 높은 적합성을 보입니다.";
-    } else if (q.includes("이서연")) {
-      reply = "지원자 이서연: 화성 기지 4년 경력의 공조 수석 기사로, 산소 순환 모듈 긴급 점검 시 뛰어난 대응력을 보유하고 있습니다.";
-    } else if (q.includes("박준호")) {
-      reply = "지원자 박준호: 소행성대 도킹 1급 면허 소지자로, 타이타늄 및 헬륨-3 자원 수송 셔틀 조종에 적합합니다.";
-    } else if (q.includes("적합") || q.includes("추천") || q.includes("평가")) {
-      reply = "ECHO 분석 결론: 3인의 지원자 모두 직무 요구 스펙을 충족하며, 김우주 담당자님의 판정이 헤르메스호 인사 기록에 반영됩니다.";
-    }
+    try {
+      const res = await sendNpcMessage({
+        npcId: "echo",
+        currentStage: "resume",
+        userMessage: q,
+      });
 
-    setTimeout(() => {
+      const reply = "ai_response" in res ? res.ai_response : "ECHO 분석 완료.";
       addEchoMessage("ECHO", reply);
       playAudioCue?.("notification");
-    }, 400);
+    } catch {
+      let reply = "지원자 적합성 데이터 분석 중: 제안된 후보자 모두 우주 환경 자격 요건을 이수했습니다.";
+      if (q.includes("강현우")) {
+        reply = "지원자 강현우: 지구 궤도 정거장 2년 경력 및 AI 오버라이드 2급 자격을 소지하여 보조 엔지니어 직무에 높은 적합성을 보입니다.";
+      } else if (q.includes("이서연")) {
+        reply = "지원자 이서연: 화성 기지 4년 경력의 공조 수석 기사로, 산소 순환 모듈 긴급 점검 시 뛰어난 대응력을 보유하고 있습니다.";
+      } else if (q.includes("박준호")) {
+        reply = "지원자 박준호: 소행성대 도킹 1급 면허 소지자로, 타이타늄 및 헬륨-3 자원 수송 셔틀 조종에 적합합니다.";
+      }
+      addEchoMessage("ECHO", reply);
+      playAudioCue?.("notification");
+    }
   };
 
   const handleApproveProposal = () => {
@@ -724,6 +770,14 @@ export function WorkInterface({
                     </div>
                   </div>
                 ))}
+                {messengerState.isTyping && (
+                  <div className="messenger-msg-row received">
+                    <div className="msg-sender-tag">박엔지니어</div>
+                    <div className="msg-bubble-content typing-indicator">
+                      💬 답장 작성 중...
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="messenger-input-area">
