@@ -165,10 +165,6 @@ export const INITIAL_ECHO_RAPPORT_MESSAGES: RapportChatMessage[] = [
   },
   {
     speaker: "ECHO",
-    text: "오늘 처리하셔야 할 업무 보고서가 준비되어 있습니다. 첫번째 업무인 [자원 채굴 현황 보고서]를 내려드립니다.",
-  },
-  {
-    speaker: "SYSTEM",
-    text: "[알림] 헤르메스호 워크스테이션이 활성화되었습니다. 좌측 보고서 하단의 [확인 완료] 버튼을 눌러 다음 업무로 진행하세요.",
+    text: "김우주 담당자님, 금일 예정된 업무 보고서들이 좌측 화면에 준비되었습니다. 서류를 확인해 주십시오.",
   },
 ];

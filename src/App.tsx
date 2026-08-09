@@ -1395,11 +1395,7 @@ function App() {
               <section className="login-form-card" aria-label="Intranet Login Form">
                 <div className="login-card-header">
                   <h3>SINGLE SIGN-ON AUTHENTICATION</h3>
-                  <span className="lock-tag">🔒 READ-ONLY</span>
                 </div>
-                <p className="login-desc">
-                  시스템 자동 인증이 완료되었습니다. 계정 정보는 보안 정책에 의해 수정 불가능한 읽기 전용 상태입니다.
-                </p>
                 <div className="login-form-fields">
                   <div className="form-group">
                     <label htmlFor="intranet-username">아이디 (Username)</label>
@@ -1438,11 +1434,10 @@ function App() {
                     type="button"
                     className="clock-in-btn"
                     onClick={handleClockIn}
-                    aria-label="Clock-in to launch dual-panel work interface"
+                    aria-label="Clock-in"
                   >
                     <span className="btn-icon">⚡</span>
                     <span className="btn-text">[출근]</span>
-                    <small className="btn-subtext">Clock-in :: 2분할 업무 화면 진입</small>
                   </button>
                 </div>
               </section>

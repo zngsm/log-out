@@ -550,7 +550,7 @@ export function WorkInterface({
                   className="confirm-complete-btn"
                   onClick={handleConfirmComplete}
                 >
-                  ✓ [확인 완료] (다음 업무로 이동)
+                  ✓ [확인 완료]
                 </button>
               </div>
             )}
