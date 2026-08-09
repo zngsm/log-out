@@ -3291,43 +3291,71 @@ pre {
   animation: danger-pulse 1.2s ease-in-out infinite;
 }
 
+.header-center-hud {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+}
+
 .compact-emergency-hud {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 4px 10px;
-  background: rgba(255, 90, 66, 0.08);
-  border: 1px solid rgba(255, 90, 66, 0.22);
-  border-radius: 6px;
-  font-size: 0.74rem;
-  color: #b5e2d6;
+  gap: 14px;
+  padding: 6px 14px;
+  background: rgba(255, 90, 66, 0.12);
+  border: 1px dashed rgba(255, 90, 66, 0.45);
+  border-radius: 8px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #d8fff4;
+  box-shadow: 0 0 12px rgba(255, 90, 66, 0.15);
+}
+
+.hud-compact-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .hud-compact-item strong {
   color: #70f7cf;
+  font-size: 0.94rem;
 }
 
 .timer-compact-item strong {
-  color: #f5fe75;
+  color: #ff5a42;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
 }
 
 .hud-audio-btn {
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   padding: 0 2px;
-  margin-left: 2px;
+  margin-left: 4px;
 }
 
 .explorer-viewer-split {
-  display: grid;
-  grid-template-columns: minmax(210px, 1fr) minmax(280px, 1.4fr);
+  display: flex;
   gap: 12px;
   flex: 1 1 0;
   min-height: 0;
   padding: 16px;
   overflow: hidden;
+}
+
+.explorer-panel {
+  flex: 0 0 190px;
+  width: 190px;
+  min-width: 0;
+}
+
+.explorer-viewer-split .file-viewer {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .explorer-viewer-split .panel {

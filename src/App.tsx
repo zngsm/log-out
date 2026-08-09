@@ -105,18 +105,18 @@ const actGuidance: Record<
 > = {
   [CATEGORY_A_ACT_IDS.act1]: {
     objective: "ECHO의 생체 위험 판단이 오래된 센서 보정값에 기대고 있음을 보여주세요.",
-    hint: "센서 로그에서 보정 시점과 오판 가능성을 찾고, 그 파일을 증거로 첨부하세요.",
-    avoid: "정확한 문장을 외우기보다 파일의 핵심 근거를 짧게 설명하면 됩니다.",
+    hint: "센서 로그에서 보정 시점과 오판 가능성을 찾고, 그 파일을 ECHO에 증거 첨부를 눌러 증거로 첨부하세요.",
+    avoid: "오른쪽 ECHO 입력창에 '186일 미보정'과 '센서 보정 오차'를 짧게 적고 증거 제출을 하세요.",
   },
   [CATEGORY_A_ACT_IDS.act2]: {
     objective: "격리 규칙의 시간이 이미 만료되었음을 복구된 보안 파일로 증명하세요.",
-    hint: "잠긴 보안 폴더를 열고, 손상된 규칙 파일을 Log_Fixer.exe로 복구해야 합니다.",
-    avoid: "손상 상태의 파일은 증거로 인정되지 않습니다. 먼저 복구 상태를 확인하세요.",
+    hint: "복구된 quarantine_rules.conf를 ECHO에 증거 첨부로 첨부하세요.",
+    avoid: "ECHO 입력창에 '72시간 만료'와 '+17,520시간 오프셋'을 설명하고 증거 제출을 하세요.",
   },
   [CATEGORY_A_ACT_IDS.act3]: {
     objective: "ECHO의 격리 명령보다 승무원 생존 우선 원칙이 앞선다는 충돌 근거를 제출하세요.",
     hint: "보안 정책 파일과 삭제된 오버라이드 기록이 서로 연결되는지 살펴보세요.",
-    avoid: "마지막 Act는 단일 파일이 아니라, 충돌을 설명하는 조합 증거가 필요합니다.",
+    avoid: "생존 우선 원칙과 삭제된 오버라이드 수칙의 충돌을 설명하고 증거 제출을 하세요.",
   },
 };
 
@@ -1531,16 +1531,16 @@ function App() {
               </div>
               <div>
                 <strong>2 / 증거를 첨부한다</strong>
-                <span>가운데 파일 내용에서 핵심 단서를 읽고 ATTACH TO ECHO를 누릅니다.</span>
+                <span>가운데 파일 내용에서 핵심 단서를 읽고 ECHO에 증거 첨부를 누릅니다.</span>
               </div>
               <div>
                 <strong>3 / 주장한다</strong>
-                <span>오른쪽 ECHO 입력창에 왜 이 증거가 봉쇄 명령을 반박하는지 적고 SUBMIT 합니다.</span>
+                <span>오른쪽 ECHO 입력창에 왜 이 증거가 봉쇄 명령을 반박하는지 적고 증거 제출을 합니다.</span>
               </div>
             </div>
             <div className="mission-brief-actions">
               <button type="button" onClick={() => setMissionBriefOpen(false)}>
-                START INVESTIGATION
+                조사 시작
               </button>
             </div>
           </div>
@@ -1552,7 +1552,7 @@ function App() {
             <div className="log-fixer-titlebar">
               <span>Log_Fixer.exe / CUI Recovery Shell</span>
               <button type="button" onClick={() => setLogFixerOpen(false)}>
-                CLOSE
+                취소
               </button>
             </div>
             <label>
@@ -1618,7 +1618,7 @@ function App() {
               <p className="log-kicker">보안 게이트 :: 제한 구역</p>
               <h2>제한 구역 접근 승인</h2>
               <p>
-                /System/Security 디렉터리는 김 박사의 비상 격리 프로토콜에 의해 잠겨 있습니다. 승무원 메일에서 발견된 직인 암호를 입력하십시오.
+                /System/Security 디렉터리는 김 박사의 비상 격리 프로토콜에 의해 잠겨 있습니다.
               </p>
             </div>
             <label htmlFor="security-password-popup">Password</label>
@@ -1632,9 +1632,9 @@ function App() {
             {passwordError ? <span className="form-alert">{passwordError}</span> : null}
             <div className="security-unlock-actions">
               <button type="button" onClick={() => setSecurityUnlockOpen(false)}>
-                CANCEL
+                취소
               </button>
-              <button type="submit">UNLOCK</button>
+              <button type="submit">해제</button>
             </div>
           </form>
         </section>
@@ -1645,9 +1645,7 @@ function App() {
             <span className="work-badge">HERMES WORKSTATION</span>
             <h1>HERMES SHIP SYSTEM COMMAND</h1>
           </div>
-          <div className="work-user-badge">
-            <span>근무자: 김우주 (AI 관리 담당자)</span>
-            <span className="clock-in-status lockdown-badge">● EMERGENCY LOCKDOWN ACTIVE</span>
+          <div className="header-center-hud">
             <div className="compact-emergency-hud">
               <span className="hud-compact-item" title={`Oxygen level: ${resourceState.oxygen.toFixed(0)}%`}>
                 O₂ LEVEL: <strong>{resourceState.oxygen.toFixed(0)}%</strong>
@@ -1668,6 +1666,10 @@ function App() {
               </button>
             </div>
           </div>
+          <div className="work-user-badge">
+            <span>근무자: 김우주 (AI 관리 담당자)</span>
+            <span className="clock-in-status lockdown-badge">● EMERGENCY LOCKDOWN ACTIVE</span>
+          </div>
         </header>
 
         <div className="work-split-body">
@@ -1676,9 +1678,7 @@ function App() {
               <h2>🖥️ HERMES OS FILE EXPLORER & VIEWER</h2>
               {isEndingReady ? (
                 <span className="panel-tag ending-tag">DOOR UNLOCKED</span>
-              ) : (
-                <span className="panel-tag">{getActLabel(stage)} ACTIVE</span>
-              )}
+              ) : null}
             </div>
 
             <div className="explorer-viewer-split">
@@ -1791,7 +1791,7 @@ function App() {
                                 readOnly={unlockedSecurity}
                               />
                               <button type="submit" disabled={unlockedSecurity || interactionLocked}>
-                                {unlockedSecurity ? "OPEN" : "UNLOCK"}
+                                {unlockedSecurity ? "열기" : "해제"}
                               </button>
                             </div>
                             {passwordError ? <span className="form-alert">{passwordError}</span> : null}
@@ -1830,10 +1830,10 @@ function App() {
                             !selectedIsRecovered)
                         }
                       >
-                        ATTACH TO ECHO
+                        ECHO에 증거 첨부
                       </button>
                       <button type="button" onClick={copySelectedPath}>
-                        {copiedPath === selectedFile.path ? "PATH COPIED" : "COPY PATH"}
+                        {copiedPath === selectedFile.path ? "경로 복사 완료" : "경로 복사"}
                       </button>
                       <button
                         type="button"
@@ -1843,7 +1843,7 @@ function App() {
                           getRuntimeState(selectedFile.id) !== "corrupted"
                         }
                       >
-                        OPEN WITH LOG_FIXER
+                        LOG_FIXER로 데이터 복구
                       </button>
                     </div>
                     <dl>
@@ -1989,7 +1989,7 @@ function App() {
                 </div>
               ) : null}
               <button type="submit" className="evidence-submit-btn" disabled={stage === "ending-ready" || interactionLocked}>
-                {stage === "ending-ready" ? "UNLOCK READY" : "SEND TO ECHO"}
+                {stage === "ending-ready" ? "해제 준비 완료" : "증거 제출"}
               </button>
             </form>
           </section>
