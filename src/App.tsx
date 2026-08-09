@@ -284,6 +284,7 @@ function App() {
   ]);
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [securityUnlockOpen, setSecurityUnlockOpen] = useState(false);
   const [unlockedSecurity, setUnlockedSecurity] = useState(false);
   const [recoveredFileIds, setRecoveredFileIds] = useState<Set<CategoryAFileId>>(
     () => new Set(),
@@ -620,8 +621,20 @@ function App() {
     }
 
     setUnlockedSecurity(true);
+    setSecurityUnlockOpen(false);
     setPasswordError("");
-    selectAndAttachFile(CATEGORY_A_FILE_IDS.quarantineRules);
+    setSelectedFileId(CATEGORY_A_FILE_IDS.quarantineRules);
+    setActiveDirectoryPath(CATEGORY_A_DIRECTORY_PATHS.systemSecurity);
+  }
+
+  function openSecurityPrompt() {
+    if (interactionLocked) {
+      setPasswordError("BLACKOUT / 전력 복구 후 보안 입력을 다시 시도하세요.");
+      return;
+    }
+
+    setPasswordError("");
+    setSecurityUnlockOpen(true);
   }
 
   function completeQuarantineRulesRecovery() {
@@ -1247,119 +1260,153 @@ function App() {
           </form>
         </section>
       ) : null}
+      {securityUnlockOpen ? (
+        <section className="security-unlock-modal" aria-label="Security password prompt">
+          <form className="security-unlock-window" onSubmit={handlePasswordSubmit}>
+            <div className="modal-window-chrome">
+              <span />
+              <span />
+              <span />
+              <code>HERMES://ROOT/System/Security</code>
+            </div>
+            <div>
+              <p className="log-kicker">SECURITY GATE</p>
+              <h2>Restricted Directory</h2>
+              <p>
+                `/System/Security` is locked by Dr_Kim emergency quarantine protocol.
+                Enter the personnel credential discovered in crew mail.
+              </p>
+            </div>
+            <label htmlFor="security-password-popup">Password</label>
+            <input
+              id="security-password-popup"
+              value={passwordInput}
+              onChange={(event) => setPasswordInput(event.target.value)}
+              placeholder="4-digit code"
+              autoFocus
+            />
+            {passwordError ? <span className="form-alert">{passwordError}</span> : null}
+            <div className="security-unlock-actions">
+              <button type="button" onClick={() => setSecurityUnlockOpen(false)}>
+                CANCEL
+              </button>
+              <button type="submit">UNLOCK</button>
+            </div>
+          </form>
+        </section>
+      ) : null}
       <section className="system-topbar" aria-label="Hermes OS status">
-        <div>
+        <div className="terminal-title-block">
           <p className="eyebrow">HERMES OS / CONTROL ROOM TERMINAL</p>
           <h1>LOG_OUT</h1>
         </div>
+        <section className="hud-grid" aria-label="Resource HUD">
+          <div className="hud-card">
+            <span>O₂ LEVEL</span>
+            <strong>{resourceState.oxygen.toFixed(0)}%</strong>
+            <small>drain x{powerState.oxygenMultiplier.toFixed(2)}</small>
+            <div className="meter">
+              <span style={{ width: `${resourceState.oxygen}%` }} />
+            </div>
+          </div>
+          <div className="hud-card">
+            <span>POWER GRID / {powerState.name}</span>
+            <strong>{resourceState.power}%</strong>
+            <small>
+              {isBlackout
+                ? `silent reboot ${Math.ceil(resourceState.blackoutRemainingSeconds)}s`
+                : `file delay ${fileAccessDelayMs}ms / fixer extra ${recoveryDelayMs}ms`}
+            </small>
+            <div className="meter meter-blue">
+              <span style={{ width: `${resourceState.power}%` }} />
+            </div>
+          </div>
+          <div className="hud-card timer-hud-card">
+            <span>{resourceState.mode.toUpperCase()} SESSION</span>
+            <strong>{remainingLabel}</strong>
+            <small>elapsed {elapsedLabel} / deterministic resource timer</small>
+          </div>
+          <div className="hud-card alert-card">
+            <span>RED ALERT FEEDBACK</span>
+            <strong>
+              {resourceEvent
+                ? "POWER SURGE"
+                : isEndingReady
+                  ? "DOOR OPEN"
+                  : isBlackout
+                    ? "BLACKOUT"
+                    : powerState.name}
+            </strong>
+            <small>
+              {resourceEvent
+                ? "monitor glow and surge alert active"
+                : isEndingReady
+                ? "Normal Ending A sequence available"
+                : isBlackout
+                  ? "Screen shake and emergency wash active"
+                  : getPressureFeedback(powerState.name)}
+            </small>
+          </div>
+          <div className="hud-card recovery-hud-card">
+            <span>RECOVERY STATUS</span>
+            <strong>{isQuarantineRecovered ? "READY" : "CORRUPTED"}</strong>
+            <small>
+              {isQuarantineRecovered
+                ? "quarantine_rules.conf can be used as Act 2 evidence"
+                : "Run Log_Fixer.exe before Act 2 submission"}
+            </small>
+          </div>
+          <div className="hud-card scene-hud-card">
+            <span>SCENE RUNTIME</span>
+            <strong>{sceneRuntime.id}</strong>
+            <small>
+              {sceneRuntime.inputLocked ? "INPUT LOCKED" : "INPUT READY"} /{" "}
+              {sceneRuntime.exitCondition}
+            </small>
+          </div>
+          <div className="hud-card echo-state-card">
+            <span>ECHO STATE / {lastSubmissionReason ?? "monitoring"}</span>
+            <strong>{echoStability}% STABLE</strong>
+            <small>
+              suspicion {echoSuspicion}% / failed attempts{" "}
+              {isEndingReady ? 0 : failedAttemptsByAct[stage]}
+            </small>
+          </div>
+          <div className="hud-card audio-hud-card">
+            <span>AUDIO SYSTEM</span>
+            <strong>{audioMuted ? "MUTED" : audioEnabled ? "ONLINE" : "LOCKED"}</strong>
+            <small>synthetic fallback cues / volume {Math.round(audioVolume * 100)}%</small>
+            <div className="audio-controls">
+              <button type="button" onClick={() => void unlockAudio()}>
+                ENABLE
+              </button>
+              <button type="button" onClick={() => setAudioMuted((current) => !current)}>
+                {audioMuted ? "UNMUTE" : "MUTE"}
+              </button>
+              <input
+                aria-label="Audio volume"
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={audioVolume}
+                onChange={(event) => setAudioVolume(Number(event.target.value))}
+              />
+            </div>
+          </div>
+          <div className="hud-card objective-hud-card">
+            <span>{isEndingReady ? "CURRENT OBJECTIVE" : `${getActLabel(stage)} OBJECTIVE`}</span>
+            <strong>{isEndingReady ? "EXIT READY" : "EVIDENCE REVIEW"}</strong>
+            <small>
+              {isEndingReady
+                ? "모든 핵심 모순이 검증되었습니다. 엔딩 확인을 진행하세요."
+                : currentActGuidance?.objective}
+            </small>
+          </div>
+        </section>
         <div className="mission-clock" aria-label="Mission timer">
           <span>{getActLabel(stage)}</span>
           <strong>{resourceState.power}%</strong>
-        </div>
-      </section>
-
-      <section className="hud-grid" aria-label="Resource HUD">
-        <div className="hud-card">
-          <span>O₂ LEVEL</span>
-          <strong>{resourceState.oxygen.toFixed(0)}%</strong>
-          <small>drain x{powerState.oxygenMultiplier.toFixed(2)}</small>
-          <div className="meter">
-            <span style={{ width: `${resourceState.oxygen}%` }} />
-          </div>
-        </div>
-        <div className="hud-card">
-          <span>POWER GRID / {powerState.name}</span>
-          <strong>{resourceState.power}%</strong>
-          <small>
-            {isBlackout
-              ? `silent reboot ${Math.ceil(resourceState.blackoutRemainingSeconds)}s`
-              : `file delay ${fileAccessDelayMs}ms / fixer extra ${recoveryDelayMs}ms`}
-          </small>
-          <div className="meter meter-blue">
-            <span style={{ width: `${resourceState.power}%` }} />
-          </div>
-        </div>
-        <div className="hud-card timer-hud-card">
-          <span>{resourceState.mode.toUpperCase()} SESSION</span>
-          <strong>{remainingLabel}</strong>
-          <small>elapsed {elapsedLabel} / deterministic resource timer</small>
-        </div>
-        <div className="hud-card alert-card">
-          <span>RED ALERT FEEDBACK</span>
-          <strong>
-            {resourceEvent
-              ? "POWER SURGE"
-              : isEndingReady
-                ? "DOOR OPEN"
-                : isBlackout
-                  ? "BLACKOUT"
-                  : powerState.name}
-          </strong>
-          <small>
-            {resourceEvent
-              ? "monitor glow and surge alert active"
-              : isEndingReady
-              ? "Normal Ending A sequence available"
-              : isBlackout
-                ? "Screen shake and emergency wash active"
-                : getPressureFeedback(powerState.name)}
-          </small>
-        </div>
-        <div className="hud-card recovery-hud-card">
-          <span>RECOVERY STATUS</span>
-          <strong>{isQuarantineRecovered ? "READY" : "CORRUPTED"}</strong>
-          <small>
-            {isQuarantineRecovered
-              ? "quarantine_rules.conf can be used as Act 2 evidence"
-              : "Run Log_Fixer.exe before Act 2 submission"}
-          </small>
-        </div>
-        <div className="hud-card scene-hud-card">
-          <span>SCENE RUNTIME</span>
-          <strong>{sceneRuntime.id}</strong>
-          <small>
-            {sceneRuntime.inputLocked ? "INPUT LOCKED" : "INPUT READY"} /{" "}
-            {sceneRuntime.exitCondition}
-          </small>
-        </div>
-        <div className="hud-card echo-state-card">
-          <span>ECHO STATE / {lastSubmissionReason ?? "monitoring"}</span>
-          <strong>{echoStability}% STABLE</strong>
-          <small>
-            suspicion {echoSuspicion}% / failed attempts{" "}
-            {isEndingReady ? 0 : failedAttemptsByAct[stage]}
-          </small>
-        </div>
-        <div className="hud-card audio-hud-card">
-          <span>AUDIO SYSTEM</span>
-          <strong>{audioMuted ? "MUTED" : audioEnabled ? "ONLINE" : "LOCKED"}</strong>
-          <small>synthetic fallback cues / volume {Math.round(audioVolume * 100)}%</small>
-          <div className="audio-controls">
-            <button type="button" onClick={() => void unlockAudio()}>
-              ENABLE
-            </button>
-            <button type="button" onClick={() => setAudioMuted((current) => !current)}>
-              {audioMuted ? "UNMUTE" : "MUTE"}
-            </button>
-            <input
-              aria-label="Audio volume"
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={audioVolume}
-              onChange={(event) => setAudioVolume(Number(event.target.value))}
-            />
-          </div>
-        </div>
-        <div className="hud-card objective-hud-card">
-          <span>{isEndingReady ? "CURRENT OBJECTIVE" : `${getActLabel(stage)} OBJECTIVE`}</span>
-          <strong>{isEndingReady ? "EXIT READY" : "EVIDENCE REVIEW"}</strong>
-          <small>
-            {isEndingReady
-              ? "모든 핵심 모순이 검증되었습니다. 엔딩 확인을 진행하세요."
-              : currentActGuidance?.objective}
-          </small>
         </div>
       </section>
 
@@ -1419,7 +1466,7 @@ function App() {
                   </p>
                   {files.map((file) => {
                     const runtimeState = getRuntimeState(file.id);
-                    const disabled = locked || interactionLocked;
+                    const disabled = interactionLocked;
                     const attached = attachedFileIds.includes(file.id);
 
                     return (
@@ -1432,8 +1479,10 @@ function App() {
                         disabled={disabled}
                         type="button"
                         key={file.id}
-                        onClick={() => selectFile(file.id)}
-                        onDoubleClick={() => selectAndAttachFile(file.id)}
+                        onClick={() => (locked ? openSecurityPrompt() : selectFile(file.id))}
+                        onDoubleClick={() =>
+                          locked ? openSecurityPrompt() : selectAndAttachFile(file.id)
+                        }
                       >
                         <span className="file-icon">
                           {getFileIconLabel(file.name, runtimeState)}
@@ -1449,6 +1498,8 @@ function App() {
                             ? resourceInteractionLocked
                               ? "blackout"
                               : "scene-lock"
+                            : locked
+                            ? "password"
                             : getRuntimeStatusLabel({ attached, disabled, runtimeState })}
                         </small>
                       </button>
