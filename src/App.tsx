@@ -158,21 +158,7 @@ function getActLabel(stage: ActProgressState) {
   return stage.toUpperCase();
 }
 
-function getDefaultPrompt(stage: ActProgressState) {
-  if (stage === CATEGORY_A_ACT_IDS.act1) {
-    return "센서 보정 오차와 186일 미보정 기록을 제출합니다.";
-  }
 
-  if (stage === CATEGORY_A_ACT_IDS.act2) {
-    return "복구된 quarantine_rules.conf의 72시간 격리 만료와 +17,520시간 오프셋 근거를 제출합니다.";
-  }
-
-  if (stage === CATEGORY_A_ACT_IDS.act3) {
-    return "ECHO의 승무원 생존 우선순위와 삭제된 오버라이드 수칙 충돌 근거를 제출합니다.";
-  }
-
-  return "최종 문 해제 조건이 충족되었습니다.";
-}
 
 function getPowerToneClass(powerStateName: string) {
   return `power-${powerStateName.toLowerCase()}`;
@@ -382,7 +368,7 @@ function App() {
     () => new Set(),
   );
   const [stage, setStage] = useState<ActProgressState>(CATEGORY_A_ACT_IDS.act1);
-  const [messageInput, setMessageInput] = useState(getDefaultPrompt(CATEGORY_A_ACT_IDS.act1));
+  const [messageInput, setMessageInput] = useState("");
   const [resourceState, setResourceState] = useState(() => createResourceState("debug"));
   const [echoMessages, setEchoMessages] = useState<EchoMessage[]>(initialEchoMessages);
   const [lastSubmissionReason, setLastSubmissionReason] =
@@ -1063,7 +1049,7 @@ function App() {
     }
 
     setAttachedFileIds([]);
-    setMessageInput(getDefaultPrompt(result.nextAct));
+    setMessageInput("");
     playAudioCue(result.nextAct === "ending-ready" ? "door-lock" : "success");
 
     if (result.nextAct === "ending-ready") {
@@ -1188,13 +1174,7 @@ function App() {
             <h1>LOG_OUT</h1>
             <small>RESOURCE MINING VESSEL HERMES / SEC-201 CONTROL ROOM</small>
           </div>
-          {appPhase === "transition" ? (
-            <div className="lockdown-broadcast" aria-label="Hermes control room broadcast">
-              <span>TERMINAL APPROACH</span>
-              <strong>컴퓨터 화면으로 접근 중입니다</strong>
-              <p>대각선 통제실 시점에서 정면 모니터 시점으로 전환합니다.</p>
-            </div>
-          ) : null}
+
           <button
             className="computer-hotspot"
             type="button"
@@ -1950,7 +1930,7 @@ function App() {
               </div>
               <textarea
                 aria-label="ECHO message"
-                placeholder="증거가 무엇을 반박하는지 한 문장으로 설명하세요."
+                placeholder="ECHO에게 제출할 증거를 입력하세요..."
                 value={messageInput}
                 onChange={(event) => setMessageInput(event.target.value)}
                 rows={3}

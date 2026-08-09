@@ -298,7 +298,7 @@ function PlaceholderScene({
     powerStateName === "Critical";
   const blackout = powerStateName === "Blackout" || mode === "blackout";
   const critical = powerStateName === "Critical";
-  const lightIntensity = blackout ? 0.2 : critical ? 0.6 : alert ? 0.85 : 1.35;
+  const lightIntensity = blackout ? 0.2 : critical ? 0.6 : alert ? 0.85 : 1.8;
 
   return (
     <>
@@ -306,7 +306,7 @@ function PlaceholderScene({
       <ambientLight intensity={lightIntensity} />
       <pointLight
         position={[0, 2.4, 2]}
-        intensity={blackout ? 0.8 : critical ? 8.5 : alert ? 7.5 : 12.5}
+        intensity={blackout ? 0.8 : critical ? 8.5 : alert ? 7.5 : 16.0}
         color={critical || alert ? "#ff7a58" : "#8fffe0"}
       />
       <pointLight

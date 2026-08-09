@@ -753,7 +753,6 @@ button {
   border: 1px dashed rgba(245, 254, 117, 0.22);
   border-radius: 999px;
   content: "";
-  animation: computer-hotspot-pulse 2.1s ease-in-out infinite reverse;
 }
 
 .computer-hotspot:not(:disabled):hover {
@@ -2664,14 +2663,6 @@ pre {
   }
 }
 
-@keyframes computer-hotspot-pulse {
-  50% {
-    transform: translate(-50%, -50%) scale(1.04);
-    box-shadow:
-      0 0 54px rgba(245, 254, 117, 0.32),
-      0 0 26px rgba(245, 254, 117, 0.24) inset;
-  }
-}
 
 @keyframes terminal-screen-zoom {
   0% {
@@ -3404,8 +3395,8 @@ pre {
 }
 
 .explorer-panel {
-  flex: 0 0 190px;
-  width: 190px;
+  flex: 0 0 360px;
+  width: 360px;
   min-width: 0;
 }
 
