@@ -296,6 +296,7 @@ function App() {
   const [lastSubmissionReason, setLastSubmissionReason] =
     useState<EvidenceSubmissionReason | null>(null);
   const [appPhase, setAppPhase] = useState<AppPhase>("menu");
+  const [missionBriefOpen, setMissionBriefOpen] = useState(false);
   const [openingElapsedSeconds, setOpeningElapsedSeconds] = useState(0);
   const [openingSpeed, setOpeningSpeed] = useState(1);
   const [endingConfirmed, setEndingConfirmed] = useState(false);
@@ -356,6 +357,55 @@ function App() {
   const fileAccessDelayMs = getFileAccessDelayMs(powerState.name);
   const recoveryDelayMs = getRecoveryDelayMs(powerState.name);
   const normalizedFileSearch = fileSearch.trim().toLowerCase();
+
+  function getNextActionText() {
+    if (resourceState.outcome === "lost") {
+      return "산소가 0%가 되면 실패합니다. 다음 시도에서는 파일을 빠르게 읽고 증거를 제출하세요.";
+    }
+
+    if (isEndingReady) {
+      return "최종 검증이 끝났습니다. 엔딩 패널에서 문 해제 결과를 확인하세요.";
+    }
+
+    if (stage === CATEGORY_A_ACT_IDS.act1) {
+      if (!attachedFileIds.includes(CATEGORY_A_FILE_IDS.sensorCalibLog)) {
+        return "1. 왼쪽 탐색기에서 sensor_calib.log를 열고 ATTACH TO ECHO를 눌러 증거로 첨부하세요.";
+      }
+
+      return "2. 오른쪽 ECHO 입력창에 '186일 미보정'과 '센서 보정 오차'를 짧게 적고 SUBMIT 하세요.";
+    }
+
+    if (stage === CATEGORY_A_ACT_IDS.act2) {
+      if (!unlockedSecurity) {
+        return "1. Dr_Kim 메일에서 4자리 코드를 확인한 뒤 /System/Security 파일을 클릭해 잠금을 해제하세요.";
+      }
+
+      if (!isQuarantineRecovered) {
+        return "2. Log_Fixer.exe를 열고 quarantine_rules.conf를 Text Reconstruction 모드로 복구하세요.";
+      }
+
+      if (!attachedFileIds.includes(CATEGORY_A_FILE_IDS.quarantineRules)) {
+        return "3. 복구된 quarantine_rules.conf를 ATTACH TO ECHO로 첨부하세요.";
+      }
+
+      return "4. ECHO 입력창에 '72시간 만료'와 '+17,520시간 오프셋'을 설명하고 SUBMIT 하세요.";
+    }
+
+    const hasPriority = attachedFileIds.includes(CATEGORY_A_FILE_IDS.aiPriorityMatrix);
+    const hasOverride = attachedFileIds.includes(CATEGORY_A_FILE_IDS.deletedOverride);
+
+    if (!hasPriority || !hasOverride) {
+      return "1. ai_priority_matrix.json과 deleted_override.txt를 모두 찾아 첨부하세요. 마지막 Act는 조합 증거가 필요합니다.";
+    }
+
+    return "2. 생존 우선 원칙과 삭제된 오버라이드 수칙의 충돌을 설명하고 SUBMIT 하세요.";
+  }
+
+  function focusFirstEvidenceFile() {
+    setSelectedFileId(CATEGORY_A_FILE_IDS.sensorCalibLog);
+    setActiveDirectoryPath(CATEGORY_A_DIRECTORY_PATHS.logsSensors);
+    setMissionBriefOpen(false);
+  }
 
   function playAudioCue(cue: AudioCue) {
     audioRuntime.playCue(cue);
@@ -940,6 +990,7 @@ function App() {
 
   function enterGameplay() {
     setAppPhase("gameplay");
+    setMissionBriefOpen(true);
     setSceneRuntime(createActEntryScene(CATEGORY_A_ACT_IDS.act1));
     setEchoMessages((current) => [
       ...current,
@@ -1201,6 +1252,50 @@ function App() {
 
       {appPhase === "gameplay" ? (
         <section className="terminal-screen-surface" aria-label="Hermes OS monitor screen">
+      {missionBriefOpen ? (
+        <section className="mission-brief-modal" aria-label="First mission brief">
+          <div className="mission-brief-window">
+            <div className="modal-window-chrome">
+              <span />
+              <span />
+              <span />
+              <code>HERMES://MISSION_BRIEF</code>
+            </div>
+            <p className="log-kicker">LOCKDOWN GAMEPLAY START</p>
+            <h2>AI를 설득해서 통제실 문을 열어야 합니다</h2>
+            <p>
+              ECHO는 당신을 위험 상태로 판단해 문을 잠갔습니다. 제한 시간 안에 선내 파일을
+              읽고, 모순되는 증거를 첨부한 뒤, 오른쪽 채팅창에서 ECHO에게 설명하세요.
+            </p>
+            <div className="mission-brief-steps" aria-label="How to play">
+              <div>
+                <strong>1 / 파일을 연다</strong>
+                <span>왼쪽 탐색기에서 의심되는 로그를 클릭합니다.</span>
+              </div>
+              <div>
+                <strong>2 / 증거를 첨부한다</strong>
+                <span>가운데 파일 내용에서 핵심 단서를 읽고 ATTACH TO ECHO를 누릅니다.</span>
+              </div>
+              <div>
+                <strong>3 / 주장한다</strong>
+                <span>오른쪽 ECHO 입력창에 왜 이 증거가 봉쇄 명령을 반박하는지 적고 SUBMIT 합니다.</span>
+              </div>
+            </div>
+            <div className="mission-brief-goal">
+              <strong>첫 목표</strong>
+              <span>sensor_calib.log에서 오래된 보정값과 생체 위험 오판 가능성을 찾으세요.</span>
+            </div>
+            <div className="mission-brief-actions">
+              <button type="button" onClick={focusFirstEvidenceFile}>
+                OPEN FIRST FILE
+              </button>
+              <button type="button" onClick={() => setMissionBriefOpen(false)}>
+                START INVESTIGATION
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
       {logFixerOpen ? (
         <section className="log-fixer-modal" aria-label="Log Fixer mini program">
           <form className="log-fixer-window" onSubmit={runLogFixerProgram}>
@@ -1408,6 +1503,13 @@ function App() {
           <span>{getActLabel(stage)}</span>
           <strong>{resourceState.power}%</strong>
         </div>
+      </section>
+      <section className="next-action-strip" aria-label="Current next action">
+        <span>NEXT ACTION</span>
+        <strong>{getNextActionText()}</strong>
+        <button type="button" onClick={() => setMissionBriefOpen(true)}>
+          HOW TO PLAY
+        </button>
       </section>
 
       <section className="terminal-grid" aria-label="Hermes OS work area">

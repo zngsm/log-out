@@ -1186,6 +1186,46 @@ h1 {
   background: linear-gradient(90deg, #59d8ff, #70f7cf);
 }
 
+.next-action-strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-bottom: 8px;
+  border: 1px solid rgba(245, 254, 117, 0.24);
+  border-radius: 12px;
+  padding: 8px 10px;
+  background:
+    linear-gradient(90deg, rgba(245, 254, 117, 0.12), rgba(112, 247, 207, 0.04)),
+    rgba(1, 8, 7, 0.78);
+}
+
+.next-action-strip span {
+  color: #f5fe75;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.next-action-strip strong {
+  min-width: 0;
+  color: #f7fffb;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.next-action-strip button {
+  border: 1px solid rgba(112, 247, 207, 0.26);
+  border-radius: 999px;
+  padding: 6px 9px;
+  color: #07100f;
+  background: #70f7cf;
+  cursor: pointer;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+}
+
 .terminal-grid {
   display: grid;
   grid-template-columns: minmax(210px, 0.62fr) minmax(360px, 1.28fr) minmax(300px, 0.82fr);
@@ -1717,7 +1757,8 @@ h1 {
 }
 
 .log-fixer-modal,
-.security-unlock-modal {
+.security-unlock-modal,
+.mission-brief-modal {
   position: fixed;
   inset: 0;
   z-index: 7;
@@ -1728,7 +1769,8 @@ h1 {
 }
 
 .log-fixer-window,
-.security-unlock-window {
+.security-unlock-window,
+.mission-brief-window {
   width: min(680px, calc(100vw - 32px));
   border: 1px solid rgba(112, 247, 207, 0.28);
   border-radius: 18px;
@@ -1752,6 +1794,93 @@ h1 {
   display: grid;
   gap: 12px;
   width: min(420px, calc(100vw - 32px));
+}
+
+.mission-brief-modal {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(112, 247, 207, 0.13), transparent 34%),
+    rgba(0, 0, 0, 0.46);
+  pointer-events: auto;
+}
+
+.mission-brief-window {
+  display: grid;
+  gap: 14px;
+  width: min(720px, calc(100vw - 32px));
+  border-color: rgba(245, 254, 117, 0.36);
+  box-shadow:
+    0 0 72px rgba(245, 254, 117, 0.12),
+    0 34px 120px rgba(0, 0, 0, 0.72);
+}
+
+.mission-brief-window h2,
+.mission-brief-window p {
+  margin: 0;
+}
+
+.mission-brief-window h2 {
+  color: #f7fffb;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  line-height: 1.02;
+}
+
+.mission-brief-window p {
+  color: #d8fff4;
+  line-height: 1.6;
+}
+
+.mission-brief-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mission-brief-steps div,
+.mission-brief-goal {
+  border: 1px solid rgba(112, 247, 207, 0.18);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(112, 247, 207, 0.055);
+}
+
+.mission-brief-steps strong,
+.mission-brief-goal strong {
+  display: block;
+  color: #f5fe75;
+  font-size: 0.76rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mission-brief-steps span,
+.mission-brief-goal span {
+  display: block;
+  margin-top: 7px;
+  color: #c8eee6;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.mission-brief-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mission-brief-actions button {
+  border: 1px solid rgba(112, 247, 207, 0.24);
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: #07100f;
+  background: #70f7cf;
+  cursor: pointer;
+  font-size: 0.76rem;
+  letter-spacing: 0.1em;
+}
+
+.mission-brief-actions button:first-child {
+  color: #07100f;
+  background: #f5fe75;
 }
 
 .modal-window-chrome {
@@ -2267,6 +2396,10 @@ pre {
     grid-template-columns: 1fr;
   }
 
+  .next-action-strip {
+    grid-template-columns: 1fr;
+  }
+
   .hud-grid {
     position: relative;
     top: auto;
@@ -2325,6 +2458,10 @@ pre {
   }
 
   .opening-director-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mission-brief-steps {
     grid-template-columns: 1fr;
   }
 
