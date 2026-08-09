@@ -166,7 +166,7 @@ function ComputerFrame({
               : critical
                 ? "#7a1f17"
                 : isMenu
-                  ? "#e98d42"
+                  ? "#0f4b46"
                   : isOpening
                     ? "#46221e"
                     : "#0f4b46"
@@ -298,7 +298,7 @@ function PlaceholderScene({
     powerStateName === "Critical";
   const blackout = powerStateName === "Blackout" || mode === "blackout";
   const critical = powerStateName === "Critical";
-  const lightIntensity = blackout ? 0.08 : critical ? 0.22 : alert ? 0.26 : 0.45;
+  const lightIntensity = blackout ? 0.2 : critical ? 0.6 : alert ? 0.85 : 1.35;
 
   return (
     <>
@@ -306,15 +306,15 @@ function PlaceholderScene({
       <ambientLight intensity={lightIntensity} />
       <pointLight
         position={[0, 2.4, 2]}
-        intensity={blackout ? 0.25 : critical ? 5.6 : alert ? 4 : 7}
+        intensity={blackout ? 0.8 : critical ? 8.5 : alert ? 7.5 : 12.5}
         color={critical || alert ? "#ff7a58" : "#8fffe0"}
       />
       <pointLight
         position={[-3, 1, 1]}
-        intensity={alert ? 5 : 2.5}
+        intensity={alert ? 7.5 : 4.8}
         color={alert ? "#ff3e26" : "#ff5a42"}
       />
-      <pointLight position={[2.8, 0.8, -1.6]} intensity={2.2} color="#80d8ff" />
+      <pointLight position={[2.8, 0.8, -1.6]} intensity={4.2} color="#80d8ff" />
       <SceneCamera mode={mode} />
       <ControlRoomShell alert={alert} doorState={doorState} />
       <Starfield />

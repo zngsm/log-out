@@ -1033,11 +1033,7 @@ function App() {
       ...current,
       {
         speaker: "ECHO",
-        text: `${result.message} [stability ${result.stabilityChange >= 0 ? "+" : ""}${
-          result.stabilityChange
-        } / suspicion ${result.suspicionChange >= 0 ? "+" : ""}${
-          result.suspicionChange
-        }]`,
+        text: result.message,
       },
     ]);
 
@@ -1192,33 +1188,21 @@ function App() {
             <h1>LOG_OUT</h1>
             <small>RESOURCE MINING VESSEL HERMES / SEC-201 CONTROL ROOM</small>
           </div>
-          <div
-            className={`lockdown-broadcast ${
-              appPhase === "menu" ? "standby-broadcast" : ""
-            }`}
-            aria-label="Hermes control room broadcast"
-          >
-            {appPhase === "menu" ? null : <span>TERMINAL APPROACH</span>}
-            <strong>
-              {appPhase === "menu"
-                ? "평시 당직 모니터가 대기 중입니다"
-                : "컴퓨터 화면으로 접근 중입니다"}
-            </strong>
-            <p>
-              {appPhase === "menu"
-                ? "헤르메스호 통제실은 아직 정상 조명 상태입니다. 중앙 컴퓨터를 클릭하면 근무 화면으로 접근합니다."
-                : "대각선 통제실 시점에서 정면 모니터 시점으로 전환합니다. 봉쇄 선언은 오프닝 컷신 안에서 발생합니다."}
-            </p>
-          </div>
+          {appPhase === "transition" ? (
+            <div className="lockdown-broadcast" aria-label="Hermes control room broadcast">
+              <span>TERMINAL APPROACH</span>
+              <strong>컴퓨터 화면으로 접근 중입니다</strong>
+              <p>대각선 통제실 시점에서 정면 모니터 시점으로 전환합니다.</p>
+            </div>
+          ) : null}
           <button
             className="computer-hotspot"
             type="button"
             onClick={startOpeningSequence}
             disabled={appPhase === "transition"}
-            aria-label="Click the Hermes computer to zoom into the terminal"
+            aria-label="Start game"
           >
-            <span>{appPhase === "transition" ? "APPROACHING MONITOR" : "CLICK COMPUTER"}</span>
-            <small>{appPhase === "transition" ? "Opening cutscene loading..." : "근무 화면으로 접근"}</small>
+            <span>{appPhase === "transition" ? "APPROACHING..." : "START"}</span>
           </button>
         </section>
       ) : null}
@@ -1647,15 +1631,27 @@ function App() {
           </div>
           <div className="header-center-hud">
             <div className="compact-emergency-hud">
-              <span className="hud-compact-item" title={`Oxygen level: ${resourceState.oxygen.toFixed(0)}%`}>
-                O₂ LEVEL: <strong>{resourceState.oxygen.toFixed(0)}%</strong>
-              </span>
-              <span className="hud-compact-item" title={`Power Grid: ${resourceState.power}% (${powerState.name})`}>
-                POWER GRID: <strong>{resourceState.power}%</strong>
-              </span>
-              <span className="hud-compact-item timer-compact-item" title={`Remaining time`}>
-                REMAINING TIME: <strong>{remainingLabel}</strong>
-              </span>
+              <div className="hud-compact-item" title={`Oxygen level: ${resourceState.oxygen.toFixed(0)}%`}>
+                <span className="hud-item-label">O₂ LEVEL: <strong>{resourceState.oxygen.toFixed(0)}%</strong></span>
+                <div className="hud-bar-track">
+                  <div
+                    className="hud-bar-fill oxygen-bar-fill"
+                    style={{ width: `${Math.max(0, Math.min(100, resourceState.oxygen))}%` }}
+                  />
+                </div>
+              </div>
+              <div className="hud-compact-item" title={`Power Grid: ${resourceState.power}% (${powerState.name})`}>
+                <span className="hud-item-label">POWER GRID: <strong>{resourceState.power}%</strong></span>
+                <div className="hud-bar-track">
+                  <div
+                    className="hud-bar-fill power-bar-fill"
+                    style={{ width: `${Math.max(0, Math.min(100, resourceState.power))}%` }}
+                  />
+                </div>
+              </div>
+              <div className="hud-compact-item timer-compact-item" title={`Remaining time`}>
+                <span className="hud-item-label">REMAINING TIME: <strong>{remainingLabel}</strong></span>
+              </div>
               <button
                 type="button"
                 className="hud-audio-btn"
