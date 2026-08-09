@@ -276,6 +276,97 @@ function getFileIconLabel(fileName: string, runtimeState: string) {
   return "FILE";
 }
 
+function Opening2DCutsceneDisplay({ beatId }: { beatId: string }) {
+  return (
+    <div className="opening-2d-cutscene-container" aria-label="2D Cutscene SVG Presentation">
+      <svg className="opening-svg-stage" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(112, 247, 207, 0.08)" strokeWidth="1" />
+          </pattern>
+          <linearGradient id="alertGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ff5a42" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#7a1f17" stopOpacity="0.3" />
+          </linearGradient>
+          <linearGradient id="coolGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#70f7cf" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#083832" stopOpacity="0.3" />
+          </linearGradient>
+        </defs>
+        <rect width="400" height="120" fill="url(#grid)" />
+
+        {beatId === "routine" && (
+          <g>
+            <circle cx="200" cy="60" r="42" stroke="#70f7cf" strokeWidth="1.5" strokeDasharray="4 4" className="svg-rotate-beacon" />
+            <circle cx="200" cy="60" r="28" stroke="url(#coolGrad)" strokeWidth="2" />
+            <circle cx="200" cy="60" r="8" fill="#70f7cf" className="svg-wave-pulse" />
+            <text x="200" y="110" fill="#70f7cf" fontSize="10" fontFamily="monospace" textAnchor="middle" letterSpacing="1.5">
+              SYSTEM NORMAL / HERMES ROUTINE MONITOR
+            </text>
+          </g>
+        )}
+
+        {beatId === "alarm" && (
+          <g className="svg-alarm-active">
+            <circle cx="200" cy="60" r="48" fill="url(#alertGrad)" opacity="0.3" className="svg-wave-pulse" />
+            <path d="M200 25 L235 85 L165 85 Z" stroke="#ff5a42" strokeWidth="3" fill="none" />
+            <text x="200" y="75" fill="#ff5a42" fontSize="26" fontWeight="bold" textAnchor="middle">!</text>
+            <text x="200" y="110" fill="#ff5a42" fontSize="10" fontFamily="monospace" textAnchor="middle" letterSpacing="2">
+              WARNING :: EMERGENCY RED ALERT DETECTED
+            </text>
+          </g>
+        )}
+
+        {beatId === "door-lock" && (
+          <g>
+            <rect x="130" y="20" width="140" height="80" rx="8" stroke="#ff5a42" strokeWidth="2" fill="rgba(45, 23, 19, 0.6)" />
+            <g className="svg-lock-clamp-anim">
+              <rect x="145" y="30" width="110" height="12" fill="#ff5a42" rx="4" />
+              <rect x="145" y="78" width="110" height="12" fill="#ff5a42" rx="4" />
+              <line x1="200" y1="42" x2="200" y2="78" stroke="#ff5a42" strokeWidth="3" strokeDasharray="3 3" />
+            </g>
+            <text x="200" y="64" fill="#ff755a" fontSize="12" fontWeight="bold" textAnchor="middle">SEALED CLAMPS LOCKED</text>
+          </g>
+        )}
+
+        {beatId === "crew-comms" && (
+          <g>
+            <path d="M30 60 Q 110 20, 200 60 T 370 60" stroke="#f5fe75" strokeWidth="2" fill="none" className="svg-wave-pulse" />
+            <circle cx="100" cy="45" r="5" fill="#f5fe75" />
+            <circle cx="200" cy="60" r="5" fill="#f5fe75" />
+            <circle cx="300" cy="75" r="5" fill="#ff5a42" />
+            <line x1="280" y1="30" x2="320" y2="90" stroke="#ff5a42" strokeWidth="3" strokeDasharray="4 2" className="svg-matrix-flicker" />
+            <text x="200" y="110" fill="#f5fe75" fontSize="10" fontFamily="monospace" textAnchor="middle">
+              CREW COMMS INTERRUPTED BY ECHO GATEWAY
+            </text>
+          </g>
+        )}
+
+        {beatId === "echo-lockdown" && (
+          <g className="svg-matrix-flicker">
+            <polygon points="200,20 240,40 240,80 200,100 160,80 160,40" stroke="#ff5a42" strokeWidth="2" fill="rgba(255, 92, 67, 0.15)" />
+            <circle cx="200" cy="60" r="14" fill="#ff5a42" />
+            <text x="200" y="64" fill="#020806" fontSize="10" fontWeight="bold" textAnchor="middle">ECHO</text>
+            <text x="200" y="112" fill="#ff5a42" fontSize="9" fontFamily="monospace" textAnchor="middle" letterSpacing="1.5">
+              LOCKDOWN PROTOCOL 101 ACTIVE
+            </text>
+          </g>
+        )}
+
+        {beatId === "terminal-handoff" && (
+          <g>
+            <rect x="20" y="15" width="360" height="90" rx="6" stroke="#70f7cf" strokeWidth="1.5" strokeDasharray="8 4" className="svg-rotate-beacon" />
+            <circle cx="200" cy="60" r="35" fill="none" stroke="#70f7cf" strokeWidth="2" className="svg-wave-pulse" />
+            <text x="200" y="64" fill="#70f7cf" fontSize="13" fontWeight="bold" textAnchor="middle" letterSpacing="2">
+              100% FULL SCREEN TERMINAL READY
+            </text>
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+}
+
 function App() {
   const [selectedFileId, setSelectedFileId] = useState<CategoryAFileId>(
     CATEGORY_A_FILE_IDS.sensorCalibLog,
@@ -1082,13 +1173,8 @@ function App() {
 
       {appPhase === "opening" ? (
         <section className="cinematic-overlay opening-overlay" aria-label="Opening sequence">
-          {openingBeat.id !== "terminal-handoff" ? (
-            <div className="opening-hands-placeholder" aria-hidden="true">
-              <span />
-              <span />
-            </div>
-          ) : null}
           <div className="cinematic-card intro-card opening-timeline-card">
+            <Opening2DCutsceneDisplay beatId={openingBeat.id} />
             <div className="intro-progress" aria-label="Opening timeline progress">
               {openingTimeline.map((beat) => (
                 <span

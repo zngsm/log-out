@@ -215,7 +215,7 @@ function ConsoleDeck() {
   );
 }
 
-function DeskProps({ showHands }: { showHands: boolean }) {
+function DeskProps() {
   return (
     <group position={[0, -1.18, 1.18]}>
       <mesh position={[-1.35, -0.03, -0.08]} rotation={[-0.16, 0.06, -0.02]}>
@@ -230,14 +230,6 @@ function DeskProps({ showHands }: { showHands: boolean }) {
         <boxGeometry args={[0.52, 0.06, 0.34]} />
         <meshStandardMaterial color="#151b1d" roughness={0.75} metalness={0.45} />
       </mesh>
-      {showHands
-        ? [-0.38, 0.38].map((x) => (
-            <mesh key={x} position={[x, 0.18, 0.04]} rotation={[0.18, 0, x * 0.15]}>
-              <capsuleGeometry args={[0.11, 0.5, 4, 12]} />
-              <meshStandardMaterial color="#c7957d" roughness={0.82} metalness={0.02} />
-            </mesh>
-          ))
-        : null}
     </group>
   );
 }
@@ -302,7 +294,6 @@ function PlaceholderScene({
     powerStateName === "Critical";
   const blackout = powerStateName === "Blackout" || mode === "blackout";
   const critical = powerStateName === "Critical";
-  const showHands = mode === "opening";
   const lightIntensity = blackout ? 0.08 : critical ? 0.22 : alert ? 0.26 : 0.45;
 
   return (
@@ -326,7 +317,7 @@ function PlaceholderScene({
       <SideConsoles alert={alert} />
       <ComputerFrame mode={mode} powerStateName={powerStateName} />
       <ConsoleDeck />
-      <DeskProps showHands={showHands} />
+      <DeskProps />
     </>
   );
 }

@@ -194,7 +194,9 @@ button {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding: 10px;
+  width: 100vw;
+  padding: 0;
+  margin: 0;
   overflow: hidden;
   background:
     linear-gradient(rgba(112, 247, 207, 0.035) 1px, transparent 1px),
@@ -205,10 +207,9 @@ button {
   background-size: 38px 38px, 38px 38px, auto, auto, auto;
   box-shadow:
     0 0 0 1px rgba(112, 247, 207, 0.2) inset,
-    0 0 0 14px rgba(1, 5, 5, 0.88) inset,
-    0 0 110px rgba(112, 247, 207, 0.14) inset;
+    0 0 80px rgba(112, 247, 207, 0.12) inset;
   clip-path: inset(0 round 0);
-  transform-origin: 50% 56%;
+  transform-origin: 50% 50%;
   animation: terminal-screen-zoom 920ms cubic-bezier(0.14, 0.86, 0.22, 1) both;
 }
 
@@ -238,15 +239,12 @@ button {
 
 .terminal-screen-surface::after {
   position: fixed;
-  inset: 10px;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
   content: "";
-  border: 1px solid rgba(112, 247, 207, 0.2);
-  border-radius: 22px;
-  box-shadow:
-    0 0 42px rgba(112, 247, 207, 0.08),
-    0 0 0 1px rgba(255, 255, 255, 0.035) inset;
+  border: none;
+  box-shadow: 0 0 42px rgba(112, 247, 207, 0.08) inset;
 }
 
 .system-topbar,
@@ -2622,27 +2620,27 @@ pre {
 
 @keyframes terminal-screen-zoom {
   0% {
-    border-radius: 34px;
-    clip-path: inset(31% 32% 31% 32% round 26px);
-    filter: brightness(0.62) blur(1.2px);
-    opacity: 0.42;
-    transform: perspective(1200px) translateY(9vh) scale(0.54) rotateX(9deg);
-  }
-
-  34% {
     border-radius: 28px;
-    clip-path: inset(18% 20% 18% 20% round 24px);
-    filter: brightness(0.9) blur(0.45px);
-    opacity: 0.86;
-    transform: perspective(1200px) translateY(4vh) scale(0.82) rotateX(4deg);
+    clip-path: inset(28% 28% 28% 28% round 24px);
+    filter: brightness(0.65) blur(1.2px);
+    opacity: 0.4;
+    transform: perspective(1200px) translateY(8vh) scale(0.52) rotateX(8deg);
   }
 
-  72% {
-    border-radius: 16px;
-    clip-path: inset(0 0 0 0 round 16px);
-    filter: brightness(1.12) blur(0);
+  35% {
+    border-radius: 18px;
+    clip-path: inset(14% 14% 14% 14% round 16px);
+    filter: brightness(0.92) blur(0.4px);
+    opacity: 0.85;
+    transform: perspective(1200px) translateY(3.5vh) scale(0.8) rotateX(3.5deg);
+  }
+
+  75% {
+    border-radius: 6px;
+    clip-path: inset(0 0 0 0 round 6px);
+    filter: brightness(1.08) blur(0);
     opacity: 1;
-    transform: perspective(1200px) translateY(0.5vh) scale(1.018) rotateX(0deg);
+    transform: perspective(1200px) translateY(0.2vh) scale(1.012) rotateX(0deg);
   }
 
   100% {
@@ -2651,6 +2649,106 @@ pre {
     filter: brightness(1) blur(0);
     opacity: 1;
     transform: perspective(1200px) translateY(0) scale(1) rotateX(0deg);
+  }
+}
+
+/* 2D Cutscene SVG & CSS Animations */
+.opening-2d-cutscene-container {
+  width: 100%;
+  height: 140px;
+  margin: 12px 0 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 16, 14, 0.75);
+  border: 1px solid rgba(112, 247, 207, 0.25);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 24px rgba(112, 247, 207, 0.1) inset;
+}
+
+.opening-svg-stage {
+  width: 100%;
+  height: 100%;
+}
+
+.svg-alarm-active {
+  animation: svg-alarm-flash 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes svg-alarm-flash {
+  0% {
+    opacity: 0.3;
+    filter: drop-shadow(0 0 4px #ff2b17);
+  }
+  100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 16px #ff5a42);
+  }
+}
+
+.svg-rotate-beacon {
+  transform-origin: center;
+  animation: svg-spin 3s linear infinite;
+}
+
+@keyframes svg-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.svg-lock-clamp-anim {
+  animation: svg-clamp-down 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes svg-clamp-down {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.svg-wave-pulse {
+  animation: svg-pulse-scale 1.5s ease-out infinite;
+  transform-origin: center;
+}
+
+@keyframes svg-pulse-scale {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+.svg-matrix-flicker {
+  animation: svg-matrix-glitch 0.4s steps(3, end) infinite;
+}
+
+@keyframes svg-matrix-glitch {
+  0% {
+    opacity: 0.7;
+    transform: translate(0, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-2px, 1px);
+  }
+  100% {
+    opacity: 0.85;
+    transform: translate(1px, -1px);
   }
 }
 
