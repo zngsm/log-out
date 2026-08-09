@@ -1694,15 +1694,15 @@ function App() {
               </div>
               <dl>
                 <div>
-                  <dt>Path</dt>
+                  <dt>경로</dt>
                   <dd>{selectedFile.path}</dd>
                 </div>
                 <div>
-                  <dt>Role</dt>
+                  <dt>분류</dt>
                   <dd>{showDebugHints ? selectedFile.role : selectedFile.kind}</dd>
                 </div>
                 <div>
-                  <dt>Evidence</dt>
+                  <dt>증거성</dt>
                   <dd>
                     {showDebugHints && selectedFile.gameplay.evidenceFor
                       ? `${selectedFile.gameplay.evidenceFor}${
@@ -1716,18 +1716,18 @@ function App() {
                   </dd>
                 </div>
                 <div>
-                  <dt>State</dt>
+                  <dt>상태</dt>
                   <dd>
                     {getRuntimeState(selectedFile.id)} / attached{" "}
                     {attachedFileIds.includes(selectedFile.id) ? "yes" : "no"}
                   </dd>
                 </div>
                 <div>
-                  <dt>Source</dt>
+                  <dt>출처</dt>
                   <dd>
                     {showDebugHints
                       ? selectedFile.gameplay.sourceRefs.join(", ")
-                      : "Hermes local archive"}
+                      : "Hermes 로컬 기록 보관소"}
                   </dd>
                 </div>
               </dl>
