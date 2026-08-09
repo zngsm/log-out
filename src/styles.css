@@ -3191,6 +3191,7 @@ pre {
    ========================================================================== */
 
 .work-screen-surface {
+  inset: 0;
   padding: 0;
   overflow: hidden;
   background: linear-gradient(180deg, #020806 0%, #041310 100%);
@@ -3201,6 +3202,8 @@ pre {
   flex-direction: column;
   width: 100vw;
   height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   animation: work-split-arrive 500ms ease-out both;
 }
 
@@ -3266,7 +3269,8 @@ pre {
   position: relative;
   display: grid;
   grid-template-columns: 1.6fr 1fr;
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -3275,6 +3279,8 @@ pre {
   border-right: 1px solid rgba(112, 247, 207, 0.2);
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
   background: rgba(2, 12, 9, 0.6);
 }
 
@@ -3308,7 +3314,9 @@ pre {
   flex-direction: column;
   gap: 20px;
   overflow-y: auto;
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
+  overscroll-behavior: contain;
 }
 
 .desktop-welcome-banner {
@@ -3384,6 +3392,8 @@ pre {
 .work-right-panel {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
   background: rgba(1, 8, 6, 0.85);
 }
 
@@ -3400,18 +3410,23 @@ pre {
 }
 
 .echo-chat-messages {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
 }
 
 .echo-msg-bubble {
   padding: 10px 14px;
   border-radius: 10px;
   max-width: 88%;
+  min-width: 0;
 }
 
 .echo-msg-bubble.speaker-echo {
@@ -3447,9 +3462,11 @@ pre {
   font-size: 0.84rem;
   line-height: 1.4;
   color: #d8fff4;
+  overflow-wrap: anywhere;
 }
 
 .echo-chat-input-area {
+  flex: 0 0 auto;
   padding: 14px 16px;
   border-top: 1px solid rgba(112, 247, 207, 0.18);
   background: rgba(3, 14, 11, 0.95);

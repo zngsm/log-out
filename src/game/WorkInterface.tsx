@@ -69,7 +69,7 @@ export function WorkInterface({
   const [chatMessages, setChatMessages] = useState<RapportChatMessage[]>(INITIAL_ECHO_RAPPORT_MESSAGES);
   const [echoQuestionInput, setEchoQuestionInput] = useState("");
 
-  const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const chatMessagesRef = useRef<HTMLDivElement | null>(null);
 
   // Draggable Messenger App Modal state and refs bounded to Left Panel
   const [modalPos, setModalPos] = useState<{ x: number; y: number } | null>(null);
@@ -137,8 +137,16 @@ export function WorkInterface({
   };
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
+    window.requestAnimationFrame(() => {
+      const chatMessagesElement = chatMessagesRef.current;
+
+      if (!chatMessagesElement) {
+        return;
+      }
+
+      chatMessagesElement.scrollTop = chatMessagesElement.scrollHeight;
+    });
+  }, [chatMessages.length]);
 
   // Real-time ECHO reaction dialogues while player reads reports (max 2 per report)
   useEffect(() => {
@@ -746,14 +754,13 @@ export function WorkInterface({
             <span className="echo-status-tag">ONLINE</span>
           </div>
 
-          <div className="echo-chat-messages">
+          <div className="echo-chat-messages" ref={chatMessagesRef}>
             {chatMessages.map((msg, idx) => (
               <div key={idx} className={`echo-msg-bubble speaker-${msg.speaker.toLowerCase()}`}>
                 <span className="speaker-name">{msg.speaker}</span>
                 <p>{msg.text}</p>
               </div>
             ))}
-            <div ref={chatEndRef} />
           </div>
 
           {/* Interactive ECHO Chat input / Q&A during resume review stage */}
