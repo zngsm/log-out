@@ -1117,7 +1117,6 @@ function App() {
       return;
     }
 
-    setAttachedFileIds([]);
     setMessageInput("");
     playAudioCue(result.nextAct === "ending-ready" ? "door-lock" : "success");
 
@@ -1641,17 +1640,23 @@ function App() {
                 {`${targetFile?.name ?? "File"} 복구 완료`}
               </div>
             ) : null}
-            <button
-              className="log-fixer-run"
-              type="submit"
-              disabled={logFixerStatus === "running" || isTargetFileAlreadyRecovered}
-            >
-              {logFixerStatus === "running"
-                ? "RECONSTRUCTING..."
-                : isTargetFileAlreadyRecovered
-                  ? "RECOVERED"
-                  : "RUN REPAIR"}
-            </button>
+            {isTargetFileAlreadyRecovered ? (
+              <button
+                className="log-fixer-run"
+                type="button"
+                onClick={() => setLogFixerOpen(false)}
+              >
+                복구 완료 / 닫기
+              </button>
+            ) : (
+              <button
+                className="log-fixer-run"
+                type="submit"
+                disabled={logFixerStatus === "running"}
+              >
+                {logFixerStatus === "running" ? "RECONSTRUCTING..." : "RUN REPAIR"}
+              </button>
+            )}
           </form>
         </section>
       ) : null}
