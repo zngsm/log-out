@@ -404,6 +404,7 @@ function App() {
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [audioMuted, setAudioMuted] = useState(false);
   const [audioVolume, setAudioVolume] = useState(0.55);
+  const [isPaused, setIsPaused] = useState(false);
   const messageListRef = useRef<HTMLDivElement | null>(null);
 
   const selectedFile = getCategoryAFileById(selectedFileId);
@@ -521,7 +522,7 @@ function App() {
   }
 
   useEffect(() => {
-    if (appPhase !== "gameplay" || isEndingReady || resourceState.outcome === "lost") {
+    if (appPhase !== "gameplay" || isEndingReady || resourceState.outcome === "lost" || isPaused) {
       return undefined;
     }
 
@@ -536,7 +537,7 @@ function App() {
     }, 1000);
 
     return () => window.clearInterval(timerId);
-  }, [appPhase, isEndingReady, resourceState.outcome]);
+  }, [appPhase, isEndingReady, resourceState.outcome, isPaused]);
 
   useEffect(() => {
     if (appPhase !== "opening") {
@@ -1044,12 +1045,12 @@ function App() {
       setResourceEvent(
         result.resourceState.blackoutRemainingSeconds > 0
           ? "BLACKOUT REBOOT / grid collapse detected"
-          : `POWER SURGE / -${resourceState.power - result.resourceState.power}% grid integrity`,
+          : "전력 서지 경고",
       );
       playAudioCue(
         result.resourceState.blackoutRemainingSeconds > 0 ? "blackout" : "wrong-surge",
       );
-      window.setTimeout(() => setResourceEvent(null), 1200);
+      window.setTimeout(() => setResourceEvent(null), 2000);
     }
 
     if (!result.success) {
@@ -1297,8 +1298,8 @@ function App() {
 
       {resourceEvent && !isBlackout ? (
         <section className="system-alert power-surge-alert" aria-label="Power surge warning">
-          <strong>{resourceEvent}</strong>
-          <span>ECHO warning: incorrect procedural claims destabilize Hermes power routing.</span>
+          <strong>전력 서지 경고</strong>
+          <span>ECHO 경고: 잘못된 절차 주장은 헤르메스 전력 라인을 불안정하게 만듭니다.</span>
         </section>
       ) : null}
 
@@ -1666,6 +1667,14 @@ function App() {
               </div>
               <button
                 type="button"
+                className="hud-pause-btn"
+                onClick={() => setIsPaused((current) => !current)}
+                title={isPaused ? "Resume game" : "Pause game"}
+              >
+                ⏸️
+              </button>
+              <button
+                type="button"
                 className="hud-audio-btn"
                 onClick={() => setAudioMuted((current) => !current)}
                 title={audioMuted ? "Unmute audio" : "Mute audio"}
@@ -2002,6 +2011,20 @@ function App() {
         </div>
       </div>
         </section>
+      ) : null}
+      {isPaused ? (
+        <div className="pause-overlay-backdrop" aria-label="Pause menu">
+          <div className="pause-modal-card">
+            <h2>PAUSED</h2>
+            <button
+              type="button"
+              className="pause-resume-btn"
+              onClick={() => setIsPaused(false)}
+            >
+              RESUME
+            </button>
+          </div>
+        </div>
       ) : null}
     </main>
   );

@@ -53,7 +53,7 @@ export function WorkInterface({
     isOpen: false,
     isMinimized: false,
     messages: [
-      { sender: "박엔지니어", text: "오늘 점심 메뉴 뭐먹을래?" },
+      { sender: "박엔지니어", text: "우주씨, 오늘 점심 뭐 드실래요?" },
     ],
     playerReplyCount: 0,
     playerInput: "",
@@ -649,7 +649,7 @@ export function WorkInterface({
               <div className="popup-icon">💬</div>
               <div className="popup-body">
                 <strong>[메신저 알림] 박엔지니어</strong>
-                <p>오늘 점심 메뉴 뭐먹을래?</p>
+                <p>우주씨, 오늘 점심 뭐 드실래요?</p>
               </div>
               <button
                 type="button"

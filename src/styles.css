@@ -4709,3 +4709,69 @@ pre {
   font-size: 0.8rem;
   cursor: pointer;
 }
+
+/* Pause Overlay & Modal */
+.pause-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(8px);
+  background: rgba(5, 12, 14, 0.7);
+}
+
+.pause-modal-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 48px 64px;
+  background: rgba(8, 24, 22, 0.95);
+  border: 1px solid rgba(112, 247, 207, 0.4);
+  border-radius: 16px;
+  box-shadow: 0 0 40px rgba(112, 247, 207, 0.2);
+  text-align: center;
+}
+
+.pause-modal-card h2 {
+  margin: 0;
+  color: #70f7cf;
+  font-size: 3.2rem;
+  letter-spacing: 0.2em;
+  font-weight: 800;
+}
+
+.pause-modal-card .pause-resume-btn {
+  border: 1px solid rgba(112, 247, 207, 0.5);
+  border-radius: 8px;
+  padding: 12px 36px;
+  color: #050c0e;
+  background: #70f7cf;
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.pause-modal-card .pause-resume-btn:hover {
+  background: #8effdc;
+  box-shadow: 0 0 15px rgba(112, 247, 207, 0.6);
+}
+
+.hud-pause-btn {
+  border: 1px solid rgba(112, 247, 207, 0.3);
+  border-radius: 6px;
+  background: rgba(112, 247, 207, 0.1);
+  color: #70f7cf;
+  font-size: 1rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.hud-pause-btn:hover {
+  background: rgba(112, 247, 207, 0.25);
+}
