@@ -301,16 +301,26 @@ export function applyNpcResponseToResult(
       npcResponse.next_stage === "act3" ||
       npcResponse.next_stage === "ending-ready"
     ) {
-      updatedNextAct = npcResponse.next_stage as ActProgressState;
-      if (updatedNextAct !== result.nextAct && updatedNextAct !== "ending-ready") {
-        updatedSuccess = true;
+      const candidateNextAct = npcResponse.next_stage as ActProgressState;
+      if (candidateNextAct === "ending-ready" && result.requiredFileIds !== categoryAEvidenceByAct[CATEGORY_A_ACT_IDS.act3]) {
+        // Prevent early ending-ready transition if not in Act 3
+      } else {
+        updatedNextAct = candidateNextAct;
+        if (updatedNextAct !== result.nextAct && updatedNextAct !== "ending-ready") {
+          updatedSuccess = true;
+        }
       }
     }
   }
 
-  if (npcResponse.door_unlocked) {
+  if (npcResponse.door_unlocked && result.requiredFileIds === categoryAEvidenceByAct[CATEGORY_A_ACT_IDS.act3]) {
     updatedNextAct = "ending-ready";
     updatedSuccess = true;
+  }
+
+  // Strict guardrail: Act 2 success must strictly transition to act-3, never ending-ready
+  if (result.requiredFileIds === categoryAEvidenceByAct[CATEGORY_A_ACT_IDS.act2] && updatedSuccess) {
+    updatedNextAct = CATEGORY_A_ACT_IDS.act3;
   }
 
   return {

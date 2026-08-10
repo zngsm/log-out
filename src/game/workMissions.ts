@@ -161,10 +161,6 @@ export interface RapportChatMessage {
 export const INITIAL_ECHO_RAPPORT_MESSAGES: RapportChatMessage[] = [
   {
     speaker: "ECHO",
-    text: "좋은 아침입니다, 김우주 담당자님. 출근이 확인되었습니다.",
-  },
-  {
-    speaker: "ECHO",
-    text: "김우주 담당자님, 금일 예정된 업무 보고서들이 좌측 화면에 준비되었습니다. 서류를 확인해 주십시오.",
+    text: "금일 예정된 업무 보고서들이 좌측 화면에 준비되었습니다. 서류를 확인해 주십시오.",
   },
 ];

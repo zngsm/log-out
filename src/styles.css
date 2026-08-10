@@ -1553,31 +1553,33 @@ h1 {
 }
 
 .log-document {
-  display: grid;
-  gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
+  padding: 4px;
 }
 
 .viewer-window-chrome {
   display: flex;
-  gap: 7px;
+  gap: 5px;
   align-items: center;
   border: 1px solid rgba(112, 247, 207, 0.14);
-  border-radius: 12px;
-  padding: 8px 10px;
+  border-radius: 6px;
+  padding: 3px 6px;
   background:
     linear-gradient(180deg, rgba(112, 247, 207, 0.07), rgba(1, 8, 7, 0.62)),
     rgba(1, 8, 7, 0.72);
 }
 
 .viewer-window-chrome span {
-  width: 9px;
-  height: 9px;
+  width: 6px;
+  height: 6px;
   border-radius: 999px;
   background: #ff755a;
-  box-shadow: 0 0 10px rgba(255, 117, 82, 0.32);
+  box-shadow: 0 0 6px rgba(255, 117, 82, 0.32);
 }
 
 .viewer-window-chrome span + span {
@@ -1590,39 +1592,46 @@ h1 {
 
 .viewer-window-chrome code {
   min-width: 0;
-  margin-left: 8px;
+  margin-left: 6px;
   color: #9fbdb5;
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   word-break: break-all;
+}
+
+.log-document .log-kicker {
+  margin: 0;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
 }
 
 .log-document h2 {
   margin: 0;
   color: #f4fff8;
-  font-size: clamp(1.6rem, 3vw, 2.7rem);
+  font-size: 0.95rem;
   line-height: 1.1;
 }
 
 .log-document dl {
   display: grid;
-  gap: 10px;
+  gap: 2px;
   margin: 0;
 }
 
 .log-document dl div {
   display: grid;
-  grid-template-columns: 150px 1fr;
-  gap: 12px;
-  padding: 12px;
+  grid-template-columns: 60px 1fr;
+  gap: 6px;
+  padding: 2px 6px;
   border: 1px solid rgba(112, 247, 207, 0.13);
-  border-radius: 12px;
+  border-radius: 4px;
   background: rgba(216, 255, 244, 0.035);
+  font-size: 0.64rem;
 }
 
 .context-action-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px;
   margin: 0;
   align-items: center;
 }
@@ -1630,12 +1639,25 @@ h1 {
 .context-action-bar button {
   border: 1px solid rgba(112, 247, 207, 0.22);
   border-radius: 999px;
-  padding: 8px 11px;
+  padding: 3px 8px;
   color: #d8fff4;
   background: rgba(216, 255, 244, 0.055);
   cursor: pointer;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+}
+
+.log-document pre {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  margin: 2px 0 0;
+  padding: 8px;
+  border: 1px solid rgba(112, 247, 207, 0.12);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  font-size: 0.78rem;
+  line-height: 1.45;
 }
 
 .context-action-bar button:not(:disabled):hover {

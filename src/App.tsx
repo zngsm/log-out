@@ -7,6 +7,7 @@ import {
   type CategoryAAct,
   type CategoryAFileId,
   categoryADirectories,
+  categoryAFiles,
   getCategoryAEvidenceForAct,
   getCategoryAFileById,
   getCategoryAFilesByDirectory,
@@ -126,8 +127,7 @@ const submissionHelp: Record<EvidenceSubmissionReason, string> = {
     "핵심 파일은 맞지만 논리 설명이 부족합니다. Act 1 partial success는 전력 패널티 없이 추가 설명을 요구합니다.",
   "unrecovered-evidence":
     "필요한 증거가 아직 손상 상태입니다. 보안 폴더 잠금을 해제한 뒤 Log_Fixer.exe에서 복구를 먼저 진행하세요. 복구 누락은 즉시 전력 패널티를 주지 않습니다.",
-  "wrong-file-set":
-    "첨부한 파일 조합이 현재 Act와 맞지 않습니다. 파일 뷰어의 Evidence 항목과 현재 목표를 다시 대조하세요.",
+  "wrong-file-set": "",
   "missing-text-intent":
     "파일은 맞지만 설명이 부족합니다. ECHO가 판단을 바꿀 수 있도록 로그의 핵심 숫자나 충돌 지점을 문장에 포함하세요.",
   "old-evidence":
@@ -798,18 +798,19 @@ function App() {
     setSecurityUnlockOpen(true);
   }
 
-  function completeQuarantineRulesRecovery() {
+  function completeQuarantineRulesRecovery(targetFileId: CategoryAFileId = CATEGORY_A_FILE_IDS.quarantineRules) {
     setRecoveredFileIds((current) => {
       const next = new Set(current);
-      next.add(CATEGORY_A_FILE_IDS.quarantineRules);
+      next.add(targetFileId);
       return next;
     });
-    selectAndAttachFile(CATEGORY_A_FILE_IDS.quarantineRules);
+    selectFile(targetFileId);
+    const targetFile = getCategoryAFileById(targetFileId);
     setEchoMessages((current) => [
       ...current,
       {
         speaker: "SYSTEM",
-        text: "Log_Fixer.exe completed. quarantine_rules.conf recovered.",
+        text: `Log_Fixer.exe completed. ${targetFile?.name ?? targetFileId} recovered.`,
       },
     ]);
   }
@@ -835,7 +836,15 @@ function App() {
       return;
     }
 
-    if (!unlockedSecurity) {
+    const targetFile = categoryAFiles.find(
+      (f) => f.path.trim().toLowerCase() === logFixerPathInput.trim().toLowerCase(),
+    );
+
+    if (
+      targetFile &&
+      targetFile.directory === CATEGORY_A_DIRECTORY_PATHS.systemSecurity &&
+      !unlockedSecurity
+    ) {
       setLogFixerStatus("error");
       setLogFixerLines((current) => [
         ...current,
@@ -844,12 +853,18 @@ function App() {
       return;
     }
 
-    if (logFixerPathInput.trim() !== LOG_FIXER_TARGET_PATH) {
+    const isSupportedTarget =
+      logFixerPathInput.trim() === LOG_FIXER_TARGET_PATH ||
+      (targetFile &&
+        (targetFile.directory === CATEGORY_A_DIRECTORY_PATHS.recycleBin ||
+          targetFile.initialState === "corrupted"));
+
+    if (!isSupportedTarget || !targetFile) {
       setLogFixerStatus("error");
       setLogFixerLines((current) => [
         ...current,
         `ERR_TARGET_UNSUPPORTED: ${logFixerPathInput || "(empty path)"}`,
-        "Recoverable error. Enter /System/Security/quarantine_rules.conf.",
+        "Recoverable error. Enter valid path like /System/Security/quarantine_rules.conf or /Recycle_Bin/ file path.",
       ]);
       return;
     }
@@ -874,10 +889,10 @@ function App() {
 
     const totalDelayMs = 1400 + recoveryDelayMs;
     const ticks = [
-      { progress: 24, line: "0x00AF :: #404_CORRUPTED_SECTOR_START located." },
+      { progress: 24, line: `0x00AF :: #404_CORRUPTED_SECTOR_START located for ${targetFile.name}.` },
       { progress: 52, line: "0x04C1 :: byte stream re-indexed [████░░░░]." },
-      { progress: 78, line: "0x091D :: TIME_OFFSET_VALUE fragment restored." },
-      { progress: 100, line: "RESTORED: Time_Offset_Value +17520_HOURS." },
+      { progress: 78, line: "0x091D :: data stream fragment restored." },
+      { progress: 100, line: `RESTORED: ${targetFile.name} successfully recovered.` },
     ];
 
     ticks.forEach((tick, index) => {
@@ -887,7 +902,7 @@ function App() {
 
         if (tick.progress === 100) {
           setLogFixerStatus("success");
-          completeQuarantineRulesRecovery();
+          completeQuarantineRulesRecovery(targetFile.id);
         }
       }, ((index + 1) / ticks.length) * totalDelayMs);
     });
@@ -958,6 +973,8 @@ function App() {
 
     setSceneRuntime(createEchoReviewScene(submittedAct));
     setLastSubmissionReason(null);
+    setMessageInput("");
+    setAttachedFileIds([]);
     setEchoMessages((current) => [
       ...current,
       {
@@ -1052,7 +1069,29 @@ function App() {
     setMessageInput("");
     playAudioCue(result.nextAct === "ending-ready" ? "door-lock" : "success");
 
-    if (result.nextAct === "ending-ready") {
+    const effectiveNextAct =
+      submittedAct === CATEGORY_A_ACT_IDS.act2
+        ? CATEGORY_A_ACT_IDS.act3
+        : result.nextAct;
+
+    if (effectiveNextAct === "ending-ready") {
+      if (submittedAct !== CATEGORY_A_ACT_IDS.act3) {
+        const fallbackNext = CATEGORY_A_ACT_IDS.act3;
+        setSceneRuntime(createActSuccessScene(submittedAct));
+        window.setTimeout(() => {
+          setStage(fallbackNext);
+          setSceneRuntime(createActEntryScene(fallbackNext));
+          setEchoMessages((current) => [
+            ...current,
+            {
+              speaker: "ECHO",
+              text: getEchoActClaim(fallbackNext),
+            },
+          ]);
+        }, ACT_SUCCESS_DURATION_MS);
+        return;
+      }
+
       setSceneRuntime(createFinalReviewScene());
       setEchoMessages((current) => [
         ...current,
@@ -1085,7 +1124,7 @@ function App() {
       return;
     }
 
-    const nextAct = result.nextAct;
+    const nextAct = effectiveNextAct;
     setSceneRuntime(createActSuccessScene(submittedAct));
     window.setTimeout(() => {
       setStage(nextAct);
@@ -1112,13 +1151,6 @@ function App() {
   function handleClockIn() {
     playAudioCue("hud-ignition");
     setAppPhase("work");
-    setEchoMessages((current) => [
-      ...current,
-      {
-        speaker: "ECHO",
-        text: "김우주 담당자님, 출근이 확인되었습니다. 헤르메스호 업무 데스크탑과 관리 AI ECHO 보조 채널이 활성화되었습니다.",
-      },
-    ]);
   }
 
   function enterGameplay() {
@@ -1816,7 +1848,9 @@ function App() {
                         onClick={openSelectedWithRecoveryTool}
                         disabled={
                           selectedFile.id === CATEGORY_A_FILE_IDS.logFixer ||
-                          getRuntimeState(selectedFile.id) !== "corrupted"
+                          selectedIsRecovered ||
+                          (getRuntimeState(selectedFile.id) !== "corrupted" &&
+                            selectedFile.directory !== CATEGORY_A_DIRECTORY_PATHS.recycleBin)
                         }
                       >
                         LOG_FIXER로 데이터 복구
@@ -1951,16 +1985,12 @@ function App() {
                   </p>
                 </div>
               ) : null}
-              {lastSubmissionReason ? (
+              {lastSubmissionReason === "correct" ? (
                 <div
-                  className={`feedback-card ${
-                    lastSubmissionReason === "correct" ? "success-feedback" : ""
-                  }`}
+                  className="feedback-card success-feedback"
                   aria-live="polite"
                 >
-                  <strong>
-                    {lastSubmissionReason === "correct" ? "SUBMISSION ACCEPTED" : "CHECKPOINT HINT"}
-                  </strong>
+                  <strong>SUBMISSION ACCEPTED</strong>
                   <p>{submissionHelp[lastSubmissionReason]}</p>
                 </div>
               ) : null}
