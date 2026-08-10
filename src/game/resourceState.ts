@@ -129,7 +129,7 @@ export function advanceResourceTime(
     ...state,
     elapsedSeconds: state.elapsedSeconds + deltaSeconds,
     oxygen,
-    power: Math.min(100, Math.round(state.power + Math.max(1, Math.floor(deltaSeconds)))),
+    power: Math.min(100, state.power + (deltaSeconds / 5)),
     blackoutRemainingSeconds,
     outcome: oxygen === 0 ? "lost" : "playing",
   };
