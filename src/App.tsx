@@ -595,6 +595,28 @@ function App() {
   }, [audioEnabled, appPhase, openingBeat.id]);
 
   useEffect(() => {
+    if (appPhase === "opening" && audioEnabled) {
+      audioRuntime.startLockdownAlarm();
+    } else if (appPhase !== "work") {
+      audioRuntime.stopLockdownAlarm();
+    }
+  }, [appPhase, audioEnabled]);
+
+  useEffect(() => {
+    if (appPhase === "gameplay" && audioEnabled && !isPaused) {
+      audioRuntime.startTensionBgm();
+    } else {
+      audioRuntime.stopTensionBgm();
+    }
+
+    return () => {
+      if (appPhase !== "gameplay") {
+        audioRuntime.stopTensionBgm();
+      }
+    };
+  }, [appPhase, audioEnabled, isPaused]);
+
+  useEffect(() => {
     audioRuntime.muted = audioMuted;
   }, [audioMuted]);
 
@@ -1494,10 +1516,14 @@ function App() {
         <section className="terminal-screen-surface work-screen-surface" aria-label="Hermes Dual-panel Work Interface">
           <WorkInterface
             playAudioCue={playAudioCue}
+            startLockdownAlarm={() => audioRuntime.startLockdownAlarm()}
+            stopLockdownAlarm={() => audioRuntime.stopLockdownAlarm()}
             onApproveUpdate={() => {
+              audioRuntime.stopLockdownAlarm();
               enterGameplay();
             }}
             onDebugSkipToGameplay={() => {
+              audioRuntime.stopLockdownAlarm();
               enterGameplay();
             }}
           />

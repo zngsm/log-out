@@ -44,6 +44,10 @@ export type AudioRuntime = {
   volume: number;
   playCue: (cue: AudioCue) => void;
   unlock: () => Promise<void>;
+  startLockdownAlarm: () => void;
+  stopLockdownAlarm: () => void;
+  startTensionBgm: () => void;
+  stopTensionBgm: () => void;
 };
 
 export function createAudioRuntime(): AudioRuntime {
@@ -51,6 +55,20 @@ export function createAudioRuntime(): AudioRuntime {
   let enabled = false;
   let muted = false;
   let volume = 0.55;
+
+  // Lockdown Siren Loop state
+  let lockdownActive = false;
+  let lockdownOsc: OscillatorNode | null = null;
+  let lockdownGain: GainNode | null = null;
+  let lockdownInterval: number | null = null;
+
+  // Dark Tension Ambient BGM state
+  let tensionActive = false;
+  let tensionOsc1: OscillatorNode | null = null;
+  let tensionOsc2: OscillatorNode | null = null;
+  let tensionLfo: OscillatorNode | null = null;
+  let tensionLfoGain: GainNode | null = null;
+  let tensionMasterGain: GainNode | null = null;
 
   async function unlock() {
     const AudioContextClass = window.AudioContext ?? window.webkitAudioContext;
@@ -66,6 +84,190 @@ export function createAudioRuntime(): AudioRuntime {
     }
 
     enabled = true;
+
+    if (lockdownActive && !lockdownOsc) {
+      startLockdownAlarm();
+    }
+    if (tensionActive && !tensionOsc1) {
+      startTensionBgm();
+    }
+  }
+
+  function updateLockdownGain() {
+    if (!lockdownGain || !audioContext) return;
+    const now = audioContext.currentTime;
+    const targetGain = !enabled || muted ? 0.0001 : 0.05 * volume;
+    lockdownGain.gain.setValueAtTime(lockdownGain.gain.value, now);
+    lockdownGain.gain.linearRampToValueAtTime(Math.max(0.0001, targetGain), now + 0.05);
+  }
+
+  function updateTensionGain() {
+    if (!tensionMasterGain || !audioContext) return;
+    const now = audioContext.currentTime;
+    const targetGain = !enabled || muted ? 0.0001 : 0.035 * volume;
+    tensionMasterGain.gain.setValueAtTime(tensionMasterGain.gain.value, now);
+    tensionMasterGain.gain.linearRampToValueAtTime(Math.max(0.0001, targetGain), now + 0.08);
+  }
+
+  function updateActiveAudioStates() {
+    updateLockdownGain();
+    updateTensionGain();
+  }
+
+  function startLockdownAlarm() {
+    lockdownActive = true;
+    if (!enabled || !audioContext) {
+      return;
+    }
+    if (lockdownOsc) {
+      updateLockdownGain();
+      return;
+    }
+
+    try {
+      const now = audioContext.currentTime;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(220, now);
+
+      const initialGain = !enabled || muted ? 0.0001 : 0.05 * volume;
+      gain.gain.setValueAtTime(initialGain, now);
+
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.start(now);
+
+      lockdownOsc = osc;
+      lockdownGain = gain;
+
+      let isHighPitch = false;
+      lockdownInterval = window.setInterval(() => {
+        if (!audioContext || !lockdownOsc || !lockdownActive) return;
+        const currentTime = audioContext.currentTime;
+        isHighPitch = !isHighPitch;
+        const targetFreq = isHighPitch ? 330 : 220;
+        lockdownOsc.frequency.cancelScheduledValues(currentTime);
+        lockdownOsc.frequency.linearRampToValueAtTime(targetFreq, currentTime + 0.12);
+      }, 380);
+    } catch (e) {
+      console.warn("Failed to start lockdown alarm:", e);
+    }
+  }
+
+  function stopLockdownAlarm() {
+    lockdownActive = false;
+    if (lockdownInterval !== null) {
+      clearInterval(lockdownInterval);
+      lockdownInterval = null;
+    }
+    if (lockdownOsc) {
+      try {
+        const now = audioContext?.currentTime ?? 0;
+        if (lockdownGain && audioContext) {
+          lockdownGain.gain.cancelScheduledValues(now);
+          lockdownGain.gain.linearRampToValueAtTime(0.0001, now + 0.08);
+        }
+        lockdownOsc.stop(now + 0.1);
+        setTimeout(() => {
+          lockdownOsc?.disconnect();
+          lockdownGain?.disconnect();
+          lockdownOsc = null;
+          lockdownGain = null;
+        }, 120);
+      } catch {
+        lockdownOsc = null;
+        lockdownGain = null;
+      }
+    }
+  }
+
+  function startTensionBgm() {
+    tensionActive = true;
+    if (!enabled || !audioContext) {
+      return;
+    }
+    if (tensionOsc1) {
+      updateTensionGain();
+      return;
+    }
+
+    try {
+      const now = audioContext.currentTime;
+
+      const osc1 = audioContext.createOscillator();
+      const osc2 = audioContext.createOscillator();
+      const lfo = audioContext.createOscillator();
+      const lfoGain = audioContext.createGain();
+      const masterGain = audioContext.createGain();
+
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(55, now);
+
+      osc2.type = "triangle";
+      osc2.frequency.setValueAtTime(87.31, now);
+
+      lfo.type = "sine";
+      lfo.frequency.setValueAtTime(0.25, now);
+      lfoGain.gain.setValueAtTime(0.008, now);
+
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc2.frequency);
+
+      const initialGain = !enabled || muted ? 0.0001 : 0.035 * volume;
+      masterGain.gain.setValueAtTime(initialGain, now);
+
+      osc1.connect(masterGain);
+      osc2.connect(masterGain);
+      masterGain.connect(audioContext.destination);
+
+      osc1.start(now);
+      osc2.start(now);
+      lfo.start(now);
+
+      tensionOsc1 = osc1;
+      tensionOsc2 = osc2;
+      tensionLfo = lfo;
+      tensionLfoGain = lfoGain;
+      tensionMasterGain = masterGain;
+    } catch (e) {
+      console.warn("Failed to start tension BGM:", e);
+    }
+  }
+
+  function stopTensionBgm() {
+    tensionActive = false;
+    if (tensionOsc1) {
+      try {
+        const now = audioContext?.currentTime ?? 0;
+        if (tensionMasterGain && audioContext) {
+          tensionMasterGain.gain.cancelScheduledValues(now);
+          tensionMasterGain.gain.linearRampToValueAtTime(0.0001, now + 0.15);
+        }
+        tensionOsc1.stop(now + 0.2);
+        tensionOsc2?.stop(now + 0.2);
+        tensionLfo?.stop(now + 0.2);
+        setTimeout(() => {
+          tensionOsc1?.disconnect();
+          tensionOsc2?.disconnect();
+          tensionLfo?.disconnect();
+          tensionLfoGain?.disconnect();
+          tensionMasterGain?.disconnect();
+          tensionOsc1 = null;
+          tensionOsc2 = null;
+          tensionLfo = null;
+          tensionLfoGain = null;
+          tensionMasterGain = null;
+        }, 220);
+      } catch {
+        tensionOsc1 = null;
+        tensionOsc2 = null;
+        tensionLfo = null;
+        tensionLfoGain = null;
+        tensionMasterGain = null;
+      }
+    }
   }
 
   function playCue(cue: AudioCue) {
@@ -102,15 +304,21 @@ export function createAudioRuntime(): AudioRuntime {
     },
     set muted(nextMuted: boolean) {
       muted = nextMuted;
+      updateActiveAudioStates();
     },
     get volume() {
       return volume;
     },
     set volume(nextVolume: number) {
       volume = Math.min(1, Math.max(0, nextVolume));
+      updateActiveAudioStates();
     },
     playCue,
     unlock,
+    startLockdownAlarm,
+    stopLockdownAlarm,
+    startTensionBgm,
+    stopTensionBgm,
   };
 }
 

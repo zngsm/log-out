@@ -15,6 +15,8 @@ interface WorkInterfaceProps {
   onApproveUpdate: () => void;
   onDebugSkipToGameplay: () => void;
   playAudioCue?: (cue: AudioCue) => void;
+  startLockdownAlarm?: () => void;
+  stopLockdownAlarm?: () => void;
 }
 
 type WorkStep = "mining" | "telemetry" | "resume" | "update";
@@ -30,6 +32,8 @@ export function WorkInterface({
   onApproveUpdate,
   onDebugSkipToGameplay,
   playAudioCue,
+  startLockdownAlarm,
+  stopLockdownAlarm,
 }: WorkInterfaceProps) {
   const [stepIndex, setStepIndex] = useState<number>(0);
   const activeStep = WORK_STEPS[stepIndex].id;
@@ -137,6 +141,12 @@ export function WorkInterface({
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging]);
+
+  useEffect(() => {
+    return () => {
+      stopLockdownAlarm?.();
+    };
+  }, [stopLockdownAlarm]);
 
   const addEchoMessage = (speaker: "ECHO" | "PLAYER" | "SYSTEM", text: string) => {
     setChatMessages((prev) => [...prev, { speaker, text }]);
@@ -346,6 +356,7 @@ export function WorkInterface({
 
     setTimeout(() => {
       setRebootState("lockdown");
+      startLockdownAlarm?.();
       playAudioCue?.("warning-siren");
       playAudioCue?.("door-lock");
       playAudioCue?.("decompression");
