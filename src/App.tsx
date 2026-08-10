@@ -369,7 +369,7 @@ function App() {
   );
   const [stage, setStage] = useState<ActProgressState>(CATEGORY_A_ACT_IDS.act1);
   const [messageInput, setMessageInput] = useState("");
-  const [resourceState, setResourceState] = useState(() => createResourceState("debug"));
+  const [resourceState, setResourceState] = useState(() => createResourceState("normal"));
   const [echoMessages, setEchoMessages] = useState<EchoMessage[]>(initialEchoMessages);
   const [lastSubmissionReason, setLastSubmissionReason] =
     useState<EvidenceSubmissionReason | null>(null);
@@ -391,7 +391,7 @@ function App() {
   );
   const [fileSearch, setFileSearch] = useState("");
   const [copiedPath, setCopiedPath] = useState("");
-  const [showDebugHints, setShowDebugHints] = useState(false);
+
   const [logFixerOpen, setLogFixerOpen] = useState(false);
   const [logFixerPathInput, setLogFixerPathInput] = useState(LOG_FIXER_TARGET_PATH);
   const [logFixerMode, setLogFixerMode] = useState<LogFixerMode>("Header Repair");
@@ -1332,9 +1332,6 @@ function App() {
               ))}
             </div>
             <div className="intro-actions">
-              <button type="button" onClick={toggleOpeningSpeed}>
-                {openingSpeed === 1 ? "DEBUG FAST FORWARD" : "NORMAL SPEED"}
-              </button>
               <button className="ghost-button" type="button" onClick={skipToTerminal}>
                 SKIP TO TERMINAL
               </button>
@@ -1553,10 +1550,6 @@ function App() {
             startLockdownAlarm={() => audioRuntime.startLockdownAlarm()}
             stopLockdownAlarm={() => audioRuntime.stopLockdownAlarm()}
             onApproveUpdate={() => {
-              audioRuntime.stopLockdownAlarm();
-              enterGameplay();
-            }}
-            onDebugSkipToGameplay={() => {
               audioRuntime.stopLockdownAlarm();
               enterGameplay();
             }}
@@ -1932,7 +1925,7 @@ function App() {
                       </div>
                       <div>
                         <dt>분류</dt>
-                        <dd>{showDebugHints ? selectedFile.role : selectedFile.kind}</dd>
+                        <dd>{selectedFile.kind}</dd>
                       </div>
                     </dl>
                     {selectedFile.id === CATEGORY_A_FILE_IDS.quarantineRules && !selectedIsRecovered ? (

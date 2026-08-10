@@ -13,7 +13,6 @@ import type { AudioCue } from "./audioSystem";
 
 interface WorkInterfaceProps {
   onApproveUpdate: () => void;
-  onDebugSkipToGameplay: () => void;
   playAudioCue?: (cue: AudioCue) => void;
   startLockdownAlarm?: () => void;
   stopLockdownAlarm?: () => void;
@@ -30,7 +29,6 @@ const WORK_STEPS: { id: WorkStep; name: string }[] = [
 
 export function WorkInterface({
   onApproveUpdate,
-  onDebugSkipToGameplay,
   playAudioCue,
   startLockdownAlarm,
   stopLockdownAlarm,
@@ -641,17 +639,7 @@ export function WorkInterface({
               </div>
             )}
 
-            {/* Debug Navigation Action Bar */}
-            <div className="work-action-bar">
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={onDebugSkipToGameplay}
-                title="Directly enter emergency gameplay terminal for testing"
-              >
-                [DEBUG] DIRECTLY ENTER SENSOR PUZZLE TERMINAL
-              </button>
-            </div>
+
           </div>
 
           {/* Top Colleague Popup Overlay inside Left Panel top-right boundary */}
