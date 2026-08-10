@@ -415,11 +415,15 @@ function App() {
   );
   const isTargetFileAlreadyRecovered = targetFile ? recoveredFileIds.has(targetFile.id) : false;
   const selectedIsRecovered = recoveredFileIds.has(selectedFileId);
-  const powerState = getPowerState(resourceState.power);
-  const isBlackout = powerState.name === "Blackout" || resourceState.blackoutRemainingSeconds > 0;
-  const resourceInteractionLocked = getInteractionLocked(resourceState);
-  const interactionLocked = resourceInteractionLocked || sceneRuntime.inputLocked;
   const isEndingReady = stage === "ending-ready";
+  const powerState = getPowerState(resourceState.power);
+  const isBlackout =
+    !isEndingReady &&
+    !endingConfirmed &&
+    (powerState.name === "Blackout" || resourceState.blackoutRemainingSeconds > 0);
+  const resourceInteractionLocked =
+    isEndingReady || endingConfirmed ? false : getInteractionLocked(resourceState);
+  const interactionLocked = resourceInteractionLocked || sceneRuntime.inputLocked;
   const currentActGuidance = isEndingReady ? null : actGuidance[stage];
   const currentEvidenceNames = isEndingReady
     ? []
@@ -526,7 +530,13 @@ function App() {
   }
 
   useEffect(() => {
-    if (appPhase !== "gameplay" || isEndingReady || resourceState.outcome === "lost" || isPaused) {
+    if (
+      appPhase !== "gameplay" ||
+      isEndingReady ||
+      endingConfirmed ||
+      resourceState.outcome === "lost" ||
+      isPaused
+    ) {
       return undefined;
     }
 
@@ -541,7 +551,22 @@ function App() {
     }, 1000);
 
     return () => window.clearInterval(timerId);
-  }, [appPhase, isEndingReady, resourceState.outcome, isPaused]);
+  }, [appPhase, isEndingReady, endingConfirmed, resourceState.outcome, isPaused]);
+
+  useEffect(() => {
+    if (isEndingReady || endingConfirmed) {
+      setResourceState((current) => {
+        if (current.power === 100 && current.blackoutRemainingSeconds === 0) {
+          return current;
+        }
+        return {
+          ...current,
+          power: 100,
+          blackoutRemainingSeconds: 0,
+        };
+      });
+    }
+  }, [isEndingReady, endingConfirmed]);
 
   useEffect(() => {
     if (appPhase !== "opening") {
@@ -645,7 +670,7 @@ function App() {
   }, [appPhase, echoMessages.length]);
 
   useEffect(() => {
-    if (resourceState.outcome === "lost") {
+    if (!isEndingReady && !endingConfirmed && resourceState.outcome === "lost") {
       setSceneRuntime(createFailureScene());
       return;
     }
@@ -662,7 +687,7 @@ function App() {
     ) {
       setSceneRuntime(createActEntryScene(stage));
     }
-  }, [appPhase, isBlackout, resourceState.outcome, sceneRuntime.phase, stage]);
+  }, [appPhase, isBlackout, resourceState.outcome, sceneRuntime.phase, stage, isEndingReady, endingConfirmed]);
 
   useEffect(() => {
     if (appPhase !== "gameplay" || !audioEnabled) {
@@ -690,7 +715,7 @@ function App() {
   }, [appPhase, audioEnabled, isBlackout, powerState.name]);
 
   function getSceneMode(): SpaceshipSceneMode {
-    if (resourceState.outcome === "lost") {
+    if (!isEndingReady && !endingConfirmed && resourceState.outcome === "lost") {
       return "failure";
     }
 
@@ -1133,6 +1158,11 @@ function App() {
       ]);
       window.setTimeout(() => {
         setStage("ending-ready");
+        setResourceState((current) => ({
+          ...current,
+          power: 100,
+          blackoutRemainingSeconds: 0,
+        }));
         setSceneRuntime(createEndingScene());
         playAudioCue("door-lock");
         window.setTimeout(() => playAudioCue("success"), 240);
@@ -1329,7 +1359,7 @@ function App() {
         </section>
       ) : null}
 
-      {resourceState.oxygen <= 0 ? (
+      {!isEndingReady && !endingConfirmed && resourceState.oxygen <= 0 ? (
         <section className="cinematic-overlay failure-overlay" aria-label="Failure sequence">
           <div className="cinematic-card">
             <p className="eyebrow">TERMINAL FAILURE</p>
