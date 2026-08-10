@@ -15,7 +15,8 @@ export interface NpcRequestPayload {
 
 export interface EchoNpcResponse {
   ai_response: string;
-  next_stage?: string;
+  is_correct?: boolean;
+  next_stage?: string | number;
   door_unlocked?: boolean;
   ending_b_triggered?: boolean;
 }

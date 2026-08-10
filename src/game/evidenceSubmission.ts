@@ -293,15 +293,31 @@ export function applyNpcResponseToResult(
   const updatedMessage = npcResponse.ai_response || result.message;
   let updatedNextAct = result.nextAct;
   let updatedSuccess = result.success;
+  let updatedCountsAsFailedAttempt = result.countsAsFailedAttempt;
+  let updatedResourceState = result.resourceState;
 
-  if (npcResponse.next_stage) {
+  let normalizedNextStage: string | undefined;
+  if (typeof npcResponse.next_stage === "number") {
+    if (npcResponse.next_stage === 1) normalizedNextStage = "act1";
+    else if (npcResponse.next_stage === 2) normalizedNextStage = "act2";
+    else if (npcResponse.next_stage === 3) normalizedNextStage = "act3";
+    else if (npcResponse.next_stage === 4) normalizedNextStage = "ending-ready";
+  } else if (typeof npcResponse.next_stage === "string") {
+    if (npcResponse.next_stage === "1") normalizedNextStage = "act1";
+    else if (npcResponse.next_stage === "2") normalizedNextStage = "act2";
+    else if (npcResponse.next_stage === "3") normalizedNextStage = "act3";
+    else if (npcResponse.next_stage === "4") normalizedNextStage = "ending-ready";
+    else normalizedNextStage = npcResponse.next_stage;
+  }
+
+  if (normalizedNextStage) {
     if (
-      npcResponse.next_stage === "act1" ||
-      npcResponse.next_stage === "act2" ||
-      npcResponse.next_stage === "act3" ||
-      npcResponse.next_stage === "ending-ready"
+      normalizedNextStage === "act1" ||
+      normalizedNextStage === "act2" ||
+      normalizedNextStage === "act3" ||
+      normalizedNextStage === "ending-ready"
     ) {
-      const candidateNextAct = npcResponse.next_stage as ActProgressState;
+      const candidateNextAct = normalizedNextStage as ActProgressState;
       if (candidateNextAct === "ending-ready" && result.requiredFileIds !== categoryAEvidenceByAct[CATEGORY_A_ACT_IDS.act3]) {
         // Prevent early ending-ready transition if not in Act 3
       } else {
@@ -318,6 +334,15 @@ export function applyNpcResponseToResult(
     updatedSuccess = true;
   }
 
+  if (npcResponse.is_correct === false) {
+    updatedSuccess = false;
+    updatedCountsAsFailedAttempt = true;
+    updatedResourceState = applyWrongSubmissionPenalty(result.resourceState);
+  } else if (npcResponse.is_correct === true) {
+    updatedSuccess = true;
+    updatedCountsAsFailedAttempt = false;
+  }
+
   // Strict guardrail: Act 2 success must strictly transition to act-3, never ending-ready
   if (result.requiredFileIds === categoryAEvidenceByAct[CATEGORY_A_ACT_IDS.act2] && updatedSuccess) {
     updatedNextAct = CATEGORY_A_ACT_IDS.act3;
@@ -328,5 +353,7 @@ export function applyNpcResponseToResult(
     message: updatedMessage,
     nextAct: updatedNextAct,
     success: updatedSuccess,
+    countsAsFailedAttempt: updatedCountsAsFailedAttempt,
+    resourceState: updatedResourceState,
   };
 }
