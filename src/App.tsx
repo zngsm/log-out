@@ -410,6 +410,10 @@ function App() {
   const selectedFile = getCategoryAFileById(selectedFileId);
   const quarantineRules = getCategoryAFileById(CATEGORY_A_FILE_IDS.quarantineRules);
   const isQuarantineRecovered = recoveredFileIds.has(CATEGORY_A_FILE_IDS.quarantineRules);
+  const targetFile = categoryAFiles.find(
+    (f) => f.path.trim().toLowerCase() === logFixerPathInput.trim().toLowerCase(),
+  );
+  const isTargetFileAlreadyRecovered = targetFile ? recoveredFileIds.has(targetFile.id) : false;
   const selectedIsRecovered = recoveredFileIds.has(selectedFileId);
   const powerState = getPowerState(resourceState.power);
   const isBlackout = powerState.name === "Blackout" || resourceState.blackoutRemainingSeconds > 0;
@@ -1611,17 +1615,17 @@ function App() {
             </div>
             {logFixerStatus === "success" ? (
               <div className="restored-line-highlight">
-                quarantine_rules.conf restored and attached to ECHO.
+                {`${targetFile?.name ?? "File"} 복구 완료`}
               </div>
             ) : null}
             <button
               className="log-fixer-run"
               type="submit"
-              disabled={logFixerStatus === "running" || isQuarantineRecovered}
+              disabled={logFixerStatus === "running" || isTargetFileAlreadyRecovered}
             >
               {logFixerStatus === "running"
                 ? "RECONSTRUCTING..."
-                : isQuarantineRecovered
+                : isTargetFileAlreadyRecovered
                   ? "RECOVERED"
                   : "RUN REPAIR"}
             </button>
