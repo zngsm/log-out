@@ -296,35 +296,25 @@ export function applyNpcResponseToResult(
   let updatedCountsAsFailedAttempt = result.countsAsFailedAttempt;
   let updatedResourceState = result.resourceState;
 
-  let normalizedNextStage: string | undefined;
-  if (typeof npcResponse.next_stage === "number") {
-    if (npcResponse.next_stage === 1) normalizedNextStage = "act1";
-    else if (npcResponse.next_stage === 2) normalizedNextStage = "act2";
-    else if (npcResponse.next_stage === 3) normalizedNextStage = "act3";
-    else if (npcResponse.next_stage === 4) normalizedNextStage = "ending-ready";
-  } else if (typeof npcResponse.next_stage === "string") {
-    if (npcResponse.next_stage === "1") normalizedNextStage = "act1";
-    else if (npcResponse.next_stage === "2") normalizedNextStage = "act2";
-    else if (npcResponse.next_stage === "3") normalizedNextStage = "act3";
-    else if (npcResponse.next_stage === "4") normalizedNextStage = "ending-ready";
-    else normalizedNextStage = npcResponse.next_stage;
+  // Normalize next_stage to canonical hyphenated CategoryAAct form ("act-1", "act-2", "act-3", "ending-ready")
+  let normalizedNextStage: ActProgressState | undefined;
+  const rawNextStage = npcResponse.next_stage;
+  if (rawNextStage !== undefined && rawNextStage !== null) {
+    const s = String(rawNextStage).trim();
+    if (s === "1" || s === "act1" || s === "act-1") normalizedNextStage = CATEGORY_A_ACT_IDS.act1;
+    else if (s === "2" || s === "act2" || s === "act-2") normalizedNextStage = CATEGORY_A_ACT_IDS.act2;
+    else if (s === "3" || s === "act3" || s === "act-3") normalizedNextStage = CATEGORY_A_ACT_IDS.act3;
+    else if (s === "4" || s === "ending-ready" || s === "ending_ready") normalizedNextStage = "ending-ready";
   }
 
   if (normalizedNextStage) {
-    if (
-      normalizedNextStage === "act1" ||
-      normalizedNextStage === "act2" ||
-      normalizedNextStage === "act3" ||
-      normalizedNextStage === "ending-ready"
-    ) {
-      const candidateNextAct = normalizedNextStage as ActProgressState;
-      if (candidateNextAct === "ending-ready" && result.requiredFileIds !== categoryAEvidenceByAct[CATEGORY_A_ACT_IDS.act3]) {
-        // Prevent early ending-ready transition if not in Act 3
-      } else {
-        updatedNextAct = candidateNextAct;
-        if (updatedNextAct !== result.nextAct && updatedNextAct !== "ending-ready") {
-          updatedSuccess = true;
-        }
+    const candidateNextAct = normalizedNextStage;
+    if (candidateNextAct === "ending-ready" && result.requiredFileIds !== categoryAEvidenceByAct[CATEGORY_A_ACT_IDS.act3]) {
+      // Prevent early ending-ready transition if not in Act 3
+    } else {
+      updatedNextAct = candidateNextAct;
+      if (updatedNextAct !== result.nextAct && updatedNextAct !== "ending-ready") {
+        updatedSuccess = true;
       }
     }
   }
