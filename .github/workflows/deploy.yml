@@ -28,8 +28,25 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Configure npm network retries
+        run: |
+          npm config set fetch-retries 5
+          npm config set fetch-retry-factor 2
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+          npm config set registry https://registry.npmjs.org/
+
       - name: Install dependencies
-        run: npm ci
+        run: |
+          for attempt in 1 2 3; do
+            echo "npm ci attempt ${attempt}/3"
+            npm ci --prefer-offline --no-audit && exit 0
+            if [ "$attempt" = "3" ]; then
+              echo "npm ci failed after 3 attempts"
+              exit 1
+            fi
+            sleep 15
+          done
 
       - name: Build
         run: npm run build
