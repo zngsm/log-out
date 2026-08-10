@@ -1711,8 +1711,8 @@ function App() {
                   />
                 </div>
               </div>
-              <div className="hud-compact-item" title={`Power Grid: ${resourceState.power}% (${powerState.name})`}>
-                <span className="hud-item-label">POWER GRID: <strong>{resourceState.power}%</strong></span>
+              <div className="hud-compact-item" title={`Power Grid: ${Math.round(resourceState.power)}% (${powerState.name})`}>
+                <span className="hud-item-label">POWER GRID: <strong>{Math.round(resourceState.power)}%</strong></span>
                 <div className="hud-bar-track">
                   <div
                     className="hud-bar-fill power-bar-fill"
