@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type SyntheticEvent } from "react";
 import {
   CATEGORY_A_ACT_IDS,
   CATEGORY_A_DIRECTORY_PATHS,
@@ -107,7 +107,7 @@ const actGuidance: Record<
   [CATEGORY_A_ACT_IDS.act1]: {
     objective: "ECHO의 생체 위험 판단이 오래된 센서 보정값에 기대고 있음을 보여주세요.",
     hint: "센서 로그에서 보정 시점과 오판 가능성을 찾고, 그 파일을 ECHO에 증거 첨부를 눌러 증거로 첨부하세요.",
-    avoid: "오른쪽 ECHO 입력창에 '186일 미보정'과 '센서 보정 오차'를 짧게 적고 증거 제출을 하세요.",
+    avoid: "",
   },
   [CATEGORY_A_ACT_IDS.act2]: {
     objective: "격리 규칙의 시간이 이미 만료되었음을 복구된 보안 파일로 증명하세요.",
@@ -934,8 +934,8 @@ function App() {
     ]);
   }
 
-  async function handleEvidenceSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleEvidenceSubmit(event?: SyntheticEvent) {
+    event?.preventDefault();
 
     if (interactionLocked) {
       setEchoMessages((current) => [
@@ -1050,7 +1050,7 @@ function App() {
       playAudioCue(
         result.resourceState.blackoutRemainingSeconds > 0 ? "blackout" : "wrong-surge",
       );
-      window.setTimeout(() => setResourceEvent(null), 2000);
+      window.setTimeout(() => setResourceEvent(null), 4000);
     }
 
     if (!result.success) {
@@ -1976,21 +1976,24 @@ function App() {
                 placeholder="ECHO에게 제출할 증거를 입력하세요..."
                 value={messageInput}
                 onChange={(event) => setMessageInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    if (event.nativeEvent.isComposing) return;
+                    event.preventDefault();
+                    handleEvidenceSubmit();
+                  }
+                }}
                 rows={3}
                 disabled={interactionLocked}
               />
-              {interactionLocked ? (
+              {resourceInteractionLocked ? (
                 <div
-                  className={`feedback-card ${
-                    resourceInteractionLocked ? "blackout-feedback" : "scene-lock-feedback"
-                  }`}
+                  className="feedback-card blackout-feedback"
                   aria-live="polite"
                 >
-                  <strong>{resourceInteractionLocked ? "BLACKOUT LOCK" : "SCENE LOCK"}</strong>
+                  <strong>BLACKOUT LOCK</strong>
                   <p>
-                    {resourceInteractionLocked
-                      ? "전력 복구 중입니다. 파일 선택, 증거 제출, 보안 입력, 복구 실행이 잠시 중단됩니다."
-                      : "ECHO가 현재 제출 내용을 검토 중입니다. 씬 전환이 끝날 때까지 입력이 잠깁니다."}
+                    전력 복구 중입니다. 파일 선택, 증거 제출, 보안 입력, 복구 실행이 잠시 중단됩니다.
                   </p>
                 </div>
               ) : null}
