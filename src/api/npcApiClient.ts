@@ -108,8 +108,16 @@ export async function sendNpcMessage(
 
     if (payload.npcId === "echo") {
       if (data && typeof data.ai_response === "string") {
+        let isCorrect: boolean | undefined = undefined;
+        if (typeof data.is_correct === "boolean") {
+          isCorrect = data.is_correct;
+        } else if (typeof data.is_correct === "string") {
+          isCorrect = data.is_correct.toLowerCase() === "true";
+        }
+
         return {
           ai_response: data.ai_response,
+          is_correct: isCorrect,
           next_stage: data.next_stage,
           door_unlocked: data.door_unlocked,
           ending_b_triggered: data.ending_b_triggered,

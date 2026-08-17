@@ -295,6 +295,15 @@ export function applyNpcResponseToResult(
   let updatedSuccess = result.success;
   let updatedCountsAsFailedAttempt = result.countsAsFailedAttempt;
   let updatedResourceState = result.resourceState;
+  let updatedReason = result.reason;
+
+  // Determine current act from result.requiredFileIds
+  let currentAct: CategoryAAct = CATEGORY_A_ACT_IDS.act1;
+  if (result.requiredFileIds === categoryAEvidenceByAct[CATEGORY_A_ACT_IDS.act2]) {
+    currentAct = CATEGORY_A_ACT_IDS.act2;
+  } else if (result.requiredFileIds === categoryAEvidenceByAct[CATEGORY_A_ACT_IDS.act3]) {
+    currentAct = CATEGORY_A_ACT_IDS.act3;
+  }
 
   // Normalize next_stage to canonical hyphenated CategoryAAct form ("act-1", "act-2", "act-3", "ending-ready")
   let normalizedNextStage: ActProgressState | undefined;
@@ -307,35 +316,52 @@ export function applyNpcResponseToResult(
     else if (s === "4" || s === "ending-ready" || s === "ending_ready") normalizedNextStage = "ending-ready";
   }
 
-  if (normalizedNextStage) {
-    const candidateNextAct = normalizedNextStage;
-    if (candidateNextAct === "ending-ready" && result.requiredFileIds !== categoryAEvidenceByAct[CATEGORY_A_ACT_IDS.act3]) {
-      // Prevent early ending-ready transition if not in Act 3
-    } else {
-      updatedNextAct = candidateNextAct;
-      if (updatedNextAct !== result.nextAct && updatedNextAct !== "ending-ready") {
-        updatedSuccess = true;
-      }
-    }
-  }
-
-  if (npcResponse.door_unlocked && result.requiredFileIds === categoryAEvidenceByAct[CATEGORY_A_ACT_IDS.act3]) {
-    updatedNextAct = "ending-ready";
-    updatedSuccess = true;
-  }
-
   if (npcResponse.is_correct === false) {
     updatedSuccess = false;
     updatedCountsAsFailedAttempt = true;
     updatedResourceState = applyWrongSubmissionPenalty(result.resourceState);
+    updatedNextAct = currentAct;
+    if (updatedReason === "correct") {
+      updatedReason = "missing-text-intent";
+    }
   } else if (npcResponse.is_correct === true) {
     updatedSuccess = true;
     updatedCountsAsFailedAttempt = false;
+    updatedReason = "correct";
+    if (currentAct === CATEGORY_A_ACT_IDS.act1) {
+      updatedNextAct = CATEGORY_A_ACT_IDS.act2;
+    } else if (currentAct === CATEGORY_A_ACT_IDS.act2) {
+      updatedNextAct = CATEGORY_A_ACT_IDS.act3;
+    } else if (currentAct === CATEGORY_A_ACT_IDS.act3) {
+      updatedNextAct = "ending-ready";
+    }
+  } else {
+    // If is_correct is not explicitly provided
+    if (normalizedNextStage) {
+      const candidateNextAct = normalizedNextStage;
+      if (candidateNextAct === "ending-ready" && result.requiredFileIds !== categoryAEvidenceByAct[CATEGORY_A_ACT_IDS.act3]) {
+        // Prevent early ending-ready transition if not in Act 3
+      } else {
+        updatedNextAct = candidateNextAct;
+        if (updatedNextAct !== result.nextAct && updatedNextAct !== "ending-ready") {
+          updatedSuccess = true;
+        }
+      }
+    }
+  }
+
+  if (npcResponse.door_unlocked && result.requiredFileIds === categoryAEvidenceByAct[CATEGORY_A_ACT_IDS.act3] && updatedSuccess) {
+    updatedNextAct = "ending-ready";
   }
 
   // Strict guardrail: Act 2 success must strictly transition to act-3, never ending-ready
   if (result.requiredFileIds === categoryAEvidenceByAct[CATEGORY_A_ACT_IDS.act2] && updatedSuccess) {
     updatedNextAct = CATEGORY_A_ACT_IDS.act3;
+  }
+
+  // Strict guardrail: If not successful, nextAct MUST remain the current act
+  if (!updatedSuccess) {
+    updatedNextAct = currentAct;
   }
 
   return {
@@ -345,5 +371,6 @@ export function applyNpcResponseToResult(
     success: updatedSuccess,
     countsAsFailedAttempt: updatedCountsAsFailedAttempt,
     resourceState: updatedResourceState,
+    reason: updatedReason,
   };
 }

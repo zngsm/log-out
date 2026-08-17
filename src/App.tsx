@@ -112,12 +112,12 @@ const actGuidance: Record<
   [CATEGORY_A_ACT_IDS.act2]: {
     objective: "격리 규칙의 시간이 이미 만료되었음을 복구된 보안 파일로 증명하세요.",
     hint: "복구된 quarantine_rules.conf를 ECHO에 증거 첨부로 첨부하세요.",
-    avoid: "ECHO 입력창에 '72시간 만료'와 '+17,520시간 오프셋'을 설명하고 증거 제출을 하세요.",
+    avoid: "",
   },
   [CATEGORY_A_ACT_IDS.act3]: {
     objective: "ECHO의 격리 명령보다 승무원 생존 우선 원칙이 앞선다는 충돌 근거를 제출하세요.",
     hint: "보안 정책 파일과 삭제된 오버라이드 기록이 서로 연결되는지 살펴보세요.",
-    avoid: "생존 우선 원칙과 삭제된 오버라이드 수칙의 충돌을 설명하고 증거 제출을 하세요.",
+    avoid: "",
   },
 };
 
@@ -1027,13 +1027,15 @@ function App() {
     setLastSubmissionReason(null);
     setMessageInput("");
     setAttachedFileIds([]);
+    const playerMessageText = `${submittedFiles
+      .map((fileId) => `@${getCategoryAFileById(fileId)?.name ?? fileId}`)
+      .join(" ")} ${submittedText}`.trim();
+
     setEchoMessages((current) => [
       ...current,
       {
         speaker: "PLAYER",
-        text: `${submittedFiles
-          .map((fileId) => `@${getCategoryAFileById(fileId)?.name ?? fileId}`)
-          .join(" ")} ${submittedText}`,
+        text: playerMessageText,
       },
       {
         speaker: "SYSTEM",
@@ -1050,7 +1052,7 @@ function App() {
       const npcResponse = await sendNpcMessage({
         npcId: "echo",
         currentStage: submittedAct,
-        userMessage: submittedText,
+        userMessage: playerMessageText,
         history,
         attachedFileIds: submittedFiles,
       });
@@ -1132,13 +1134,6 @@ function App() {
         window.setTimeout(() => {
           setStage(fallbackNext);
           setSceneRuntime(createActEntryScene(fallbackNext));
-          setEchoMessages((current) => [
-            ...current,
-            {
-              speaker: "ECHO",
-              text: getEchoActClaim(fallbackNext),
-            },
-          ]);
         }, ACT_SUCCESS_DURATION_MS);
         return;
       }
@@ -1185,13 +1180,6 @@ function App() {
     window.setTimeout(() => {
       setStage(nextAct);
       setSceneRuntime(createActEntryScene(nextAct));
-      setEchoMessages((current) => [
-        ...current,
-        {
-          speaker: "ECHO",
-          text: getEchoActClaim(nextAct),
-        },
-      ]);
     }, ACT_SUCCESS_DURATION_MS);
   }
 
@@ -1980,7 +1968,7 @@ function App() {
                 {!isEndingReady ? (
                   <small>
                     Required evidence slots: {currentEvidenceNames.length} / currently attached:{" "}
-                    {attachedFileIds.length}. {currentActGuidance?.avoid}
+                    {attachedFileIds.length}.{currentActGuidance?.avoid ? ` ${currentActGuidance.avoid}` : ""}
                   </small>
                 ) : null}
               </section>
