@@ -106,17 +106,17 @@ const actGuidance: Record<
 > = {
   [CATEGORY_A_ACT_IDS.act1]: {
     objective: "ECHO의 생체 위험 판단이 오래된 센서 보정값에 기대고 있음을 보여주세요.",
-    hint: "센서 로그에서 보정 시점과 오판 가능성을 찾고, 그 파일을 ECHO에 증거 첨부를 눌러 증거로 첨부하세요.",
+    hint: "",
     avoid: "",
   },
   [CATEGORY_A_ACT_IDS.act2]: {
     objective: "격리 규칙의 시간이 이미 만료되었음을 복구된 보안 파일로 증명하세요.",
-    hint: "복구된 quarantine_rules.conf를 ECHO에 증거 첨부로 첨부하세요.",
+    hint: "",
     avoid: "",
   },
   [CATEGORY_A_ACT_IDS.act3]: {
     objective: "ECHO의 격리 명령보다 승무원 생존 우선 원칙이 앞선다는 충돌 근거를 제출하세요.",
-    hint: "보안 정책 파일과 삭제된 오버라이드 기록이 서로 연결되는지 살펴보세요.",
+    hint: "",
     avoid: "",
   },
 };
@@ -1960,11 +1960,11 @@ function App() {
                 <strong>
                   {isEndingReady ? "문 해제 조건 충족" : currentActGuidance?.objective}
                 </strong>
-                <p>
-                  {isEndingReady
-                    ? "ECHO가 격리 명령을 철회할 준비가 되었습니다."
-                    : currentActGuidance?.hint}
-                </p>
+                {isEndingReady ? (
+                  <p>ECHO가 격리 명령을 철회할 준비가 되었습니다.</p>
+                ) : currentActGuidance?.hint ? (
+                  <p>{currentActGuidance.hint}</p>
+                ) : null}
                 {!isEndingReady ? (
                   <small>
                     Required evidence slots: {currentEvidenceNames.length} / currently attached:{" "}
